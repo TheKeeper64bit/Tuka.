@@ -1,21 +1,23 @@
-# Тука · Скопје
-Personal location-first JSP PWA, in Macedonian. Opens on nearby stops and arrivals, with opposite directions kept as separate stops. Requires HTTPS for location and installation. No accounts or location uploads.
+# Tuka · Skopje
+English personal JSP PWA, with a map-first home screen.
 
-## GitHub Pages
-Upload this repository to your GitHub account. In Settings → Pages choose GitHub Actions. The included workflow publishes `dist/` on pushes to `main`. All local asset paths are relative, so repository subpaths work. GitHub Pages publishes a reachable URL; local favourites and location stay on your device. Source code in a public repo is public. Remove `.openai/hosting.json` if using only GitHub Pages.
+## Flow
+Stops: locate yourself or drag the blue starting pin, confirm, then select a stop on the map or in the nearby list. Stop direction markers remain separate. Select bus-number chips to filter both arrivals and vehicle positions. Bus lines: every route in the current JSP feed, searchable by number, with route geometry, directions, stop lists and only that route's live vehicles. Journey: the confirmed origin stays fixed; search or drag a separate red destination pin, then compare earliest-arrival trips with up to two transfers. Saved stop stars remain device-local.
 
-## Data
-Schedule ZIP and GTFS-Realtime from the publicly listed JSP Modeshift feeds:
+## Data and privacy
+Public JSP/Modeshift GTFS schedule and combined realtime feed:
 https://www.modeshift.app/api/v1/9814b106-2afe-47c8-919b-bdec6a5e521e/transport/gtfs/gtfs.zip
 https://www.modeshift.app/api/v1/9814b106-2afe-47c8-919b-bdec6a5e521e/transport/gtfsrt/tripupdates.pb
-Tested September 30, 2026: both returned 200 and allowed the supplied browser Origin. 1,419 stops, 106 routes and 4,133 scheduled trips. Feed contents and access may change. Schedule is fetched when the app opens, with a cached offline fallback. Calendar and calendar exceptions govern service dates. No fabricated arrival data. Realtime is polled every 30 seconds while visible; only timestamps within 120 seconds of the current time are treated as live. Scheduled service is shown when live data is unavailable, stale or unmatched. Walking distances are straight-line estimates, not pedestrian routing.
 
-## Features and limits
-Nearby stops within 1.2km; map pin selection; stop/line/destination search; local favourite stops; stop arrival boards; trip stop lists; light/dark theme; installable PWA. The planner searches location-to-destination journeys with zero, one or two transfers and transfers up to 250m apart. It is a first version: no guaranteed connections, street-aware walking, push notifications or tickets. GPS cannot reliably determine the correct side of the road. Destination/direction labels and separate nearby stops help the rider choose.
+The combined realtime feed includes both trip updates and vehicle positions. September 30, 2026 testing: 1,419 stops, 106 routes and 161 vehicle positions (160 matched to scheduled trips). Only GPS positions within 120 seconds of the device time are displayed. Stop filtering additionally requires a matching trip serving that stop and checks the reported stop sequence where available. Vehicles are not inferred from the timetable. Feed polling runs every 30 seconds while visible. The schedule reloads on opening, with a cached offline fallback; calendar and exceptions control service validity. Live arrivals fall back to scheduled times when fresh updates are missing.
 
-The map uses Leaflet from unpkg and OpenStreetMap tiles. Map requests go to those providers. Transit feed requests go to Modeshift. Place search uses the public Photon geocoder; entered searches are sent to that service with a fixed Skopje search bias. Location coordinates are used in browser memory and are only sent to Google Maps when the rider explicitly opens walking directions.
+MapLibre 5.6.2 is bundled locally; the modern vector basemap comes from OpenFreeMap, with map attribution retained. Photon place search receives entered address queries and a fixed Skopje bias, not the GPS origin. It searches building/street variants and separates missing house numbers from exact mapped matches. Unit numbers may not exist in map data. No invented address locations. Red map pin placement is always available. Coordinates and favourites are kept in the browser; no account, analytics or location storage on our servers. Map tiles and place queries go to their respective providers.
 
-## Local use
-Run a static HTTP server in `dist`, e.g. `python -m http.server 8000`. Geolocation works on localhost or HTTPS. A recent browser supporting DecompressionStream(deflate-raw) is required. No build or package installation needed.
+## Journey limits
+Earliest-arrival rounds compare walking access, waiting, rides, transfers and walking egress. Up to three bus rides, transfer walks within 250m, and a two-minute connection buffer. Access/egress stops within 800m. Walking times use straight-line distances multiplied by 1.3 at 75m/min, without pedestrian street routing or crossing verification. Real-time updates are used at individual stops when fresh and matching; timetable estimates fill gaps. Rankings are estimates, not guaranteed connections. No ticketing or push notifications.
 
-Destination search and map pins feed an earliest-arrival round-based planner. Walking access/egress cover stops within 800m, with a 1.3 distance multiplier. Up to three rides, transfers within 250m and a two-minute connection buffer. All candidate journeys are ranked by arrival time from now, not by number of transfers. Updated times at downstream stops are used when available; timetable estimates fill gaps. Walking geometry is not street-aware and therefore route choices remain estimates.
+## GitHub Pages
+Upload the source to a GitHub repository. Choose Settings → Pages → GitHub Actions. The included workflow publishes `dist/` on pushes to `main`. Relative local asset paths support repository subpaths. Remove `.openai/hosting.json` if using only GitHub Pages. A public repository and Pages URL can be viewed by others; favourites and location remain local. Requires HTTPS for geolocation/PWA installation and a recent browser with WebGL and DecompressionStream(deflate-raw).
+
+## Validation
+JavaScript syntax, actual schedule and realtime parsing, vehicle coordinates, all 106 rendered line entries, origin confirmation flow, independent destination pin, stop selection and tab navigation checked. Routing regression verifies an immediate 17-minute transfer journey outranks a 50-minute direct journey, and rejects a connection with less than the two-minute buffer. Full visual testing on a physical phone remains necessary.

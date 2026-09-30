@@ -1,1 +1,1 @@
-{"name":"Тука · Скопје","short_name":"Тука","lang":"mk","start_url":"./","scope":"./","display":"standalone","background_color":"#f2f5f7","theme_color":"#101e2c","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]}
+{"name": "Tuka · Skopje", "short_name": "Tuka", "lang": "en", "start_url": "./", "scope": "./", "display": "standalone", "background_color": "#f2f5f7", "theme_color": "#0b2338", "icons": [{"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}]}
