@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {polishMap,routeGeometry,routeOverlay,syncMarkers} from '../dist/map-ui.js';
+const paints=[],layouts=[],sources=new Map(),layers=[];
+const map={getStyle:()=>({layers:[{id:'background',type:'background'},{id:'road_trunk_primary',type:'line'},{id:'road_trunk_primary_casing',type:'line'},{id:'water',type:'fill'},{id:'road_label',type:'symbol',layout:{'text-field':['get','name']}}]}),setPaintProperty:(...x)=>paints.push(x),setLayoutProperty:(...x)=>layouts.push(x),getSource:id=>sources.get(id),getLayer:id=>id==='stops',addSource:(id,data)=>sources.set(id,{...data,setData(d){this.data=d;}}),addLayer:(l,before)=>layers.push({l,before})};
+polishMap(map);assert(paints.some(x=>x[0]==='road_trunk_primary'&&x[2]==='#ffffff'));assert(layouts.some(x=>JSON.stringify(x).includes('name:en')));
+const trip={trip_id:'t',shape_id:'shape'},db={shapes:new Map([['shape',[[21.4,42,1],[21.405,42.002,2],[21.41,42,3]]]]),stops:[{id:'a',lon:21.4,lat:42},{id:'b',lon:21.41,lat:42}],times:new Map([['t',[{stop_id:'a'},{stop_id:'b'}]]])};
+const geo=routeGeometry(db,trip);assert.equal(geo.points.length,3);assert(!geo.approximate);assert(routeGeometry(db,{trip_id:'t'}).approximate);
+routeOverlay(map,'selected-route',geo.points);assert.equal(layers.length,2);assert(layers.every(x=>x.before==='stops'));assert.equal(sources.get('selected-route').data.features.length,1);
+routeOverlay(map,'selected-route',[]);assert.equal(layers.length,2);assert.equal(sources.get('selected-route').data.features.length,0);
+let created=0,removed=0;const create=v=>({marker:{remove(){removed++;}},key:v.label});const update=(entry,v)=>entry.position=v.lon;
+let state=syncMarkers(new Map(),[{label:'bus',lon:1}],v=>{created++;return create(v);},update);const marker=state.get('bus');state=syncMarkers(state,[{label:'bus',lon:2}],v=>{created++;return create(v);},update);assert.equal(created,1);assert.equal(removed,0);assert.equal(state.get('bus'),marker);assert.equal(marker.position,2);state=syncMarkers(state,[],create,update);assert.equal(removed,1);
+console.log('Passed: quiet map palette, street labels, exact route geometry, route updates/clearing, stable vehicle badges');
