@@ -2,7 +2,7 @@
 English personal JSP PWA, with a map-first home screen.
 
 ## Flow
-Stops: locate yourself or drag the blue starting pin, confirm, then select a stop on the map or in the nearby list. Stop direction markers remain separate. Select bus-number chips to filter both arrivals and vehicle positions. Bus lines: every route in the current JSP feed, searchable by number, with route geometry, directions, stop lists and only that route's live vehicles. Journey: the confirmed origin stays fixed; search or drag a separate red destination pin, then compare earliest-arrival trips with up to two transfers. Saved stop stars remain device-local.
+Stops: the app locates you automatically; select a stop on the map or in the nearby list. Starting location is locked by default. Use Correct location to temporarily enable dragging/tapping a correction pin, then save or cancel. Stop direction markers remain separate. Select bus-number chips to filter both arrivals and vehicle positions. Bus lines: every route in the current JSP feed, searchable by number, with route geometry, directions, stop lists and only that route's live vehicles. Journey: the confirmed origin stays fixed; search or drag a separate red destination pin, then compare earliest-arrival trips with up to two transfers. Saved stop stars remain device-local.
 
 ## Data and privacy
 Public JSP/Modeshift GTFS schedule and combined realtime feed:
@@ -21,3 +21,5 @@ Upload the source to a GitHub repository. Choose Settings → Pages → GitHub A
 
 ## Validation
 JavaScript syntax, actual schedule and realtime parsing, vehicle coordinates, all 106 rendered line entries, origin confirmation flow, independent destination pin, stop selection and tab navigation checked. Routing regression verifies an immediate 17-minute transfer journey outranks a 50-minute direct journey, and rejects a connection with less than the two-minute buffer. Full visual testing on a physical phone remains necessary.
+
+October 1 refresh: standalone Tuka wordmark (no repeated initial), floating map controls and navigation, quieter vector map, larger stop tap targets. Stop selection keeps the map visible, immediately opens arrivals, refreshes GPS and fits the selected stop plus up to eight nearest matching vehicles in view. Scheduled arrivals render before the realtime request completes. Schedule requests time out after 12 seconds and fall back to an existing cached feed; realtime requests time out after 10 seconds. Auto-GPS/correction/stop-tap flows tested with a DOM/map stub and explicit schedule fixture; full phone visual testing remains necessary.
