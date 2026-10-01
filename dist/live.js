@@ -51,7 +51,7 @@ export function mergeArrivals(db,rt,id,list,now,day){
     if(live){used.add(live);continue;}
     const scheduled=same.filter(x=>!x.live).sort((x,y)=>Math.abs(x.time-a.time)-Math.abs(y.time-a.time))[0];
     if(scheduled&&Math.abs(scheduled.time-a.time)<=600000){out.splice(out.indexOf(scheduled),1);}
-    const entry={trip:{trip_id:'sk-eta-'+a.route.route_id+'-'+a.time,route_id:a.route.route_id,trip_headsign:a.headsign},s:{seq:a.seq,stop_id:id},route:a.route,time:a.time,scheduled:null,live:false,estimate:true,source:'Skopska',day,unmatched:true};out.push(entry);used.add(entry);
+    const entry={trip:{trip_id:'sk-eta-'+a.route.route_id+'-'+a.time,route_id:a.route.route_id,trip_headsign:a.headsign},s:{seq:a.seq,stop_id:id},route:a.route,time:a.time,scheduled:null,live:false,estimate:true,source:'Skopska',path:a.path,day,unmatched:true};out.push(entry);used.add(entry);
   }
   return out.sort((a,b)=>a.time-b.time);
 }
