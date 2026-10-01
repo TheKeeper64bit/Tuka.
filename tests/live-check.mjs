@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import worker from '../dist/server/index.js';
+import {load,realtime,departures} from '../dist/transit.js';
+const native=globalThis.fetch;
+const fixtures=process.env.TUKA_FIXTURES;
+if(fixtures){const sample=Number(fs.readFileSync(fixtures+'/time','utf8'));Date.now=()=>sample*1000;}
+const original=(input,options)=>{const u=new URL(String(input));if(!fixtures)return native(input,options);if(u.pathname.includes('/rest-auth/'))return Promise.resolve(Response.json('test-public-guest'));if(u.hostname==='info.skopska.mk'){const file=u.pathname.slice(1).replaceAll('/','_')+'.json';return Promise.resolve(new Response(fs.readFileSync(fixtures+'/'+file),{headers:{'Content-Type':'application/json'}}));}const file=u.pathname.split('/').at(-1);return Promise.resolve(new Response(fs.readFileSync(fixtures+'/'+file)));};
+globalThis.location={href:'http://localhost/'};
+globalThis.fetch=(input,options)=>{const url=String(input);return url.startsWith('http://localhost/')?worker.fetch(new Request(input,options)):original(input,options);};
+const [db,r]=await Promise.all([load(),worker.fetch(new Request('http://localhost/api/network'))]);
+assert.equal(r.status,200,'Skopska network should load');
+const network=await r.json();assert(network.routes.length>100);
+const stop=db.stops.find(s=>s.stop_code==='52');assert(stop);
+const rt=await realtime(db,stop.id);assert(rt.sources.modeshift);
+const sk=rt.vehicles.filter(v=>v.source==='Skopska');
+assert.equal(new Set(rt.vehicles.map(v=>v.label||v.id)).size,rt.vehicles.length,'No duplicate vehicle labels');
+assert(rt.vehicles.every(v=>Date.now()/1000-v.timestamp<=120&&v.timestamp<=Date.now()/1000+15));
+assert(sk.every(v=>v.stops?.length&&v.seq>=1),'Added buses need a direction and stop pattern');
+const rows=departures(db,rt,stop.id,Date.now(),60);
+assert(rows.every((x,i)=>!i||x.time>=rows[i-1].time));
+console.log(JSON.stringify({sources:rt.sources,totalGPS:rt.vehicles.length,additionalGPS:sk.length,additionalLines:[...new Set(sk.map(v=>db.routes.get(v.routeId)?.route_short_name))],skopskaArrivals:rt.additionalArrivals?.length,stop52:rows.slice(0,10).map(x=>({line:x.route.route_short_name,inMinutes:Math.ceil((x.time-Date.now())/60000),live:x.live,source:x.source||'Modeshift'}))},null,2));
+// Either source may fail without taking the other down.
+globalThis.fetch=(input,options)=>String(input).includes('modeshift.app')?Promise.reject(Error('offline')):String(input).startsWith('http://localhost/')?worker.fetch(new Request(input,options)):original(input,options);
+const fallback=await realtime(db,stop.id);assert(!fallback.sources.modeshift);assert(fallback.sources.skopska);assert(fallback.vehicles.every(v=>v.source==='Skopska'));console.log('Modeshift outage: Skopska still supplies live vehicles');
+globalThis.fetch=(input,options)=>String(input).startsWith('http://localhost/')?Promise.resolve(new Response('{}',{status:503})):original(input,options);
+const primary=await realtime(db,stop.id);assert(primary.sources.modeshift);assert(!primary.sources.skopska);console.log('Skopska outage: Modeshift still supplies live vehicles');
+assert.equal((await worker.fetch(new Request('http://localhost/api/arrivals?stop=http://example.com'))).status,404);
+assert.equal((await worker.fetch(new Request('http://localhost/api/live',{method:'POST'}))).status,405);
+assert.equal((await worker.fetch(new Request('http://localhost/'))).status,200);
+assert.equal((await worker.fetch(new Request('http://localhost/app.js?v=5'))).status,200);
+console.log('Fixed endpoint validation and embedded app assets passed');
