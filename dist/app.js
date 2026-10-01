@@ -1,6 +1,6 @@
-import {boardingNetwork,visibleNetwork,arrivalConnects,vehicleServes,routeColor} from './stop-network.js';
-import {polishMap,routeGeometry,routeOverlay,syncMarkers,networkOverlay} from './map-ui.js';
-import {load,realtime,departures,distance,planJourney} from './transit.js';
+import {boardingNetwork,visibleNetwork,arrivalConnects,vehicleServes,routeColor} from './stop-network.js?v=8';
+import {polishMap,routeGeometry,routeOverlay,syncMarkers,networkOverlay} from './map-ui.js?v=8';
+import {load,realtime,departures,distance,planJourney} from './transit.js?v=8';
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const alphabet={'А':'A','Б':'B','В':'V','Г':'G','Д':'D','Ѓ':'Gj','Е':'E','Ж':'Zh','З':'Z','Ѕ':'Dz','И':'I','Ј':'J','К':'K','Л':'L','Љ':'Lj','М':'M','Н':'N','Њ':'Nj','О':'O','П':'P','Р':'R','С':'S','Т':'T','Ќ':'Kj','У':'U','Ф':'F','Х':'H','Ц':'C','Ч':'Ch','Џ':'Dzh','Ш':'Sh'};
 export const latin=s=>String(s??'').split('').map(c=>alphabet[c]??(alphabet[c.toUpperCase()]?.toLowerCase())??c).join('');
