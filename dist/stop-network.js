@@ -1,4 +1,4 @@
-import {routeGeometry} from './map-ui.js?v=9';
+import {routeGeometry} from './map-ui.js?v=11';
 const colors=['#1768df','#8b51ce','#087f79','#bd5628','#bf3970','#607526','#5661b1','#a37915'];
 export function routeColor(id){let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))>>>0;return colors[h%colors.length];}
 const boards=s=>s.pickup_type!=='1',alights=s=>s.drop_off_type!=='1';
