@@ -55,8 +55,16 @@ export function networkOverlay(map,patterns,stops,target){
   if(map.getSource('reachable-stops'))map.getSource('reachable-stops').setData(points);
   else{
     map.addSource('reachable-stops',{type:'geojson',data:points});
-    map.addLayer({id:'reachable-stops',type:'circle',source:'reachable-stops',paint:{'circle-radius':['interpolate',['linear'],['zoom'],10,2.5,14,4,17,6],'circle-color':'#fff','circle-stroke-color':'#245474','circle-stroke-width':1.5}});
-    map.addLayer({id:'destination-stop',type:'circle',source:'reachable-stops',filter:['==',['get','id'],target||''],paint:{'circle-radius':9,'circle-color':'#cf3b79','circle-stroke-color':'#fff','circle-stroke-width':3}});
+    map.addLayer(stopPinLayer(map,'reachable-stops','reachable-stops',undefined));
+    map.addLayer(stopPinLayer(map,'destination-stop','reachable-stops',['==',['get','id'],target||''],true));
   }
   map.setFilter('destination-stop',['==',['get','id'],target||'']);
+}
+
+export function stopPinLayer(map,id,source,filter,selected=false){
+ if(map.addImage&&!map.hasImage('tuka-stop-pin')){
+  const canvas=document.createElement('canvas');canvas.width=48;canvas.height=64;const c=canvas.getContext('2d');
+  c.beginPath();c.moveTo(24,60);c.bezierCurveTo(18,49,5,36,5,23);c.arc(24,23,19,Math.PI,0);c.bezierCurveTo(43,36,30,49,24,60);c.closePath();c.fillStyle='#0865d6';c.fill();c.lineWidth=3;c.strokeStyle='#fff';c.stroke();c.beginPath();c.arc(24,23,7,0,Math.PI*2);c.fillStyle='#fff';c.fill();map.addImage('tuka-stop-pin',c.getImageData(0,0,48,64),{pixelRatio:2});
+ }
+ return map.addImage?{id,type:'symbol',source,minzoom:selected?0:11.5,filter,layout:{'icon-image':'tuka-stop-pin','icon-anchor':'bottom','icon-allow-overlap':selected,'icon-ignore-placement':selected,'icon-padding':2,'icon-size':selected?1.15:['interpolate',['linear'],['zoom'],11.5,.5,14,.7,17,.9]}}:{id,type:'circle',source,minzoom:selected?0:11.5,filter,paint:{'circle-radius':selected?9:4,'circle-color':'#0865d6','circle-stroke-color':'#fff','circle-stroke-width':2}};
 }
