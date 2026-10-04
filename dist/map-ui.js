@@ -55,8 +55,8 @@ export function networkOverlay(map,patterns,stops,target){
   if(map.getSource('reachable-stops'))map.getSource('reachable-stops').setData(points);
   else{
     map.addSource('reachable-stops',{type:'geojson',data:points});
-    map.addLayer(stopPinLayer(map,'reachable-stops','reachable-stops',undefined));
-    map.addLayer(stopPinLayer(map,'destination-stop','reachable-stops',['==',['get','id'],target||''],true));
+    map.addLayer({id:'reachable-stops',type:'circle',source:'reachable-stops',paint:{'circle-radius':['interpolate',['linear'],['zoom'],9,3,14,4,17,6],'circle-color':'#fff','circle-stroke-color':'#0865d6','circle-stroke-width':2}});
+    map.addLayer({id:'destination-stop',type:'circle',source:'reachable-stops',filter:['==',['get','id'],target||''],paint:{'circle-radius':9,'circle-color':'#cf3b79','circle-stroke-color':'#fff','circle-stroke-width':3}});
   }
   map.setFilter('destination-stop',['==',['get','id'],target||'']);
 }

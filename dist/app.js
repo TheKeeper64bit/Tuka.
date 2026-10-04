@@ -1,6 +1,6 @@
 import {createProgress,advance} from './ride.js?v=13';
-import {boardingNetwork,visibleNetwork,arrivalConnects,vehicleServes,routeColor} from './stop-network.js?v=14';
-import {polishMap,routeGeometry,routeOverlay,syncMarkers,networkOverlay,stopPinLayer} from './map-ui.js?v=14';
+import {boardingNetwork,visibleNetwork,arrivalConnects,vehicleServes,routeColor} from './stop-network.js?v=15';
+import {polishMap,routeGeometry,routeOverlay,syncMarkers,networkOverlay,stopPinLayer} from './map-ui.js?v=15';
 import {load,realtime,departures,distance,planJourney} from './transit.js?v=14';
 let ride=null,arrivalChoices=[],locationWatch=null,wakeLock=null,lastLocation=0;
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
