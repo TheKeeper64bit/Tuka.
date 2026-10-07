@@ -1,0 +1,4 @@
+# Generate a fresh local secret with: node -p "require('crypto').randomBytes(32).toString('hex')"
+# Paste it after AUTH_SECRET below. Never reuse a production secret here.
+AUTH_SECRET=
+PUBLIC_ORIGIN=http://localhost:8787

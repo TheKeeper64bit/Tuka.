@@ -1,2 +1,8 @@
 dist/server/
 dist/.openai/
+node_modules/
+.wrangler/
+.dev.vars*
+.env*
+!.dev.vars.example
+worker-configuration.d.ts

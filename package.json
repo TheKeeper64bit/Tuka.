@@ -1,0 +1,18 @@
+{
+  "name": "tuka-skopje",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "test:auth": "node --test tests/auth-check.mjs",
+    "test": "npm run test:auth && node tests/ride-check.mjs && node tests/network-check.mjs && node tests/merge-check.mjs && node tests/map-check.mjs && node --experimental-vm-modules tests/screens-check.mjs",
+    "deploy": "wrangler deploy",
+    "access": "node scripts/access.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "4.148.0"
+  }
+}

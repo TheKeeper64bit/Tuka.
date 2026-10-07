@@ -1,0 +1,47 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tuka",
+  "account_id": "3df4a4e8e43f274f996cca3c181cd4c6",
+  "main": "server/cloudflare.js",
+  "compatibility_date": "2026-10-07",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "html_handling": "none"
+  },
+  "d1_databases": [
+    {
+      "binding": "AUTH_DB",
+      "database_name": "tuka-access",
+      "migrations_dir": "migrations",
+      "database_id": "f532aa49-d9ee-45f0-98b4-2356221ec0e2"
+    }
+  ],
+  "send_email": [
+    {
+      "name": "OWNER_EMAIL",
+      "destination_address": "ignatij.tasevski@gmail.com"
+    }
+  ],
+  "vars": {
+    "PUBLIC_ORIGIN": "https://tuka.rand0m.net",
+    "OWNER_ADDRESS": "ignatij.tasevski@gmail.com",
+    "SENDER_ADDRESS": "access@rand0m.net"
+  },
+  "observability": {
+    "enabled": true,
+    "traces": {
+      "enabled": true
+    }
+  },
+  "routes": [
+    {
+      "pattern": "tuka.rand0m.net",
+      "custom_domain": true,
+      "zone_id": "d3846dacf16f8497bc15bff70c1d185e"
+    }
+  ]
+}

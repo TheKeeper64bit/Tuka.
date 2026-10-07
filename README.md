@@ -16,8 +16,27 @@ MapLibre 5.6.2 is bundled locally; the modern vector basemap comes from OpenFree
 ## Journey limits
 Earliest-arrival rounds compare walking access, waiting, rides, transfers and walking egress. Up to three bus rides, transfer walks within 250m, and a two-minute connection buffer. Access/egress stops within 800m. Walking times use straight-line distances multiplied by 1.3 at 75m/min, without pedestrian street routing or crossing verification. Real-time updates are used at individual stops when fresh and matching; timetable estimates fill gaps. Rankings are estimates, not guaranteed connections. No ticketing or push notifications.
 
-## GitHub Pages
-Upload the source to a GitHub repository. Choose Settings → Pages → GitHub Actions. The included workflow publishes `dist/` on pushes to `main`. Relative local asset paths support repository subpaths. Remove `.openai/hosting.json` if using only GitHub Pages. A public repository and Pages URL can be viewed by others; favourites and location remain local. Requires HTTPS for geolocation/PWA installation and a recent browser with WebGL and DecompressionStream(deflate-raw).
+## Private development access on Cloudflare
+
+The Cloudflare deployment serves `https://tuka.rand0m.net` through `server/cloudflare.js`. A visitor requests approval using a name/device label. An eight-digit, single-use code is emailed only to `ignatij.tasevski@gmail.com`; visitors cannot choose a recipient. The owner checks the request reference and shares the code only with the intended visitor. The code is bound to the requesting browser and expires in ten minutes. Five incorrect attempts lock that request until expiry.
+
+Approved browsers receive a Secure, HttpOnly, SameSite=Strict cookie lasting up to 180 days. Closing and reopening the browser keeps access. Signing out, clearing cookies, expiry, or owner revocation requires a new approval. Private browsing and separately installed app/browser profiles can have separate cookie storage. No ChatGPT account is required on the Cloudflare deployment.
+
+All app documents, scripts and same-origin transport APIs require a valid server-side session. Only login assets, icons, the manifest and service-worker update are public. The app shell is no longer available offline; the public timetable cache and device-local favourites remain. There is no public static fallback, `workers.dev` endpoint or deployment preview. The old GitHub Pages publishing workflow has been removed because static hosting would bypass this gate. The original Sites deployment is a separate, private historical deployment.
+
+Cloudflare D1 stores the visitor-provided device label, timestamps, code HMAC, browser/session token hashes and short-lived rate counters. Raw OTPs and session cookies are not stored in D1. Rate limits permit five requests per IP/hour, ten total/hour and thirty total/day; IP addresses are HMACed before storage. Codes are sent through a binding restricted to the owner's verified address. GPS coordinates and favourites remain in the browser as described above.
+
+### Owner operations
+
+Use Node 24 or later and `npm ci`. Authenticate Wrangler with your Cloudflare account. `npm run access -- list` lists active approved browsers by ID, label and expiry. `npm run access -- revoke <session-id>` revokes one browser immediately at the server. An already-open app checks its session at least once a minute while visible and when returning to the tab; new protected requests are rejected immediately.
+
+For local development, copy `.dev.vars.example` to `.dev.vars`, generate a fresh local secret, run `npx wrangler d1 migrations apply tuka-access --local`, then `npm run dev`. Local email delivery is simulated and saved under `.wrangler/tmp/email/`; it does not email the owner. These files and local secrets are ignored by Git.
+
+For deployment, apply D1 migrations with `--remote`, configure the production `AUTH_SECRET` using `wrangler secret put AUTH_SECRET`, then run `npm run deploy`. `wrangler.jsonc` specifies the account, D1 database and exact Tuka hostname. Do not publish `dist/` directly or use the legacy Sites build for this native-auth deployment. Requires HTTPS and a recent browser with WebGL and DecompressionStream(deflate-raw).
+
+Run `npm test` for authentication and transit regressions. `npx wrangler types` regenerates the ignored binding/runtime type reference.
+
+October 7 access validation: eleven authentication tests passed, along with the existing ride, network, merge, map and screen regressions. A real local Wrangler/D1 browser flow verified request → simulated email → code entry → app, reopening with remembered access, and sign-out. Production checks verified the native login, server-side rejection of unauthenticated scripts/APIs, and delivery of a real code email to the owner's inbox. The owner also confirmed a successful production sign-in at the custom domain. HTTP requests are upgraded to HTTPS before serving the login. Physical-phone visual QA remains unverified.
 
 ## Validation
 JavaScript syntax, actual schedule and realtime parsing, vehicle coordinates, all 106 rendered line entries, origin confirmation flow, independent destination pin, stop selection and tab navigation checked. Routing regression verifies an immediate 17-minute transfer journey outranks a 50-minute direct journey, and rejects a connection with less than the two-minute buffer. Full visual testing on a physical phone remains necessary.
@@ -31,7 +50,7 @@ Modeshift remains the schedule and primary live-trip source. The same-origin tra
 
 Additional GPS requires fresh position and vehicle-status timestamps, COURSE_EXECUTE status, an unambiguous bus-number mapping, a complete stop pattern matched by stop code and proximity, a reported sequence within the path, and a position within 350m of that path. Fresh Modeshift vehicles win same-label conflicts. Skopska delay updates affect the journey planner only when exactly one active GTFS trip has the same complete stop pattern and departure within one minute, and position/status timestamps agree within 30 seconds. Skopska stop predictions are labeled separately and never silently assigned to a GTFS trip. Nearby duplicate main-feed live arrivals are retained; nearby timetable rows are replaced by the source's prediction. Both sources fail independently, with timetable fallback when neither supplies fresh data. Backend API responses are never stored by the service worker.
 
-GitHub Pages can still serve the original `dist/` shell and Modeshift feed, but cannot run the Skopska connection; combined feeds require the Worker deployment. Do not upload `dist/server/` as public Pages assets.
+The historical `scripts/build.mjs` packages the old Sites Worker. The current Cloudflare entrypoint instead wraps the transport Worker with native access control and serves assets through the authenticated binding. Do not upload `dist/` or `dist/server/` as public Pages assets.
 
 October 1 map/route repair: applied a quiet neutral street palette consistently to all maps, with a soft blue river and muted green parks. Map headings and controls sit above GPS badges. Vehicle markers are retained by physical label between refreshes instead of removed and recreated; fresh supplemental positions remain visible while the primary feed updates. Selecting a stop stays at local street zoom. The home map draws one relevant route using published GTFS shapes, and tapping a vehicle selects its route. Missing shapes are explicitly labeled as a stop outline. Line-detail markers now match the selected direction. Map geometry, overlay clearing, marker identity, stop selection, and line-detail rendering are checked with fixtures and a DOM/MapLibre stub; physical-phone visual QA remains unverified.
 
