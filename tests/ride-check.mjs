@@ -17,3 +17,11 @@ assert.equal(advance(state,fix(21.42),time).alert,null);
 assert.equal(advance(state,{...fix(21.42),timestamp:time-60000},time).alert,null);
 let jump=createProgress(points,stops,5);assert.equal(advance(jump,fix(21.42),time).alert,null);assert.equal(jump.progress,0);
 console.log('Passed: fifth-stop sequence, early and exit alerts once, inaccurate/off-route/stale fixes rejected, implausible boarding jump rejected');
+
+// A first fix beyond the old 350 m boarding window must reacquire on two fixes.
+let late=createProgress(points,stops,5);let one=fix(21.412);assert.equal(advance(late,one,time).status,'Confirming your position on this route');let two=fix(21.413);assert.equal(advance(late,two,time).status,'Tracking your ride');assert(late.progress>900);
+// Sparse geometry still projects within a restricted progress window.
+let sparse=createProgress([points[0],points.at(-1)],stops,5);assert.equal(advance(sparse,fix(21.4),time).alert,null);advance(sparse,fix(21.401),time);assert(sparse.lastTime>0);
+// A paused tracker reacquires after a long gap, without an instant exit alert.
+time+=120000;assert.equal(advance(late,fix(21.418),time).alert,null);assert.equal(advance(late,fix(21.4185),time).status,'Tracking your ride');
+console.log('Passed: late boarding, sparse shapes and GPS-resume reacquisition');

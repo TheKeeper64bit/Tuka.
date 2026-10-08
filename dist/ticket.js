@@ -1,0 +1,1 @@
+(()=>{const dialog=document.querySelector('#ticket-dialog');document.querySelector('#ticket-open').onclick=()=>dialog.showModal();document.querySelector('#ticket-close').onclick=()=>dialog.close();})();

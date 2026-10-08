@@ -40,7 +40,7 @@ async function approved(s) {
 test('unauthenticated documents, scripts and APIs stay protected; missing configuration fails closed',async()=>{
   const s=setup();
   for(const path of ['/','/index.html']) assert.equal((await worker.fetch(s.req(path),s.env)).status,303);
-  for(const path of ['/api/live','/app.js','/vendor/maplibre-gl.js','/server/index.js']) assert.equal((await worker.fetch(s.req(path),s.env)).status,401);
+  for(const path of ['/api/live','/app.js','/vendor/maplibre-gl.js','/server/index.js','/community.js','/community-config.json','/ticket.js']) assert.equal((await worker.fetch(s.req(path),s.env)).status,401);
   assert.equal((await worker.fetch(s.req('/login'),s.env)).status,200);
   assert.equal((await worker.fetch(s.req('/api/live'),{...s.env,AUTH_SECRET:''})).status,503);
 });
