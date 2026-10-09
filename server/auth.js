@@ -1,6 +1,7 @@
 const SESSION_COOKIE = '__Host-tuka_session';
 const REQUEST_COOKIE = '__Host-tuka_request';
 const CODE_SECONDS = 600;
+const RESEND_SECONDS = 60;
 const SESSION_SECONDS = 180 * 24 * 60 * 60;
 const PUBLIC_PATHS = new Set(['/login', '/login.html', '/login.js', '/login.css', '/icon.svg', '/icon-192-blue.png', '/icon-512-blue.png', '/manifest.webmanifest', '/sw.js']);
 const encoder = new TextEncoder();
@@ -56,7 +57,7 @@ async function session(request, db, now) {
 async function challenge(request, db, now) {
   const token = cookie(request, REQUEST_COOKIE);
   if (!token) return null;
-  return db.prepare('SELECT id, expires_at, attempts FROM challenges WHERE browser_hash = ? AND expires_at > ? AND delivered = 1').bind(await hash(token), now).first();
+  return db.prepare('SELECT id, code_mac, label, created_at, expires_at, attempts FROM challenges WHERE browser_hash = ? AND expires_at > ? AND delivered = 1').bind(await hash(token), now).first();
 }
 async function limit(db, key, maximum, seconds, now) {
   const window = Math.floor(now / seconds);
@@ -64,7 +65,7 @@ async function limit(db, key, maximum, seconds, now) {
   return row.hits <= maximum;
 }
 const reference = id => id.slice(0, 8).toUpperCase();
-const pending = row => ({pending:true, reference:reference(row.id), expiresAt:row.expires_at * 1000});
+const pending = row => ({pending:true, reference:reference(row.id), expiresAt:row.expires_at * 1000, resendAt:(row.created_at + RESEND_SECONDS) * 1000});
 const escapeHtml = s => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 // Returns null only when this request may proceed to the app/static handler.
@@ -96,14 +97,17 @@ export async function accessResponse(request, env, deliver) {
   }
   let input;
   try { input = await body(request); } catch { return json({error:'Check the form and try again.'}, 400); }
-  if (url.pathname === '/auth/request') {
+  if (url.pathname === '/auth/request' || url.pathname === '/auth/resend') {
     if (await session(request, db, now)) return json({authenticated:true});
-    const label = typeof input.label === 'string' ? input.label.trim() : '';
-    if (!label || label.length > 48 || /[\x00-\x1f\x7f]/.test(label)) return json({error:'Enter a name or device label, up to 48 characters.'}, 400);
+    const resending = url.pathname === '/auth/resend';
     const outstanding = await challenge(request, db, now);
+    if (resending && !outstanding) return json({error:'No active code to resend. Request access again, or wait if a code is already being sent.'}, 409);
+    const label = resending ? outstanding.label : typeof input.label === 'string' ? input.label.trim() : '';
+    if (!label || label.length > 48 || /[\x00-\x1f\x7f]/.test(label)) return json({error:'Enter a name or device label, up to 48 characters.'}, 400);
     if (outstanding) {
       if (outstanding.attempts >= 5) return json({error:'Too many attempts. Wait until the current code expires.'}, 429);
-      return json(pending(outstanding));
+      if (!resending) return json(pending(outstanding));
+      if (now < outstanding.created_at + RESEND_SECONDS) return json({error:'Wait one minute between codes.', resendAt:(outstanding.created_at + RESEND_SECONDS) * 1000}, 429);
     }
     const key = await keyFor(env.AUTH_SECRET);
     const ipKey = await mac(key, 'rate:' + (request.headers.get('CF-Connecting-IP') || 'unknown'));
@@ -113,14 +117,19 @@ export async function accessResponse(request, env, deliver) {
     if (!env.OWNER_ADDRESS || !env.SENDER_ADDRESS) return json({error:'Code delivery is not ready.'}, 503);
     const browserToken = cookie(request, REQUEST_COOKIE) || randomToken();
     const browserHash = await hash(browserToken), id = crypto.randomUUID(), code = randomCode();
-    await db.batch([
+    if (!resending) await db.batch([
       db.prepare('DELETE FROM challenges WHERE expires_at <= ?').bind(now),
       db.prepare('DELETE FROM sessions WHERE expires_at <= ?').bind(now),
       db.prepare('DELETE FROM request_limits WHERE expires_at <= ?').bind(now),
     ]);
-    // For an established request cookie, the unique key also rejects concurrent requests.
-    const inserted = await db.prepare('INSERT OR IGNORE INTO challenges (id, browser_hash, code_mac, label, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?) RETURNING id')
-      .bind(id, browserHash, await mac(key, `code:${id}:${code}`), label, now, now + CODE_SECONDS).first();
+    const codeMac = await mac(key, `code:${id}:${code}`);
+    // Claim the current generation atomically before sending. Resends keep the
+    // failed-attempt count; racing resends or redemption cannot mint extra codes.
+    const inserted = resending
+      ? await db.prepare('UPDATE challenges SET id = ?, code_mac = ?, created_at = ?, expires_at = ?, delivered = 0 WHERE id = ? AND browser_hash = ? AND delivered = 1 AND attempts < 5 AND expires_at > ? RETURNING id')
+        .bind(id, codeMac, now, now + CODE_SECONDS, outstanding.id, browserHash, now).first()
+      : await db.prepare('INSERT OR IGNORE INTO challenges (id, browser_hash, code_mac, label, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?) RETURNING id')
+        .bind(id, browserHash, codeMac, label, now, now + CODE_SECONDS).first();
     if (!inserted) return json({error:'An access request is already being sent. Try again in a moment.'}, 409);
     try {
       await deliver({
@@ -132,11 +141,15 @@ export async function accessResponse(request, env, deliver) {
       });
       await db.prepare('UPDATE challenges SET delivered = 1 WHERE id = ?').bind(id).run();
     } catch {
-      await db.prepare('DELETE FROM challenges WHERE id = ?').bind(id).run();
+      // A delivery failure must not strand a browser with an unusable old email.
+      // Keep any attempts made before the claim; never restore a deleted request.
+      if (resending) await db.prepare('UPDATE challenges SET id = ?, code_mac = ?, created_at = ?, expires_at = ?, delivered = 1 WHERE id = ? AND browser_hash = ?')
+        .bind(outstanding.id, outstanding.code_mac, outstanding.created_at, outstanding.expires_at, id, browserHash).run();
+      else await db.prepare('DELETE FROM challenges WHERE id = ?').bind(id).run();
       console.error(JSON.stringify({event:'access_email_failed'}));
-      return json({error:'The code could not be sent. Please try again later.'}, 503);
+      return json({error:resending ? 'The new code could not be sent. Your previous code still works until it expires.' : 'The code could not be sent. Please try again later.'}, 503);
     }
-    return json(pending({id, expires_at:now + CODE_SECONDS}), 200, [setCookie(REQUEST_COOKIE, browserToken, CODE_SECONDS)]);
+    return json(pending({id, created_at:now, expires_at:now + CODE_SECONDS}), 200, [setCookie(REQUEST_COOKIE, browserToken, CODE_SECONDS)]);
   }
   if (url.pathname === '/auth/verify') {
     const browserToken = cookie(request, REQUEST_COOKIE);

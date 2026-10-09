@@ -128,3 +128,68 @@ test('delivery failure leaves no usable challenge; oversized and invalid request
   assert.equal((await s.call('/auth/request',{label:'x'.repeat(1100)})).status,400);
   assert.equal((await s.call('/auth/request',{label:'Bad\nlabel'})).status,400);
 });
+
+const allowResend = s => s.sqlite.prepare('UPDATE challenges SET created_at = created_at - 61').run();
+test('resend waits one minute, keeps its browser and owner, and replaces the previous code',async()=>{
+  const s=setup(),r=await requested(s,'My phone');
+  assert.equal(r.body.resendAt,r.body.expiresAt-540000);
+  const early=await s.call('/auth/resend',{},r.requestCookie);
+  assert.equal(early.status,429);assert.equal((await early.json()).resendAt,r.body.resendAt);
+  assert.equal(s.messages.length,1);
+  allowResend(s);
+  const response=await s.call('/auth/resend',{label:'Changed',email:'other@example.com'},r.requestCookie);
+  assert.equal(response.status,200);
+  const next=await response.json(),code=s.messages.at(-1).text.match(/One-time code: (\d{8})/)[1];
+  assert.notEqual(next.reference,r.body.reference);
+  assert.equal(cookie(response,'__Host-tuka_request'),r.requestCookie);
+  assert.equal(s.messages.at(-1).to,s.env.OWNER_ADDRESS);
+  assert.match(s.messages.at(-1).text,/Visitor-provided label: My phone/);
+  assert.equal((await s.call('/auth/session',undefined,r.requestCookie)).status,200);
+  assert.equal((await (await s.call('/auth/session',undefined,r.requestCookie)).json()).resendAt,next.resendAt);
+  assert.equal((await s.call('/auth/verify',{code:r.code},r.requestCookie)).status,401);
+  assert.equal((await s.call('/auth/verify',{code},'__Host-tuka_request='+'b'.repeat(64))).status,401);
+  assert.equal((await s.call('/auth/verify',{code},r.requestCookie)).status,200);
+});
+test('resending cannot reset the five-guess limit or send without a browser-bound challenge',async()=>{
+  const s=setup(),r=await requested(s),bad=r.code==='00000000'?'11111111':'00000000';
+  for(let i=0;i<3;i++)await s.call('/auth/verify',{code:bad},r.requestCookie);
+  allowResend(s);assert.equal((await s.call('/auth/resend',{},r.requestCookie)).status,200);
+  assert.equal(s.sqlite.prepare('SELECT attempts FROM challenges').get().attempts,3);
+  s.sqlite.prepare('UPDATE challenges SET attempts = 5, created_at = created_at - 61').run();
+  assert.equal((await s.call('/auth/resend',{},r.requestCookie)).status,429);
+  assert.equal((await s.call('/auth/resend',{})).status,409);
+  assert.equal((await s.call('/auth/resend',{},r.requestCookie,{Origin:'https://example.com'})).status,403);
+  s.sqlite.prepare('UPDATE challenges SET expires_at = 1').run();
+  assert.equal((await s.call('/auth/resend',{},r.requestCookie)).status,409);
+  assert.equal(s.messages.length,2);
+});
+test('concurrent resends send only one new email; resends count toward inbox rate limits',async()=>{
+  const s=setup(),r=await requested(s);allowResend(s);
+  const responses=await Promise.all([s.call('/auth/resend',{},r.requestCookie),s.call('/auth/resend',{},r.requestCookie)]);
+  assert.deepEqual(responses.map(x=>x.status).sort(),[200,409]);
+  assert.equal(s.messages.length,2);
+  for(let i=0;i<2;i++){allowResend(s);assert.equal((await s.call('/auth/resend',{},r.requestCookie)).status,200);}
+  allowResend(s);assert.equal((await s.call('/auth/resend',{},r.requestCookie)).status,429);
+  assert.equal(s.messages.length,4);
+});
+test('failed resend preserves the prior code and attempts; pending delivery cannot redeem either code',async()=>{
+  const s=setup(),r=await requested(s);allowResend(s);
+  s.sqlite.prepare('UPDATE challenges SET attempts = 2').run();
+  const old=s.sqlite.prepare('SELECT * FROM challenges').get();
+  let release,started;
+  const sending=new Promise(resolve=>{started=resolve;});
+  s.env.OWNER_EMAIL.send=()=>{started();return new Promise((resolve,reject)=>{release=()=>reject(new Error('Delivery failed'));});};
+  const resend=s.call('/auth/resend',{},r.requestCookie);await sending;
+  assert.equal((await s.call('/auth/verify',{code:r.code},r.requestCookie)).status,401);
+  assert.equal((await s.call('/auth/resend',{},r.requestCookie)).status,409);
+  release();assert.equal((await resend).status,503);
+  assert.deepEqual(s.sqlite.prepare('SELECT * FROM challenges').get(),old);
+  assert.equal((await s.call('/auth/verify',{code:r.code},r.requestCookie)).status,200);
+});
+test('a resend racing a valid redemption never leaves a second usable challenge after approval',async()=>{
+  const s=setup(),r=await requested(s);allowResend(s);
+  const [resend,verify]=await Promise.all([s.call('/auth/resend',{},r.requestCookie),s.call('/auth/verify',{code:r.code},r.requestCookie)]);
+  if(verify.status===200){assert.notEqual(resend.status,200);assert.equal(s.sqlite.prepare('SELECT count(*) AS n FROM challenges').get().n,0);}
+  else{assert.equal(resend.status,200);const code=s.messages.at(-1).text.match(/One-time code: (\d{8})/)[1];assert.equal((await s.call('/auth/verify',{code},r.requestCookie)).status,200);}
+  assert.equal(s.sqlite.prepare('SELECT count(*) AS n FROM sessions').get().n,1);
+});

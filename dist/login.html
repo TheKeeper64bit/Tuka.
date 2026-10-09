@@ -26,6 +26,7 @@
         <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{8}" maxlength="8" placeholder="00000000" required>
         <p class="hint" id="expiry"></p>
         <button type="submit">Open Tuka <span aria-hidden="true">→</span></button>
+        <button id="resend-code" class="text-button" type="button" disabled>Resend code to owner</button>
       </form>
       <p id="status" role="status" aria-live="polite"></p>
       <button id="retry-request" class="text-button" type="button" hidden>Request a new code</button>
