@@ -21,13 +21,28 @@ export function polishMap(map){
   }
 }
 export function routeGeometry(db,trip,stops){
-  const shaped=(db.shapes.get(trip?.shape_id)||[]).map(p=>p.slice(0,2)).filter(valid);
-  if(shaped.length>1)return {points:shaped,approximate:false};
   const byId=new Map(db.stops.map(s=>[s.id,s]));
-  const points=(stops||(db.times.get(trip?.trip_id)||[]).map(s=>s.stop_id)).map(id=>byId.get(id)).filter(Boolean).map(s=>[s.lon,s.lat]).filter(valid);
-  return {points,approximate:true};
+  const scheduled=(db.times.get(trip?.trip_id)||[]).map(s=>s.stop_id);
+  const outline=ids=>ids.map(id=>byId.get(id)).filter(Boolean).map(s=>[s.lon,s.lat]).filter(valid);
+  const reference=outline(scheduled.length?scheduled:stops||[]);
+  const shaped=(db.shapes.get(trip?.shape_id)||[]).map(p=>p.slice(0,2));
+  // A shape can be syntactically valid yet belong to another place. The 47a П
+  // feed included a 1,096 km excursion while its actual stops span about 13 km.
+  // Reject the whole shape; removing foreign points would invent connecting roads.
+  if(shaped.length>1&&shaped.every(valid)&&credibleShape(shaped,reference))return {points:shaped,approximate:false};
+  return {points:stops?outline(stops):reference,approximate:true,reason:shaped.length>1?'invalid-shape':'missing-shape'};
 }
-function valid(p){return p.length>=2&&Number.isFinite(p[0])&&Number.isFinite(p[1]);}
+function valid(p){return p.length>=2&&Number.isFinite(p[0])&&Number.isFinite(p[1])&&Math.abs(p[0])<=180&&Math.abs(p[1])<=90;}
+function credibleShape(points,stops){
+  if(stops.length<2)return false;
+  const xs=stops.map(p=>p[0]),ys=stops.map(p=>p[1]),south=Math.min(...ys),north=Math.max(...ys);
+  const longitudeMeters=Math.max(1,111000*Math.cos((south+north)/2*Math.PI/180));
+  const west=Math.min(...xs)-5000/longitudeMeters,east=Math.max(...xs)+5000/longitudeMeters;
+  // Generous padding allows normal street detours beyond the outermost stops.
+  if(points.some(p=>p[0]<west||p[0]>east||p[1]<south-5000/111000||p[1]>north+5000/111000))return false;
+  const length=path=>path.slice(1).reduce((sum,p,i)=>sum+Math.hypot((p[0]-path[i][0])*longitudeMeters,(p[1]-path[i][1])*111000),0);
+  return length(points)<=length(stops)*4+5000;
+}
 export function routeOverlay(map,id,points){
   const data={type:'FeatureCollection',features:points.length>1?[{type:'Feature',geometry:{type:'LineString',coordinates:points},properties:{}}]:[]};
   if(map.getSource(id)){map.getSource(id).setData(data);return;}
