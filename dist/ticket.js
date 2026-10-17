@@ -1,3 +1,4 @@
+import {apiURL,apiCredentials} from './config.js?v=1';
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const TICKET_LINKS=Object.freeze({
   android:'https://play.google.com/store/apps/details?id=com.modeshift.jsp',
@@ -51,7 +52,7 @@ export function createTicketView(document,fetcher=fetch,userAgent='',maxTouchPoi
     if(busy||(!force&&loadedAt&&Date.now()-loadedAt<30*60000))return;
     busy=true;refresh.disabled=true;list.setAttribute('aria-busy','true');status.textContent='Checking JSP fares…';status.dataset.state='loading';
     try{
-      const response=await fetcher('/api/tickets',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(15000)});
+      const response=await fetcher(apiURL('/api/tickets'),{credentials:apiCredentials(),cache:'no-store',signal:AbortSignal.timeout(15000)});
       if(response.status===401){status.textContent='Sign in to Tuka again to load ticket prices.';status.dataset.state='error';return;}
       if(!response.ok)throw Error();
       const data=await response.json();

@@ -378,9 +378,9 @@ function showShareFallback(url){
 }
 function shareSelectedJourney(button){
  const context=button.dataset.shareJourney===''?activeJourney?.context:journeyContext;
- if(context)shareURL(sharedJourney(location.origin,context.origin,context.destination,context.options),button);
+ if(context)shareURL(sharedJourney(location.href,context.origin,context.destination,context.options),button);
 }
-function shareStop(button){if(!stopId)return;const url=new URL('/',location.origin);url.searchParams.set('stop',stopId);shareURL(url.href,button);}
+function shareStop(button){if(!stopId)return;const url=new URL('./',location.href);url.searchParams.set('stop',stopId);shareURL(url.href,button);}
 function openSharedLink(){
  const shared=readShared(location.href);if(!shared)return;
  if(shared.stop){if(stopIndex.has(shared.stop))selectStop(shared.stop);return;}

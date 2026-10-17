@@ -1,10 +1,11 @@
+import {apiURL,apiCredentials} from './config.js?v=1';
 // Conservative Skopska supplement. Timetables are never used to invent GPS positions.
 const letters={'А':'A','Б':'B','В':'V','Г':'G','Д':'D','Ѓ':'Gj','Е':'E','Ж':'Zh','З':'Z','Ѕ':'Dz','И':'I','Ј':'J','К':'K','Л':'L','Љ':'Lj','М':'M','Н':'N','Њ':'Nj','О':'O','П':'P','Р':'R','С':'S','Т':'T','Ќ':'Kj','У':'U','Ф':'F','Х':'H','Ц':'C','Ч':'Ch','Џ':'Dzh','Ш':'Sh'};
 const norm=s=>String(s??'').toUpperCase().split('').map(c=>letters[c]||c).join('').replace(/[^A-Z0-9]/g,'');
 const meters=(a,b)=>Math.hypot((a.lat-b.lat)*111000,(a.lon-b.lon)*82500);
 function pathDistance(v,path){let best=Infinity;for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i],x=(b.lon-a.lon)*82500,y=(b.lat-a.lat)*111000,px=(v.lon-a.lon)*82500,py=(v.lat-a.lat)*111000,t=Math.max(0,Math.min(1,(px*x+py*y)/(x*x+y*y||1)));best=Math.min(best,Math.hypot(px-t*x,py-t*y));}return best;}
 let networkPromise,networkUntil=0;
-async function json(path){const r=await fetch(new URL(path,globalThis.location?.href||'http://localhost/'),{cache:'no-store',signal:AbortSignal.timeout(24000)});if(!r.ok)throw Error('Additional source unavailable');return r.json();}
+async function json(path){const r=await fetch(new URL(apiURL(path),globalThis.location?.href||'http://localhost/'),{credentials:apiCredentials(),cache:'no-store',signal:AbortSignal.timeout(24000)});if(!r.ok)throw Error('Additional source unavailable');return r.json();}
 function network(){if(!networkPromise||Date.now()>networkUntil){networkUntil=Date.now()+3600000;networkPromise=json('./api/network').catch(e=>{networkPromise=null;throw e;});}return networkPromise;}
 export async function additional(stopCode){
   const [n,l,a]=await Promise.allSettled([network(),json('./api/live'),stopCode?json('./api/arrivals?stop='+encodeURIComponent(stopCode)):Promise.resolve(null)]);

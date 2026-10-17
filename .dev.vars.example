@@ -1,3 +1,5 @@
+# Local-only approval-code signing secret (at least 32 characters).
+AUTH_SECRET=
 PUBLIC_ORIGIN=http://localhost:8787
 
 # Server-only Google Gemini API key; never expose in dist/.

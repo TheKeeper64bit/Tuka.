@@ -11,6 +11,13 @@ test('shared journeys round-trip places and preferences, never carry live times'
  for(const value of ['NaN,21.4','42,Infinity','0,0',',21.4','42,21.4,0'])assert.equal(readShared('https://tuka.test/?from='+value+'&to=42,21.4'),null);
  assert.equal(readShared('https://tuka.test/?stop=1513').stop,'1513');
 });
+test('journey links retain a GitHub Pages repository path and clear old queries',()=>{
+ for(const base of ['https://thekeeper64bit.github.io/Tuka./','https://thekeeper64bit.github.io/Tuka./index.html?stop=old#saved']){
+  const link=sharedJourney(base,origin,destination),url=new URL(link);
+  assert.equal(url.pathname,'/Tuka./');assert.equal(url.hash,'');assert.equal(url.searchParams.has('stop'),false);
+  assert.deepEqual(readShared(link).origin,origin);assert.deepEqual(readShared(link).destination,destination);
+ }
+});
 test('Home and Work stay on this device and invalid stored points are ignored',()=>{
  const map=new Map(),storage={getItem:k=>map.get(k),setItem:(k,v)=>map.set(k,v)};
  writePlace(storage,'home',origin);writePlace(storage,'work',destination);assert.deepEqual(readPlaces(storage),{home:origin,work:destination});

@@ -1,3 +1,4 @@
+import {apiURL,apiCredentials} from './config.js?v=1';
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date=value=>new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'Europe/Skopje'}).format(new Date(value));
 const datePart=(value,part)=>new Intl.DateTimeFormat('en-GB',{[part]:part==='month'?'short':'numeric',timeZone:'Europe/Skopje'}).format(new Date(value));
@@ -19,7 +20,7 @@ export function createNewsView(document,fetcher=fetch){
     busy=true;refresh.disabled=true;list.setAttribute('aria-busy','true');status.textContent='Checking the latest JSP announcements…';
     if(retry){clearTimeout(retry);retry=null;}
     try{
-      const r=await fetcher('/api/news',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(55000)});
+      const r=await fetcher(apiURL('/api/news'),{credentials:apiCredentials(),cache:'no-store',signal:AbortSignal.timeout(55000)});
       if(r.status===401){status.textContent='Sign in again to read JSP news.';return;}
       const data=await r.json();
       if(!r.ok)throw Error();

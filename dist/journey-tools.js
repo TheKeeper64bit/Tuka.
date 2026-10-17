@@ -17,7 +17,7 @@ export function writePlace(storage,key,value){
 }
 export function sharedJourney(base,from,to,options={}){
   const a=place(from),b=place(to);if(!a||!b)return null;
-  const url=new URL('/',base),p=preferences(options);
+  const url=new URL('./',base),p=preferences(options);
   for(const [key,value] of Object.entries({from:`${a.lat.toFixed(5)},${a.lon.toFixed(5)}`,to:`${b.lat.toFixed(5)},${b.lon.toFixed(5)}`,fromName:a.name,toName:b.name,preference:p.preference,speed:p.walkingSpeed,transfer:p.minTransfer}))url.searchParams.set(key,value);
   return url.href;
 }

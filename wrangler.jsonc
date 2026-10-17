@@ -7,7 +7,7 @@
   "workers_dev": false,
   "preview_urls": false,
   "assets": {
-    "directory": "./dist",
+    "directory": "./.build/private",
     "binding": "ASSETS",
     "run_worker_first": true,
     "html_handling": "none"
@@ -21,7 +21,9 @@
     }
   ],
   "vars": {
-    "PUBLIC_ORIGIN": "https://tuka.rand0m.net"
+    "PUBLIC_ORIGIN": "https://tuka.rand0m.net",
+    "OWNER_ADDRESS": "ignatij.tasevski@gmail.com",
+    "SENDER_ADDRESS": "access@rand0m.net"
   },
   "observability": {
     "enabled": true,
@@ -34,6 +36,15 @@
       "pattern": "tuka.rand0m.net",
       "custom_domain": true,
       "zone_id": "d3846dacf16f8497bc15bff70c1d185e"
+    }
+  ],
+  "build": {
+    "command": "node scripts/build-private.mjs"
+  },
+  "send_email": [
+    {
+      "name": "OWNER_EMAIL",
+      "destination_address": "ignatij.tasevski@gmail.com"
     }
   ]
 }

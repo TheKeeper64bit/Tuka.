@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tuka-public-api",
+  "account_id": "3df4a4e8e43f274f996cca3c181cd4c6",
+  "main": "server/public-api.js",
+  "compatibility_date": "2026-10-17",
+  "workers_dev": true,
+  "preview_urls": false,
+  "d1_databases": [
+    {
+      "binding": "AUTH_DB",
+      "database_name": "tuka-access",
+      "migrations_dir": "migrations",
+      "database_id": "f532aa49-d9ee-45f0-98b4-2356221ec0e2"
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "traces": { "enabled": true }
+  }
+}

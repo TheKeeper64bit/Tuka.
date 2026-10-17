@@ -1,5 +1,6 @@
 import {walkingResponse} from './walking.js';
 import transport from './worker.js';
+import {accessResponse} from './auth.js';
 import {newsResponse} from './news.js';
 import {ticketsResponse} from './tickets.js';
 
@@ -10,31 +11,27 @@ export default {
       if (url.protocol === 'http:' && env.PUBLIC_ORIGIN?.startsWith('https://')) {
         return new Response(null, {status:308, headers:{Location:env.PUBLIC_ORIGIN + url.pathname + url.search, 'Cache-Control':'no-store'}});
       }
+      const gate=await accessResponse(request,env,message=>env.OWNER_EMAIL.send(message));
+      if(gate)return gate;
       let response;
-      if (['/login','/login.html'].includes(url.pathname)) {
-        const next=url.searchParams.get('next')||'/';
-        const target=next.startsWith('/?')&&next.length<=1800&&!/[\x00-\x1f\x7f]/.test(next)?next:'/';
-        response=new Response(null,{status:303,headers:{Location:target}});
-      }
-      // Older open tabs and service workers may still check their session.
-      // Public access needs no cookie and never creates an account or sends mail.
-      else if(url.pathname==='/auth/session'&&['GET','HEAD'].includes(request.method)) response=Response.json({authenticated:true,public:true});
-      else if(url.pathname.startsWith('/auth/')) response=Response.json({public:true,error:'Access codes are no longer required. Open Tuka directly.',redirect:'/'},{status:410});
-      else if (url.pathname === '/api/news') response = await newsResponse(request, env);
+      if (url.pathname === '/api/news') response = await newsResponse(request, env);
       else if (url.pathname === '/api/walk') response = await walkingResponse(request, env);
       else if (url.pathname === '/api/tickets') response = await ticketsResponse(request);
       else if (url.pathname.startsWith('/api/')) response = await transport.fetch(request);
       else {
         if (!['GET','HEAD'].includes(request.method)) return new Response('Method not allowed', {status:405});
         if (url.pathname === '/') url.pathname = '/index.html';
+        if (url.pathname === '/login') url.pathname = '/login.html';
         response = await env.ASSETS.fetch(new Request(url, request));
       }
       const headers = new Headers(response.headers);
       headers.set('Cache-Control', 'no-store');
+      headers.set('Vary','Cookie');
       headers.set('X-Content-Type-Options', 'nosniff');
       headers.set('Referrer-Policy', 'no-referrer');
       headers.set('X-Frame-Options', 'DENY');
       if (url.protocol === 'https:') headers.set('Strict-Transport-Security', 'max-age=31536000');
+      if(url.pathname==='/login.html')headers.set('Content-Security-Policy',"default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
       return new Response(request.method==='HEAD'?null:response.body, {status:response.status, headers});
     } catch {
       console.error(JSON.stringify({event:'tuka_request_failed'}));
