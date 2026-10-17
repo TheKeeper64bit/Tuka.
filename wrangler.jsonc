@@ -20,16 +20,8 @@
       "database_id": "f532aa49-d9ee-45f0-98b4-2356221ec0e2"
     }
   ],
-  "send_email": [
-    {
-      "name": "OWNER_EMAIL",
-      "destination_address": "ignatij.tasevski@gmail.com"
-    }
-  ],
   "vars": {
-    "PUBLIC_ORIGIN": "https://tuka.rand0m.net",
-    "OWNER_ADDRESS": "ignatij.tasevski@gmail.com",
-    "SENDER_ADDRESS": "access@rand0m.net"
+    "PUBLIC_ORIGIN": "https://tuka.rand0m.net"
   },
   "observability": {
     "enabled": true,

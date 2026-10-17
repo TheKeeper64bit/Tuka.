@@ -1,0 +1,64 @@
+/* The loading scene is decorative. Actual readiness stays in boot.js. */
+.boot-screen {
+  --boot-sky: #e8f1f8;
+  --boot-city: #cedeea;
+  --boot-window: #edf4f9;
+  --boot-mountain: #d6e3ed;
+  --boot-cloud: #c5d7e5;
+  --boot-road: #c5d7e3;
+  --boot-lane: #aec6d9;
+  --boot-shadow: #193c5714;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 28px 22px;
+  background: var(--bg);
+  color: var(--ink);
+}
+.boot-screen[hidden] { display: none; }
+.boot-content { width: min(100%, 420px); text-align: center; }
+.boot-wordmark { color: var(--blue); font-size: 64px; line-height: 1; font-weight: 850; letter-spacing: -4px; }
+.boot-city-label { color: var(--muted); font-size: 9px; font-weight: 750; letter-spacing: 2.6px; margin-top: 16px; }
+.boot-scene { width: 100%; margin: 18px auto 0; overflow: hidden; }
+.boot-illustration { display: block; width: 100%; height: auto; overflow: hidden; }
+.boot-content h1 { font-size: 23px; line-height: 1.4; letter-spacing: -.6px; margin: 0; }
+.boot-content p { font-size: 14px; color: var(--muted); line-height: 1.65; min-height: 46px; max-width: 290px; margin: 12px auto 20px; }
+.boot-progress { height: 3px; overflow: hidden; border-radius: 10px; background: var(--line); margin: 0 auto 24px; width: 112px; }
+.boot-progress span { display: block; height: 100%; width: 45%; background: var(--blue); border-radius: inherit; animation: tuka-boot-progress 1.8s ease-in-out infinite; }
+.boot-content button { margin: 4px; }
+.boot-city-track { animation: tuka-boot-city 26s linear infinite; }
+.boot-lane-track { animation: tuka-boot-road .65s linear infinite; }
+.boot-bus-body { animation: tuka-boot-suspension 1.4s ease-in-out infinite; }
+.boot-bus-shadow { transform-origin: 213px 179px; animation: tuka-boot-shadow 1.4s ease-in-out infinite; }
+.boot-wheel { transform-box: fill-box; transform-origin: center; animation: tuka-boot-wheel .75s linear infinite; }
+.boot-clouds { animation: tuka-boot-clouds 7s ease-in-out infinite alternate; }
+body.dark .boot-screen {
+  --boot-sky: #102b40;
+  --boot-city: #1b3c53;
+  --boot-window: #34576e;
+  --boot-mountain: #1e4056;
+  --boot-cloud: #31536b;
+  --boot-road: #2b4b60;
+  --boot-lane: #3b5e77;
+  --boot-shadow: #030e1960;
+}
+@keyframes tuka-boot-city { to { transform: translateX(-760px); } }
+@keyframes tuka-boot-road { to { transform: translateX(-56px); } }
+@keyframes tuka-boot-suspension { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.5px); } }
+@keyframes tuka-boot-shadow { 50% { transform: scaleX(.98); opacity: .7; } }
+@keyframes tuka-boot-wheel { to { transform: rotate(360deg); } }
+@keyframes tuka-boot-clouds { to { transform: translateX(-9px); } }
+@keyframes tuka-boot-progress { 0% { transform: translateX(-110%); } 100% { transform: translateX(330%); } }
+@media (max-width: 370px), (max-height: 580px) {
+  .boot-wordmark { font-size: 52px; }
+  .boot-city-label { margin-top: 12px; }
+  .boot-scene { max-width: 330px; margin-top: 10px; }
+  .boot-content h1 { font-size: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .boot-screen *, .boot-screen *::before, .boot-screen *::after { animation: none !important; transition: none !important; }
+  .boot-progress span { transform: translateX(60%); }
+}

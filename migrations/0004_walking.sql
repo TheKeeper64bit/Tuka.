@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS walking_cache (
+  route_key TEXT PRIMARY KEY,
+  payload TEXT NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS walking_budget (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  next_at INTEGER NOT NULL DEFAULT 0,
+  day TEXT NOT NULL DEFAULT '',
+  requests INTEGER NOT NULL DEFAULT 0
+);
+INSERT OR IGNORE INTO walking_budget (id) VALUES (1);

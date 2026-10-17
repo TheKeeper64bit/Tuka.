@@ -1,0 +1,3 @@
+ALTER TABLE jsp_news_cache ADD COLUMN ai_next_at INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE jsp_news_cache ADD COLUMN ai_window_start INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE jsp_news_cache ADD COLUMN ai_attempts INTEGER NOT NULL DEFAULT 0;

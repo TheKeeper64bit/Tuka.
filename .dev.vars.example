@@ -1,4 +1,6 @@
-# Generate a fresh local secret with: node -p "require('crypto').randomBytes(32).toString('hex')"
-# Paste it after AUTH_SECRET below. Never reuse a production secret here.
-AUTH_SECRET=
 PUBLIC_ORIGIN=http://localhost:8787
+
+# Server-only Google Gemini API key; never expose in dist/.
+GEMINI_API_KEY=
+# Optional override; defaults to gemini-3.8-flash.
+GEMINI_MODEL=gemini-3.8-flash

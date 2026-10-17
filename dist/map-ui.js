@@ -1,22 +1,26 @@
 // Quiet street palette and reusable map overlays; MapLibre owns marker positioning.
-export function polishMap(map){
+export function polishMap(map,dark=false){
+  const p=dark?{ground:'#0b1d2d',water:'#12394b',green:'#193c36',building:'#263e50',residential:'#112637',institution:'#1c3147',road:'#344e60',casing:'#142737',boundary:'#425b6b',label:'#cfdeea',minor:'#a2b8c9',halo:'#0b1d2d'}:{ground:'#f3f6f8',water:'#c7e0ee',green:'#e0ece4',building:'#dfe5e9',residential:'#eef2f5',institution:'#e7edf3',road:'#ffffff',casing:'#d7dfe6',boundary:'#bbc7d0',label:'#435c6e',minor:'#687d8c',halo:'#f8fafc'};
   for(const layer of map.getStyle().layers||[]){
     const id=layer.id;
-    if(layer.type==='background')map.setPaintProperty(id,'background-color','#f3f6f8');
+    // Theme the basemap only: route colours, stop pins and ride overlays retain identity.
+    if(/^(station-network|reachable-stops|destination-stop|selected-stop|stops|route|journey|selected-route)(-|$)/.test(id))continue;
+    if(layer.type==='background')map.setPaintProperty(id,'background-color',p.ground);
     if(layer.type==='fill'){
-      const color=/water/.test(id)?'#c7e0ee':/park|wood|grass|cemetery|pitch/.test(id)?'#e0ece4':/building/.test(id)?'#dfe5e9':/residential/.test(id)?'#eef2f5':/hospital|school/.test(id)?'#e7edf3':null;
-      if(color)map.setPaintProperty(id,'fill-color',color);
+      const color=/water/.test(id)?p.water:/park|wood|grass|cemetery|pitch|landcover/.test(id)?p.green:/building/.test(id)?p.building:/residential/.test(id)?p.residential:/hospital|school/.test(id)?p.institution:p.ground;
+      map.setPaintProperty(id,'fill-color',color);
     }
+    if(layer.type==='fill-extrusion')map.setPaintProperty(id,'fill-extrusion-color',p.building);
     if(layer.type==='line'){
-      if(/waterway/.test(id))map.setPaintProperty(id,'line-color','#c7e0ee');
-      else if(/^(road|bridge|tunnel)_/.test(id)&&!/rail|pattern/.test(id))map.setPaintProperty(id,'line-color',/casing/.test(id)?'#d7dfe6':'#ffffff');
-      else if(/boundary/.test(id))map.setPaintProperty(id,'line-color','#bbc7d0');
+      if(/waterway/.test(id))map.setPaintProperty(id,'line-color',p.water);
+      else if(/^(road|bridge|tunnel)_/.test(id))map.setPaintProperty(id,'line-color',/casing|rail|pattern/.test(id)?p.casing:p.road);
+      else if(/boundary|building/.test(id))map.setPaintProperty(id,'line-color',p.boundary);
     }
     const label=layer.layout?.['text-field'];
-    if(layer.type==='symbol'&&label&&JSON.stringify(label).includes('name')){
-      map.setLayoutProperty(id,'text-field',['coalesce',['get','name:en'],['get','name:latin'],['get','name']]);
-      map.setPaintProperty(id,'text-color',/road|waterway/.test(id)?'#687d8c':'#435c6e');
-      map.setPaintProperty(id,'text-halo-color','#f8fafc');
+    if(layer.type==='symbol'&&label){
+      if(JSON.stringify(label).includes('name'))map.setLayoutProperty(id,'text-field',['coalesce',['get','name:en'],['get','name:latin'],['get','name']]);
+      map.setPaintProperty(id,'text-color',/road|waterway/.test(id)?p.minor:p.label);
+      map.setPaintProperty(id,'text-halo-color',p.halo);
     }
   }
 }

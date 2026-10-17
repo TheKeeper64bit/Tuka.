@@ -3,6 +3,12 @@ import {polishMap,routeGeometry,routeOverlay,syncMarkers} from '../dist/map-ui.j
 const paints=[],layouts=[],sources=new Map(),layers=[];
 const map={getStyle:()=>({layers:[{id:'background',type:'background'},{id:'road_trunk_primary',type:'line'},{id:'road_trunk_primary_casing',type:'line'},{id:'water',type:'fill'},{id:'road_label',type:'symbol',layout:{'text-field':['get','name']}}]}),setPaintProperty:(...x)=>paints.push(x),setLayoutProperty:(...x)=>layouts.push(x),getSource:id=>sources.get(id),getLayer:id=>id==='stops',addSource:(id,data)=>sources.set(id,{...data,setData(d){this.data=d;}}),addLayer:(l,before)=>layers.push({l,before})};
 polishMap(map);assert(paints.some(x=>x[0]==='road_trunk_primary'&&x[2]==='#ffffff'));assert(layouts.some(x=>JSON.stringify(x).includes('name:en')));
+paints.length=0;polishMap(map,true);
+assert(paints.some(x=>x[0]==='background'&&x[2]==='#0b1d2d'));
+assert(paints.some(x=>x[0]==='water'&&x[2]==='#12394b'));
+assert(paints.some(x=>x[0]==='road_label'&&x[1]==='text-halo-color'&&x[2]==='#0b1d2d'));
+paints.length=0;polishMap(map,false);assert(paints.some(x=>x[0]==='background'&&x[2]==='#f3f6f8'));
+const custom=[];polishMap({getStyle:()=>({layers:[{id:'journey-bus-path',type:'line'},{id:'station-network-lines',type:'line'},{id:'route-stops',type:'circle'}]}),setPaintProperty:(...args)=>custom.push(args)},true);assert.equal(custom.length,0,'Custom route and stop colours must not change');
 const trip={trip_id:'t',shape_id:'shape'},db={shapes:new Map([['shape',[[21.4,42,1],[21.405,42.002,2],[21.41,42,3]]]]),stops:[{id:'a',lon:21.4,lat:42},{id:'b',lon:21.41,lat:42}],times:new Map([['t',[{stop_id:'a'},{stop_id:'b'}]]])};
 const geo=routeGeometry(db,trip);assert.equal(geo.points.length,3);assert(!geo.approximate);assert(routeGeometry(db,{trip_id:'t'}).approximate);
 routeOverlay(map,'selected-route',geo.points);assert.equal(layers.length,2);assert(layers.every(x=>x.before==='stops'));assert.equal(sources.get('selected-route').data.features.length,1);

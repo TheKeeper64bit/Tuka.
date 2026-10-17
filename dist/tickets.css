@@ -1,0 +1,52 @@
+.ticket-dialog{width:min(800px,calc(100% - 32px));max-width:800px;max-height:90dvh;padding:0;border:1px solid var(--line);border-radius:28px;background:var(--bg);color:var(--ink);box-shadow:0 24px 100px #071f4959;overflow:auto;overscroll-behavior:contain}
+.ticket-dialog::backdrop{background:#081d3b80;backdrop-filter:blur(5px)}
+.ticket-dialog [hidden]{display:none!important}
+.ticket-head{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:flex-start;padding:28px 28px 18px;gap:20px;background:var(--bg);border-bottom:1px solid var(--line)}
+.ticket-kicker{font-size:10px;font-weight:800;letter-spacing:1.8px;color:var(--blue);text-transform:uppercase}
+.ticket-head h2{font-size:34px;letter-spacing:-1.2px;line-height:1.15;margin:8px 0}
+.ticket-head p{color:var(--muted);font-size:14px;line-height:1.6;max-width:530px;margin:0}
+.ticket-dismiss{width:38px;height:38px;min-width:38px;display:grid;place-items:center;border-radius:50%;font-size:25px;background:var(--panel);border:1px solid var(--line);color:var(--muted);line-height:1}
+.ticket-content{padding:0 28px 28px}
+.ticket-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0 18px}
+.ticket-filters{display:flex;gap:4px;flex-wrap:wrap;padding:4px;background:var(--line);border-radius:12px}
+.ticket-filters:empty{padding:0}
+.ticket-filters button{padding:9px 16px;border-radius:9px;background:transparent;color:var(--muted);font-size:13px;font-weight:700;min-height:38px}
+.ticket-filters button[aria-pressed=true]{background:var(--panel);color:var(--ink);box-shadow:0 2px 5px #10273710}
+.ticket-refresh{background:transparent;color:var(--blue);font-size:12px;font-weight:650;padding:10px;min-height:40px}
+.ticket-refresh:disabled{opacity:.55;cursor:wait}
+.ticket-products{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.ticket-product{display:flex;flex-direction:column;gap:18px;min-height:224px;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--ink);padding:18px;text-align:left;transition:border-color .15s,box-shadow .15s,transform .15s}
+.ticket-product:hover{border-color:var(--blue);transform:translateY(-2px)}
+.ticket-product[aria-pressed=true]{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
+.ticket-product-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ticket-product-zone{font-size:10px;letter-spacing:.7px;text-transform:uppercase;font-weight:750;color:var(--muted)}
+.ticket-product-check{visibility:hidden;display:grid;place-items:center;border-radius:50%;background:var(--blue);color:var(--panel);width:20px;height:20px;font-size:12px}
+.ticket-product[aria-pressed=true] .ticket-product-check{visibility:visible}
+.ticket-product-name{font-size:17px;line-height:1.35;font-weight:700;min-height:46px;overflow-wrap:anywhere}
+.ticket-product-price{font-size:32px;line-height:1.1;font-weight:750;letter-spacing:-1px;margin-top:auto;font-variant-numeric:tabular-nums}
+.ticket-product-price small{font-size:10px;letter-spacing:.5px;margin-left:6px;color:var(--muted);font-weight:650}
+.ticket-product-bottom{display:flex;justify-content:space-between;align-items:center;border-top:1px dashed var(--line);padding-top:14px;color:var(--muted);font-size:12px}
+.ticket-product-bottom>span{color:var(--blue);font-size:19px}
+.ticket-status{font-size:11px;line-height:1.5;color:var(--muted);margin:12px 0 22px}
+.ticket-status[data-state=error],.ticket-status[data-state=stale]{color:var(--ink);background:var(--soft);border-radius:10px;padding:10px 12px}
+.ticket-choice{border:1px solid var(--blue);border-radius:18px;padding:20px;margin:0 0 22px;background:var(--soft);scroll-margin:16px}
+.ticket-choice h3{margin:8px 0;font-size:20px;line-height:1.35}
+.ticket-choice p{margin:0 0 16px;font-size:13px;line-height:1.65;color:var(--muted)}
+.ticket-launch{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:12px 18px;border-radius:12px;text-decoration:none;font-size:13px;font-weight:750;background:var(--blue);color:#fff}
+.ticket-app-row{display:flex;align-items:center;gap:18px;border-radius:18px;background:var(--panel);border:1px solid var(--line);padding:20px}
+.ticket-app-symbol{display:grid;place-items:center;width:46px;height:46px;min-width:46px;border-radius:14px;background:var(--soft);color:var(--blue)}
+.ticket-app-symbol svg{width:24px;height:24px}
+.ticket-app-info{flex:1;min-width:0}
+.ticket-app-info h3{font-size:16px;margin:0 0 5px}
+.ticket-app-info p{font-size:12px;line-height:1.6;color:var(--muted);margin:0}
+.ticket-app-links{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+.ticket-app-links a{font-size:12px;font-weight:700;text-decoration:none;color:var(--blue);min-height:30px;display:inline-flex;align-items:center}
+.ticket-other{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:20px 0 0;padding:18px 0 0;border-top:1px solid var(--line)}
+.ticket-other a{font-size:12px;font-weight:650;color:var(--muted);text-decoration:none;min-height:30px;display:inline-flex;align-items:center}
+.ticket-other a:last-child{margin-left:auto}
+.ticket-empty{grid-column:1/-1;color:var(--muted);font-size:14px;padding:24px 0;margin:0}
+.ticket-dialog a:focus-visible,.ticket-dialog button:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+body.dark .ticket-dialog{box-shadow:0 24px 100px #0009}
+body.dark .ticket-launch{color:var(--panel)}
+@media(max-width:600px){.ticket-dialog{width:calc(100% - 20px);max-height:92dvh;border-radius:23px}.ticket-head{padding:22px 20px 10px;gap:12px}.ticket-head h2{font-size:30px}.ticket-head p{font-size:13px}.ticket-content{padding:0 20px 22px}.ticket-products{grid-template-columns:1fr;gap:10px}.ticket-product{display:grid;grid-template-columns:1fr auto;gap:7px 14px;min-height:0;padding:16px}.ticket-product-top{grid-column:1/-1}.ticket-product-name{font-size:16px;min-height:0;grid-column:1;grid-row:2;max-width:220px}.ticket-product-price{font-size:27px;grid-column:2;grid-row:2;align-self:center;margin:0;white-space:nowrap}.ticket-product-price small{display:block;text-align:right;margin:4px 0 0;font-size:9px}.ticket-product-bottom{grid-column:1/-1;padding-top:9px;margin-top:5px}.ticket-product-zone{font-size:9px}.ticket-app-row{align-items:flex-start;padding:16px;gap:12px}.ticket-app-symbol{width:38px;height:38px;min-width:38px;border-radius:11px}.ticket-choice{padding:16px}.ticket-other{gap:8px 18px}.ticket-other a:last-child{margin-left:0}.ticket-filters button{padding:9px 12px}}
+@media(prefers-reduced-motion:reduce){.ticket-product{transition:none}.ticket-product:hover{transform:none}}
