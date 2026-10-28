@@ -1,6 +1,8 @@
 import {CITY_CATALOG, publicCities} from './meta-catalog.js';
 
+const SESSION = 'tuka_meta_session';
 const encoder = new TextEncoder();
+const decoder = new TextDecoder();
 
 function constantTimeEqual(a, b) {
   if (a.length !== b.length) return false;
@@ -10,24 +12,54 @@ function constantTimeEqual(a, b) {
 }
 
 function unauthorized() {
-  return new Response('Authentication required', {
-    status: 401,
-    headers: {'WWW-Authenticate': 'Basic realm="Tuka Meta Hackathon"', 'Cache-Control': 'no-store'},
-  });
+  return Response.json({error: 'Sign in to the Meta hackathon build.'}, {status: 401, headers: {'Cache-Control': 'no-store'}});
 }
 
-async function authorized(request, env) {
-  const header = request.headers.get('Authorization') || '';
-  if (!header.startsWith('Basic ')) return false;
-  let decoded;
-  try { decoded = atob(header.slice(6)); } catch { return false; }
-  const split = decoded.indexOf(':');
-  if (split < 1) return false;
-  const user = decoded.slice(0, split);
-  const password = decoded.slice(split + 1);
-  const expectedUser = String(env.META_AUTH_USER || '');
-  const expectedPassword = String(env.META_AUTH_PASSWORD || '');
-  return constantTimeEqual(user, expectedUser) && constantTimeEqual(password, expectedPassword);
+function base64url(bytes) {
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function fromBase64url(value) {
+  const padded = value.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - value.length % 4) % 4);
+  const binary = atob(padded);
+  return Uint8Array.from(binary, char => char.charCodeAt(0));
+}
+
+async function sign(value, secret) {
+  const key = await crypto.subtle.importKey('raw', encoder.encode(secret), {name: 'HMAC', hash: 'SHA-256'}, false, ['sign']);
+  return base64url(new Uint8Array(await crypto.subtle.sign('HMAC', key, encoder.encode(value))));
+}
+
+async function issueSession(user, secret) {
+  const payload = base64url(encoder.encode(JSON.stringify({user, expires: Date.now() + 1000 * 60 * 60 * 12})));
+  return `${payload}.${await sign(payload, secret)}`;
+}
+
+async function validSession(request, env) {
+  const cookies = request.headers.get('Cookie') || '';
+  const value = cookies.split(';').map(part => part.trim()).find(part => part.startsWith(`${SESSION}=`))?.slice(SESSION.length + 1);
+  if (!value) return false;
+  const [payload, signature] = value.split('.');
+  if (!payload || !signature) return false;
+  let parsed;
+  try { parsed = JSON.parse(decoder.decode(fromBase64url(payload))); } catch { return false; }
+  if (!parsed?.user || parsed.expires < Date.now()) return false;
+  const expected = await sign(payload, String(env.META_AUTH_PASSWORD || ''));
+  return constantTimeEqual(signature, expected) && parsed.user === String(env.META_AUTH_USER || '');
+}
+
+function safeNext(value) {
+  return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') && !value.includes('\\') ? value : '/';
+}
+
+async function loginPage(request, env) {
+  const response = await env.ASSETS.fetch(new Request(new URL('/meta-login', request.url), request));
+  const next = safeNext(new URL(request.url).searchParams.get('next'));
+  const html = await response.text();
+  const error = new URL(request.url).searchParams.get('error') === 'invalid' ? 'The username or password is not correct.' : '';
+  return new Response(html.replace('__NEXT__', next.replace(/&/g, '&amp;').replace(/"/g, '&quot;')).replace('{{ERROR}}', error), {status: response.status, headers: {'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY'}});
 }
 
 function json(data, status = 200) {
@@ -107,9 +139,25 @@ async function askMeta(message, env) {
 
 export default {
   async fetch(request, env) {
-    if (!(await authorized(request, env))) return unauthorized();
     const url = new URL(request.url);
+    if (url.pathname === '/login' && request.method === 'GET') return loginPage(request, env);
+    if (url.pathname === '/auth/login' && request.method === 'POST') {
+      let form;
+      try { form = await request.formData(); } catch { return Response.redirect(new URL('/login?error=invalid', request.url), 303); }
+      const user = String(form.get('username') || '');
+      const password = String(form.get('password') || '');
+      if (!constantTimeEqual(user, String(env.META_AUTH_USER || '')) || !constantTimeEqual(password, String(env.META_AUTH_PASSWORD || ''))) return Response.redirect(new URL('/login?error=invalid', request.url), 303);
+      const cookie = await issueSession(user, String(env.META_AUTH_PASSWORD || ''));
+      const destination = safeNext(form.get('next'));
+      return new Response(null, {status: 303, headers: {'Location': destination, 'Set-Cookie': `${SESSION}=${cookie}; Max-Age=43200; Path=/; HttpOnly; Secure; SameSite=Lax`, 'Cache-Control': 'no-store'}});
+    }
+    if (url.pathname === '/auth/logout') return new Response(null, {status: 303, headers: {'Location': '/login', 'Set-Cookie': `${SESSION}=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax`, 'Cache-Control': 'no-store'}});
+    if (!(await validSession(request, env))) {
+      if (url.pathname.startsWith('/api/')) return unauthorized();
+      return Response.redirect(new URL(`/login?next=${encodeURIComponent(url.pathname + url.search)}`, request.url), 303);
+    }
     if (url.pathname === '/api/cities' && request.method === 'GET') return json({cities: publicCities()});
+    if (url.pathname === '/boston-snapshot.json' && request.method === 'GET') return env.ASSETS.fetch(new Request(url, request));
     if (url.pathname === '/api/meta/ask' && request.method === 'POST') {
       let body;
       try { body = await request.json(); } catch { return json({error: 'Send a JSON request.'}, 400); }

@@ -10,9 +10,9 @@ Tuka is a working Skopje transit PWA with JSP/Modeshift schedules and live data,
 
 - A city/provider registry with explicit timezones, data capabilities, and provider status.
 - A second-city GTFS adapter profile for Boston using the official MBTA GTFS feed, kept separate from Skopje’s live provider.
-- A city profile panel that makes scheduled versus realtime coverage visible to judges.
+- A city profile panel that makes scheduled versus realtime coverage visible to judges, with a manual Boston test-location mode that draws stops and scheduled departures from the MBTA snapshot.
 - Tuka Copilot through the Meta Model API. The model is server-side only and can call a verified network-profile tool; it must say when a live result is unavailable and cannot invent departures or guarantees.
-- A separate Cloudflare Worker, custom domain, observability, and HTTP Basic Auth for the judging build. Existing `tuka.rand0m.net` and the closed Hacktoberfest host are left unchanged.
+- A separate Cloudflare Worker, custom domain, observability, and a real session-cookie login page for the judging build. Existing `tuka.rand0m.net` and the closed Hacktoberfest host are left unchanged.
 
 ## Run and test
 
@@ -21,7 +21,7 @@ npm test
 npm run build:meta
 ```
 
-For local Meta Worker testing, provide `META_AUTH_PASSWORD` and `MODEL_API_KEY` as local secrets. The deployment config keeps the judge username as `CerebralValley`; the password is provisioned as a Wrangler secret and is intentionally not committed.
+For local Meta Worker testing, provide `META_AUTH_PASSWORD` and `MODEL_API_KEY` as local secrets. The deployment config keeps the judge username as `CerebralValley`; the password is provisioned as a Wrangler secret and is intentionally not committed. After signing in, open **Meta Copilot**, choose **Boston**, and use the manual test location to inspect its scheduled stops.
 
 ## Deployment
 
