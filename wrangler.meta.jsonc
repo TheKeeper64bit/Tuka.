@@ -10,7 +10,8 @@
   "vars": {
     "META_AUTH_USER": "CerebralValley",
     "META_API_URL": "https://api.meta.ai/v1/chat/completions",
-    "META_MODEL": "muse-spark-1.3"
+    "META_MODEL": "muse-spark-1.3",
+    "MBTA_API_BASE": "https://api-v3.mbta.com"
   },
   "routes": [{"pattern": "tuka.meta-cerebralvalley.rand0m.net", "custom_domain": true}],
   "observability": {"enabled": true, "traces": {"enabled": true}}

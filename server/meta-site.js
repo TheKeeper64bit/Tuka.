@@ -71,6 +71,46 @@ function cleanMessage(value) {
   return value.trim().slice(0, 1200);
 }
 
+function mbtaUrl(env, path, params = {}) {
+  const base = String(env.MBTA_API_BASE || 'https://api-v3.mbta.com').replace(/\/$/, '');
+  const url = new URL(`${base}${path}`);
+  for (const [key, value] of Object.entries(params)) if (value !== undefined && value !== '') url.searchParams.set(key, value);
+  if (env.MBTA_API_KEY) url.searchParams.set('api_key', String(env.MBTA_API_KEY));
+  return url;
+}
+
+function mbtaRelationship(item, type) {
+  return item?.relationships?.[type]?.data?.id || '';
+}
+
+async function bostonRealtime(request, env) {
+  const stop = new URL(request.url).searchParams.get('stop') || '';
+  if (stop && !/^[A-Za-z0-9:_-]{1,120}$/.test(stop)) return json({error: 'Invalid Boston stop id.'}, 400);
+  const headers = {'Accept': 'application/vnd.api+json'};
+  const fetchFeed = async (path, params) => {
+    try {
+      const response = await fetch(mbtaUrl(env, path, params), {headers, signal: AbortSignal.timeout(9000)});
+      if (!response.ok) return {ok: false, status: response.status};
+      return {ok: true, data: await response.json()};
+    } catch { return {ok: false, status: 0}; }
+  };
+  const predictionsRequest = stop ? fetchFeed('/predictions', {
+    'filter[stop]': stop, 'filter[route_type]': '3', include: 'route,trip,stop', sort: 'departure_time', 'page[limit]': '30',
+  }) : Promise.resolve({ok: true, data: {data: []}});
+  const vehiclesRequest = fetchFeed('/vehicles', {'filter[route_type]': '3', include: 'route,trip', 'page[limit]': '250'});
+  const [predictions, vehicles] = await Promise.all([predictionsRequest, vehiclesRequest]);
+  const predictionRows = predictions.ok && Array.isArray(predictions.data?.data) ? predictions.data.data.map(item => {
+    const a = item.attributes || {};
+    return {id: String(item.id || ''), route: mbtaRelationship(item, 'route'), trip: mbtaRelationship(item, 'trip'), stop: mbtaRelationship(item, 'stop'), departureTime: a.departure_time || null, arrivalTime: a.arrival_time || null, status: a.status || null, direction: a.direction_id ?? null};
+  }).filter(row => row.departureTime || row.arrivalTime) : [];
+  const vehicleRows = vehicles.ok && Array.isArray(vehicles.data?.data) ? vehicles.data.data.map(item => {
+    const a = item.attributes || {};
+    return {id: String(item.id || ''), label: a.label || item.id || '', routeId: mbtaRelationship(item, 'route'), tripId: mbtaRelationship(item, 'trip'), lat: Number(a.latitude), lon: Number(a.longitude), status: a.current_status || null, updatedAt: a.updated_at || null, occupancy: a.occupancy_status || null};
+  }).filter(row => Number.isFinite(row.lat) && Number.isFinite(row.lon)) : [];
+  const liveAvailable = predictions.ok || vehicles.ok;
+  return json({source: 'MBTA V3 API', fetchedAt: new Date().toISOString(), liveAvailable, message: liveAvailable ? 'Live MBTA data received.' : 'MBTA realtime is unavailable right now.', predictions: predictionRows, vehicles: vehicleRows, errors: liveAvailable ? undefined : {predictions: predictions.status, vehicles: vehicles.status}});
+}
+
 const networkTool = {
   type: 'function',
   function: {
@@ -158,6 +198,7 @@ export default {
     }
     if (url.pathname === '/api/cities' && request.method === 'GET') return json({cities: publicCities()});
     if (url.pathname === '/boston-snapshot.json' && request.method === 'GET') return env.ASSETS.fetch(new Request(url, request));
+    if (url.pathname === '/api/boston/realtime' && request.method === 'GET') return bostonRealtime(request, env);
     if (url.pathname === '/api/meta/ask' && request.method === 'POST') {
       let body;
       try { body = await request.json(); } catch { return json({error: 'Send a JSON request.'}, 400); }
