@@ -19,11 +19,12 @@ export const CITY_CATALOG = [
     country: 'United States',
     timezone: 'America/New_York',
     center: [-71.0589, 42.3601],
-    capabilities: ['scheduled'],
-    provider: 'MBTA official GTFS',
+    capabilities: ['scheduled', 'realtime', 'alerts'],
+    provider: 'MBTA official GTFS + V3 API',
     feedUrl: 'https://cdn.mbta.com/MBTA_GTFS.zip',
-    status: 'gtfs',
-    description: 'A second-city GTFS adapter with scheduled service and a separate local timezone.',
+    status: 'live',
+    coverage: ['bus', 'shuttle'],
+    description: 'Boston’s official bus and shuttle schedule, with live MBTA predictions and vehicle positions when available.',
   },
 ];
 

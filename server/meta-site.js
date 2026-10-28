@@ -94,21 +94,31 @@ async function bostonRealtime(request, env) {
       return {ok: true, data: await response.json()};
     } catch { return {ok: false, status: 0}; }
   };
+  // MBTA route types: 0 subway, 1 subway, 2 commuter rail, 3 bus,
+  // 4 ferry, 5 cable car. We keep the static demo snapshot intentionally
+  // small, but the live layer should not silently discard non-bus service.
+  const routeTypes = '0,1,2,3,4,5';
   const predictionsRequest = stop ? fetchFeed('/predictions', {
-    'filter[stop]': stop, 'filter[route_type]': '3', include: 'route,trip,stop', sort: 'departure_time', 'page[limit]': '30',
+    'filter[stop]': stop, 'filter[route_type]': routeTypes, include: 'route,trip,stop', sort: 'departure_time', 'page[limit]': '40',
   }) : Promise.resolve({ok: true, data: {data: []}});
-  const vehiclesRequest = fetchFeed('/vehicles', {'filter[route_type]': '3', include: 'route,trip', 'page[limit]': '250'});
+  const vehiclesRequest = fetchFeed('/vehicles', {'filter[route_type]': routeTypes, include: 'route,trip', 'page[limit]': '400'});
   const [predictions, vehicles] = await Promise.all([predictionsRequest, vehiclesRequest]);
+  const included = new Map((predictions.data?.included || []).map(item => [String(item.id), item]));
+  const vehicleIncluded = new Map((vehicles.data?.included || []).map(item => [String(item.id), item]));
+  const routeLabel = (id, map) => map.get(String(id))?.attributes?.short_name || map.get(String(id))?.attributes?.long_name || null;
+  const routeType = (id, map) => map.get(String(id))?.attributes?.type ?? null;
   const predictionRows = predictions.ok && Array.isArray(predictions.data?.data) ? predictions.data.data.map(item => {
     const a = item.attributes || {};
-    return {id: String(item.id || ''), route: mbtaRelationship(item, 'route'), trip: mbtaRelationship(item, 'trip'), stop: mbtaRelationship(item, 'stop'), departureTime: a.departure_time || null, arrivalTime: a.arrival_time || null, status: a.status || null, direction: a.direction_id ?? null};
+    const route = mbtaRelationship(item, 'route');
+    return {id: String(item.id || ''), route, routeName: routeLabel(route, included), routeType: routeType(route, included), trip: mbtaRelationship(item, 'trip'), stop: mbtaRelationship(item, 'stop'), departureTime: a.departure_time || null, arrivalTime: a.arrival_time || null, status: a.status || null, direction: a.direction_id ?? null};
   }).filter(row => row.departureTime || row.arrivalTime) : [];
   const vehicleRows = vehicles.ok && Array.isArray(vehicles.data?.data) ? vehicles.data.data.map(item => {
     const a = item.attributes || {};
-    return {id: String(item.id || ''), label: a.label || item.id || '', routeId: mbtaRelationship(item, 'route'), tripId: mbtaRelationship(item, 'trip'), lat: Number(a.latitude), lon: Number(a.longitude), status: a.current_status || null, updatedAt: a.updated_at || null, occupancy: a.occupancy_status || null};
+    const routeId = mbtaRelationship(item, 'route');
+    return {id: String(item.id || ''), label: a.label || item.id || '', routeId, routeName: routeLabel(routeId, vehicleIncluded), routeType: routeType(routeId, vehicleIncluded), tripId: mbtaRelationship(item, 'trip'), lat: Number(a.latitude), lon: Number(a.longitude), status: a.current_status || null, updatedAt: a.updated_at || null, occupancy: a.occupancy_status || null};
   }).filter(row => Number.isFinite(row.lat) && Number.isFinite(row.lon)) : [];
   const liveAvailable = predictions.ok || vehicles.ok;
-  return json({source: 'MBTA V3 API', fetchedAt: new Date().toISOString(), liveAvailable, message: liveAvailable ? 'Live MBTA data received.' : 'MBTA realtime is unavailable right now.', predictions: predictionRows, vehicles: vehicleRows, errors: liveAvailable ? undefined : {predictions: predictions.status, vehicles: vehicles.status}});
+  return json({source: 'MBTA V3 API', fetchedAt: new Date().toISOString(), liveAvailable, routeTypes, message: liveAvailable ? 'Live MBTA data received.' : 'MBTA realtime is unavailable right now.', predictions: predictionRows, vehicles: vehicleRows, errors: liveAvailable ? undefined : {predictions: predictions.status, vehicles: vehicles.status}});
 }
 
 const networkTool = {
@@ -120,6 +130,18 @@ const networkTool = {
   },
 };
 
+const cityContextTool = {
+  type: 'function',
+  function: {
+    name: 'get_city_context',
+    description: 'Return verified context for the selected Tuka city. For Boston, include a stop id only when the rider selected one so live MBTA data can be checked.',
+    parameters: {type: 'object', properties: {
+      city_id: {type: 'string', enum: ['skopje', 'boston']},
+      stop_id: {type: 'string', description: 'Optional MBTA stop id selected in the Boston map.'},
+    }, required: ['city_id'], additionalProperties: false},
+  },
+};
+
 function toolResult() {
   return JSON.stringify(publicCities().map(city => ({
     id: city.id, name: city.name, timezone: city.timezone,
@@ -128,7 +150,17 @@ function toolResult() {
   })));
 }
 
-async function askMeta(message, env) {
+async function cityContext(args, env) {
+  const city = CITY_CATALOG.find(item => item.id === String(args?.city_id || '')) || CITY_CATALOG[0];
+  const result = {city: publicCities().find(item => item.id === city.id), dataFreshness: city.id === 'boston' ? 'Official MBTA GTFS snapshot at build time; live MBTA V3 checked on request.' : 'Tuka live provider data is available through the main planner.'};
+  if (city.id === 'boston' && args?.stop_id && /^[A-Za-z0-9:_-]{1,120}$/.test(String(args.stop_id))) {
+    const response = await bostonRealtime(new Request(`https://tuka.local/api/boston/realtime?stop=${encodeURIComponent(args.stop_id)}`), env);
+    result.live = await response.json();
+  }
+  return JSON.stringify(result);
+}
+
+async function askMeta(message, context, env) {
   const token = env.MODEL_API_KEY || env.META_AI_TOKEN || env.META_API_KEY;
   if (!token) return {error: 'Meta AI is not configured for this deployment.', status: 503};
   const endpoint = String(env.META_API_URL || 'https://api.meta.ai/v1/chat/completions').replace(/\/$/, '');
@@ -138,10 +170,11 @@ async function askMeta(message, env) {
     'Use only verified city/provider profiles and the supplied app context.',
     'Never invent a departure, arrival, route, fare, disruption, or guarantee.',
     'If a live result is not supplied, say that it is unavailable and direct the rider to the planner.',
+    'The selected city and stop are context, not permission to invent data. Use get_city_context before making a city-specific claim.',
     'Be concise, practical, and explain the timezone or data freshness when relevant.',
   ].join(' ');
   const base = {model, temperature: 0.2, max_completion_tokens: 760, tool_choice: 'auto', parallel_tool_calls: false,
-    messages: [{role: 'system', content: system}, {role: 'user', content: message}], tools: [networkTool]};
+    messages: [{role: 'system', content: system}, {role: 'user', content: `Selected city: ${context.cityId || 'skopje'}${context.stopId ? `; selected stop: ${context.stopId}` : ''}\nRider question: ${message}`}], tools: [networkTool, cityContextTool]};
   const call = async body => fetch(endpoint, {method: 'POST', headers: {'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'}, body: JSON.stringify(body), signal: AbortSignal.timeout(18000)});
   let response = await call(base);
   if (!response.ok) return {error: 'Meta AI could not answer right now.', status: response.status === 429 ? 429 : 502};
@@ -160,13 +193,22 @@ async function askMeta(message, env) {
         function: {name: String(call.function?.name || 'get_network_profiles'), arguments: String(call.function?.arguments || '{}')},
       })),
     };
-    const messages = [...base.messages, assistant, ...calls.map(call => ({role: 'tool', tool_call_id: call.id, name: call.function?.name || 'get_network_profiles', content: toolResult()}))];
-    response = await call({...base, messages, tools: [networkTool]});
+    const messages = [...base.messages, assistant, ...await Promise.all(calls.map(async call => {
+      const name = call.function?.name || 'get_network_profiles';
+      let content = toolResult();
+      if (name === 'get_city_context') {
+        let args = {};
+        try { args = JSON.parse(call.function?.arguments || '{}'); } catch {}
+        content = await cityContext(args, env);
+      }
+      return {role: 'tool', tool_call_id: call.id, name, content};
+    }))];
+    response = await call({...base, messages, tools: [networkTool, cityContextTool]});
     if (!response.ok) {
       // A provider/model may decline a replayed tool turn. Keep the answer
       // grounded by retrying with the verified tool result as context and no
       // further tool request.
-      response = await call({...base, tools: [], messages: [base.messages[0], base.messages[1], {role: 'user', content: `Verified network profiles from Tuka: ${toolResult()}`} ]});
+      response = await call({...base, tools: [], messages: [base.messages[0], base.messages[1], {role: 'user', content: `Verified Tuka context: ${toolResult()}`} ]});
       if (!response.ok) return {error: 'Meta AI could not finish the verified answer.', status: 502};
     }
     data = await response.json();
@@ -204,7 +246,9 @@ export default {
       try { body = await request.json(); } catch { return json({error: 'Send a JSON request.'}, 400); }
       const message = cleanMessage(body?.message);
       if (!message) return json({error: 'Ask Tuka Copilot a question first.'}, 400);
-      const result = await askMeta(message, env);
+      const cityId = ['skopje', 'boston'].includes(String(body?.cityId)) ? String(body.cityId) : 'boston';
+      const stopId = typeof body?.stopId === 'string' && /^[A-Za-z0-9:_-]{1,120}$/.test(body.stopId) ? body.stopId : '';
+      const result = await askMeta(message, {cityId, stopId}, env);
       return result.error ? json({error: result.error}, result.status) : json(result);
     }
     if (url.pathname.startsWith('/api/')) return json({error: 'Not found'}, 404);
