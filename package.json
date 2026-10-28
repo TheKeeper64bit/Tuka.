@@ -14,7 +14,7 @@
     "build:hacktoberfest": "node scripts/build-hacktoberfest.mjs",
     "deploy:hacktoberfest": "wrangler deploy --config wrangler.hacktoberfest.jsonc",
     "build:meta": "node scripts/build-meta.mjs",
-    "deploy:meta": "wrangler deploy --config wrangler.meta.jsonc",
+    "deploy:meta": "npm run build:meta && wrangler deploy --config wrangler.meta.jsonc",
     "deploy:public-api": "wrangler deploy --config wrangler.public-api.jsonc",
     "access": "node scripts/access.mjs"
   },
