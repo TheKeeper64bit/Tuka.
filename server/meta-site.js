@@ -121,6 +121,41 @@ async function bostonRealtime(request, env) {
   return json({source: 'MBTA V3 API', fetchedAt: new Date().toISOString(), liveAvailable, routeTypes, message: liveAvailable ? 'Live MBTA data received.' : 'MBTA realtime is unavailable right now.', predictions: predictionRows, vehicles: vehicleRows, errors: liveAvailable ? undefined : {predictions: predictions.status, vehicles: vehicles.status}});
 }
 
+function decodePolyline(value) {
+  const points = [];
+  let index = 0, lat = 0, lon = 0;
+  while (index < value.length) {
+    let result = 0, shift = 0, byte;
+    do { byte = value.charCodeAt(index++) - 63; result |= (byte & 31) << shift; shift += 5; } while (byte >= 32 && index <= value.length);
+    lat += (result & 1) ? ~(result >> 1) : result >> 1;
+    result = 0; shift = 0;
+    do { byte = value.charCodeAt(index++) - 63; result |= (byte & 31) << shift; shift += 5; } while (byte >= 32 && index <= value.length);
+    lon += (result & 1) ? ~(result >> 1) : result >> 1;
+    points.push([lon / 1e5, lat / 1e5]);
+  }
+  return points;
+}
+
+async function bostonRouteShapes(request, env) {
+  const url = new URL(request.url);
+  const routeIds = [...new Set((url.searchParams.get('routes') || '').split(',').map(value => value.trim()).filter(value => /^[A-Za-z0-9:_-]{1,80}$/.test(value)))].slice(0, 12);
+  if (!routeIds.length) return json({source: 'MBTA V3 API', routes: [], features: []}, 400);
+  const headers = {'Accept': 'application/vnd.api+json'};
+  const fetchRoute = async route => {
+    try {
+      const response = await fetch(mbtaUrl(env, '/shapes', {'filter[route]': route, 'page[limit]': '40'}), {headers, signal: AbortSignal.timeout(9000)});
+      if (!response.ok) return [];
+      const data = await response.json();
+      return (data.data || []).flatMap(shape => {
+        const coordinates = decodePolyline(String(shape.attributes?.polyline || ''));
+        return coordinates.length > 1 ? [{type: 'Feature', geometry: {type: 'LineString', coordinates}, properties: {route, shape: String(shape.id || '')}}] : [];
+      });
+    } catch { return []; }
+  };
+  const features = (await Promise.all(routeIds.map(fetchRoute))).flat();
+  return json({source: 'MBTA V3 API', routes: routeIds, features});
+}
+
 const networkTool = {
   type: 'function',
   function: {
@@ -241,6 +276,7 @@ export default {
     if (url.pathname === '/api/cities' && request.method === 'GET') return json({cities: publicCities()});
     if (url.pathname === '/boston-snapshot.json' && request.method === 'GET') return env.ASSETS.fetch(new Request(url, request));
     if (url.pathname === '/api/boston/realtime' && request.method === 'GET') return bostonRealtime(request, env);
+    if (url.pathname === '/api/boston/route-shapes' && request.method === 'GET') return bostonRouteShapes(request, env);
     if (url.pathname === '/api/meta/ask' && request.method === 'POST') {
       let body;
       try { body = await request.json(); } catch { return json({error: 'Send a JSON request.'}, 400); }
