@@ -11,8 +11,8 @@ export const PUBLIC_ASSETS=[
   'community.js','community-config.json','favourites.js','journey-follow.js',
   'journey-store.js','journey-tools.js','live.js','map-ui.js','news.js',
   'offline.js','place-search.js','planner.js','ride.js','schedule.js',
-  'service-alerts.js','stop-network.js','ticket.js','transit.js','walking.js',
-  'style.css','boot.css','language.css','news.css','tickets.css','planner.css','offline.css',
+  'service-alerts.js','stop-network.js','ticket.js','ticket-wallet.js','ticket-store.js','transit.js','walking.js',
+  'style.css','boot.css','language.css','news.css','tickets.css','ticket-wallet.css','planner.css','offline.css','meta.css','meta.js',
   'icon.svg','icon-192.png','icon-512.png','icon-192-blue.png','icon-512-blue.png',
   'vendor/maplibre-gl.js','vendor/maplibre-gl.css',
 ];

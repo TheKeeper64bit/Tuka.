@@ -14,6 +14,7 @@ test('Pages publishes only public assets and injects a cookie-free API origin',(
   mkdirSync(output,{recursive:true});writeFileSync(join(output,'CNAME'),'old.example');
   buildPages({source,output,apiBase:'https://public-api.example/'});
   assert(existsSync(join(output,'.nojekyll')));assert(existsSync(join(output,'vendor/maplibre-gl.js')));
+  for(const file of ['ticket-wallet.js','ticket-wallet.css','ticket-store.js'])assert(existsSync(join(output,file)),`Pages must include the local wallet asset ${file}`);
   for(const file of ['login.html','session.js','.dev.vars','CNAME','server'])assert(!existsSync(join(output,file)),file);
   const config=readFileSync(join(output,'config.js'),'utf8');
   assert(config.includes('export const API_BASE = "https://public-api.example";'));assert(config.includes("API_BASE?'omit':'same-origin'"));

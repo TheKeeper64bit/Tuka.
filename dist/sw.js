@@ -4,9 +4,9 @@
 const PRIVATE_ACCESS=false;
 const BASE_PATH=new URL('./',self.registration.scope).pathname;
 const CACHE_PREFIX=BASE_PATH==='/'?'tuka-offline-':'tuka-offline-'+encodeURIComponent(BASE_PATH)+'-';
-const OFFLINE_CACHE=CACHE_PREFIX+'v29';
+const OFFLINE_CACHE=CACHE_PREFIX+'v32';
 const ownReaderCache=key=>BASE_PATH==='/'?/^tuka-offline-v\d+(?:-|$)/.test(key):key.startsWith(CACHE_PREFIX);
-const FILES=['offline.html','offline.js','offline.css','config.js?v=1','transit.js?v=24','schedule.js?v=24','planner.js?v=24','journey-store.js?v=24','favourites.js?v=20','live.js?v=16','language.js?v=26','language.css?v=26','i18n.js?v=26','service-alerts.js?v=26'].map(path=>BASE_PATH+path);
+const FILES=['offline.html','offline.js','offline.css','ticket-wallet.js?v=1','ticket-wallet.css?v=1','ticket-store.js?v=1','config.js?v=1','transit.js?v=24','schedule.js?v=24','planner.js?v=24','journey-store.js?v=24','favourites.js?v=20','live.js?v=16','language.js?v=31','language.css?v=31','i18n.js?v=32','service-alerts.js?v=26'].map(path=>BASE_PATH+path);
 const PUBLIC_FILES=new Set(FILES.map(path=>path.split('?')[0]));
 const readerClients=new Map();
 let preparing,generation=0;

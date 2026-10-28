@@ -1,19 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync,existsSync} from 'node:fs';
-import {execFileSync} from 'node:child_process';
+import {readFileSync,existsSync,mkdtempSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import vm from 'node:vm';
+import {buildPrivate} from '../scripts/build-private.mjs';
 
 test('private artifact adds access controls without changing the public source',()=>{
-  execFileSync(process.execPath,['scripts/build-private.mjs']);
-  const privateHTML=readFileSync('.build/private/index.html','utf8'),publicHTML=readFileSync('dist/index.html','utf8');
-  assert(privateHTML.includes('id="tuka-signout"'));assert(privateHTML.includes('src="session.js"'));
-  assert(!publicHTML.includes('id="tuka-signout"'));assert(!publicHTML.includes('src="session.js"'));
-  const worker=readFileSync('.build/private/sw.js','utf8');
-  assert(worker.includes('const PRIVATE_ACCESS=true;')||worker.includes("const session=await fetch('/auth/session'"));
-  assert(existsSync('.build/private/login.html'));assert(!existsSync('.build/private/.dev.vars'));
-  assert(readFileSync('.build/private/session.js','utf8').includes("location.replace('/login')"));
-  assert(readFileSync('.build/private/login.html','utf8').includes('language.js'));
+  const temp=mkdtempSync(join(tmpdir(),'tuka-private-test-'));
+  try{
+    const {output}=buildPrivate({output:join(temp,'private')});
+    const privateHTML=readFileSync(join(output,'index.html'),'utf8'),publicHTML=readFileSync('dist/index.html','utf8');
+    assert(privateHTML.includes('id="tuka-signout"'));assert(privateHTML.includes('src="session.js"'));
+    assert(!publicHTML.includes('id="tuka-signout"'));assert(!publicHTML.includes('src="session.js"'));
+    const worker=readFileSync(join(output,'sw.js'),'utf8');
+    assert(worker.includes('const PRIVATE_ACCESS=true;')||worker.includes("const session=await fetch('/auth/session'"));
+    assert(existsSync(join(output,'login.html')));assert(!existsSync(join(output,'.dev.vars')));
+    assert(readFileSync(join(output,'session.js'),'utf8').includes("location.replace('/login')"));
+    assert(readFileSync(join(output,'login.html'),'utf8').includes('language.js'));
+  }finally{rmSync(temp,{recursive:true,force:true});}
 });
 
 test('private sign-in preserves shared links without external redirects',()=>{

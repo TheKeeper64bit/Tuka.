@@ -1,0 +1,29 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tuka-hacktoberfest",
+  "account_id": "3df4a4e8e43f274f996cca3c181cd4c6",
+  "main": "server/public-site.js",
+  "compatibility_date": "2026-10-17",
+  "workers_dev": false,
+  "preview_urls": false,
+  "vars": {"PUBLIC_DEMO_ENABLED": "false"},
+  "assets": {
+    "directory": "./.build/hacktoberfest",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "html_handling": "none",
+    "not_found_handling": "none"
+  },
+  "services": [{"binding": "PUBLIC_API", "service": "tuka-public-api"}],
+  "observability": {
+    "enabled": true,
+    "logs": {"enabled": true},
+    "traces": {"enabled": true}
+  },
+  "routes": [{
+    "pattern": "tuka.hacktoberfest.rand0m.net",
+    "custom_domain": true,
+    "zone_id": "d3846dacf16f8497bc15bff70c1d185e"
+  }],
+  "build": {"command": "node scripts/build-hacktoberfest.mjs"}
+}

@@ -7,3 +7,6 @@ node_modules/
 !.dev.vars.example
 worker-configuration.d.ts
 .build/
+
+# Local presentation media; never publish with either site or the repository.
+/presentation/

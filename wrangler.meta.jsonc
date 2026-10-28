@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tuka-meta-hackathon",
+  "account_id": "3df4a4e8e43f274f996cca3c181cd4c6",
+  "main": "server/meta-site.js",
+  "compatibility_date": "2026-10-28",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": {"directory": ".build/meta", "binding": "ASSETS", "run_worker_first": true},
+  "vars": {
+    "META_AUTH_USER": "CerebralValley",
+    "META_API_URL": "https://api.meta.ai/v1/chat/completions",
+    "META_MODEL": "muse-spark-1.3"
+  },
+  "routes": [{"pattern": "tuka.meta-cerebralvalley.rand0m.net", "custom_domain": true}],
+  "observability": {"enabled": true, "traces": {"enabled": true}}
+}

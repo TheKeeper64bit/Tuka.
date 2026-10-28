@@ -1,4 +1,4 @@
-import {language} from './i18n.js?v=26';
+import {language} from './i18n.js?v=32';
 import {readPlaces,writePlace,readShared,sharedJourney,wheelchairAccess,walkingDistance} from './journey-tools.js?v=26';
 import {walkingPath,knownWalk,walkInstruction} from './walking.js?v=26';
 import {matchingAlerts,matchingStopAlerts,alertText,safeLink} from './service-alerts.js?v=26';

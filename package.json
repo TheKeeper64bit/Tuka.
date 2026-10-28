@@ -7,10 +7,14 @@
   },
   "scripts": {
     "dev": "wrangler dev",
-    "test": "node --test tests/auth-check.mjs tests/deployment-check.mjs tests/public-api-check.mjs tests/pages-build-check.mjs && node --test tests/planner-check.mjs tests/offline-check.mjs tests/journey-tools-check.mjs tests/walking-check.mjs tests/journey-follow-regression-check.mjs tests/service-alert-regression-check.mjs tests/language-regression-check.mjs && node --test tests/favourites-check.mjs tests/news-check.mjs tests/tickets-check.mjs tests/ticket-ui-check.mjs && node tests/community-check.mjs && node tests/ride-check.mjs && node tests/network-check.mjs && node tests/merge-check.mjs && node tests/map-check.mjs && node tests/geometry-check.mjs && node --experimental-vm-modules tests/screens-check.mjs",
+    "test": "node --test tests/auth-check.mjs tests/deployment-check.mjs tests/public-api-check.mjs tests/public-site-check.mjs tests/meta-site-check.mjs tests/pages-build-check.mjs && node --test tests/planner-check.mjs tests/offline-check.mjs tests/journey-tools-check.mjs tests/walking-check.mjs tests/journey-follow-regression-check.mjs tests/service-alert-regression-check.mjs tests/language-regression-check.mjs tests/boot-language-check.mjs && node --test tests/favourites-check.mjs tests/news-check.mjs tests/tickets-check.mjs tests/ticket-ui-check.mjs tests/ticket-store-check.mjs tests/ticket-wallet-check.mjs && node tests/community-check.mjs && node tests/ride-check.mjs && node tests/network-check.mjs && node tests/merge-check.mjs && node tests/map-check.mjs && node tests/geometry-check.mjs && node --experimental-vm-modules tests/screens-check.mjs",
     "deploy": "wrangler deploy",
     "build:private": "node scripts/build-private.mjs",
     "build:pages": "node scripts/build-pages.mjs",
+    "build:hacktoberfest": "node scripts/build-hacktoberfest.mjs",
+    "deploy:hacktoberfest": "wrangler deploy --config wrangler.hacktoberfest.jsonc",
+    "build:meta": "node scripts/build-meta.mjs",
+    "deploy:meta": "wrangler deploy --config wrangler.meta.jsonc",
     "deploy:public-api": "wrangler deploy --config wrangler.public-api.jsonc",
     "access": "node scripts/access.mjs"
   },

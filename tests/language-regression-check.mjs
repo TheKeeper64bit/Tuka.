@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import {translateText,language,languages} from '../dist/i18n.js';
+import {translateText,language,languages,messages} from '../dist/i18n.js';
+import {WALLET_ERRORS,walletCardMarkup} from '../dist/ticket-wallet.js';
 
 const noTrips='JSP has not included bus trips for the selected time window in the downloaded feed. Reconnect closer to travel to check for an updated timetable.';
 const scope='Search covers the next 4 hours, up to two transfers and stops within 800 m of each endpoint. Try a different time or nearby point.';
@@ -118,4 +119,62 @@ test('first launch requires a language choice and stores the selected language',
   const ui=domHarness(null);assert.equal(ui.dialog.open,true);let prevented=false;
   ui.dialog.handlers.get('cancel')({preventDefault(){prevented=true;}});assert(prevented);
   ui.choose('sq');assert.equal(ui.dialog.open,false);assert.equal(ui.store.get('tuka-language'),'sq');
+});
+
+
+test('QR wallet instructions, controls, accessibility labels and errors translate as complete messages',()=>{
+  const source=fs.readFileSync('dist/ticket-wallet.js','utf8')+' '+fs.readFileSync('dist/index.html','utf8');
+  const copy=[
+    'Tickets and saved QR cards','Your saved QR cards and current JSP fares, in one place.',
+    'Ready to ride.','Close tickets','JSP SKOPJE · TICKETS','ON THIS DEVICE','Your QR cards',
+    '+ Import QR image','Import QR image','Import a SkopjeBus QR image and keep track of your uses.',
+    'SkopjeBus QR codes can refresh or expire. A saved image may not be accepted; use the official app if needed.',
+    'Card name','My JSP card','Total uses','Uses left','Used','QR image',
+    'PNG, JPEG or WebP · up to 8 MB. Keep the entire QR code and its white border visible.',
+    'QR image preview','Save card',
+    'Images and counts stay in this browser. Clearing browser data removes them. Each Tuka site keeps its own cards.',
+    'Saved QR image','Saved image · validity is not verified',
+    'No QR cards saved yet. Import an image to keep it close at hand.',
+    'Show QR image','Show QR image ↗','SAVED IMAGE','Manual counter · not synced with SkopjeBus',
+    'No uses left','Mark as used','Undo last use','Edit card',
+    'Remove this saved image and counter from this browser?','Remove card','Keep card',
+    'One use recorded. You can undo it below.','Last use undone.',
+    'Card removed from this browser.','Card saved on this device.',
+    ...Object.values(WALLET_ERRORS),
+  ];
+  for(const input of copy){
+    assert(source.includes(input),`Wallet copy changed: ${input}`);
+    assert(messages[input],`Missing exact wallet message: ${input}`);
+    for(const [index,locale] of ['mk','sq'].entries()){
+      const translated=translateText(input,locale);
+      assert.equal(translated,messages[input][index]);
+      assert.notEqual(translated,input,`${locale}: ${input}`);
+      assert.equal(translateText(input,'en'),input);
+      for(const token of input.match(/\b(?:60|9999|10|8|PNG|JPEG|WebP|SkopjeBus)\b/g)||[])assert(translated.includes(token),`${locale}: missing ${token}`);
+    }
+  }
+});
+
+test('QR wallet names remain untouched while dynamic warnings and labels change language',()=>{
+  const markup=walletCardMarkup({id:'one',name:'Work',total:10,remaining:3,canUndo:true},'blob:test');
+  assert(markup.includes('<h4 data-no-translate>Work</h4>'));
+  assert(fs.readFileSync('dist/ticket-wallet.js','utf8').includes('data-qr-viewer-name data-no-translate'));
+  const ui=domHarness('mk');
+  const cardName=ui.node('Work',['[data-no-translate]']);
+  const viewerName=ui.node('Home',['[data-no-translate]']);
+  const warning=ui.node('Manual counter · not synced with SkopjeBus');
+  ui.input.setAttribute('placeholder','My JSP card');
+  ui.input.setAttribute('aria-label','Show QR image');
+  ui.refresh();
+  assert.equal(warning.textContent,messages['Manual counter · not synced with SkopjeBus'][0]);
+  for(const locale of ['sq','mk']){
+    ui.choose(locale);
+    assert.equal(cardName.textContent,'Work');assert.equal(viewerName.textContent,'Home');
+    assert.equal(ui.input.getAttribute('placeholder'),translateText('My JSP card',locale));
+    assert.equal(ui.input.getAttribute('aria-label'),translateText('Show QR image',locale));
+    warning.textContent=WALLET_ERRORS.conflict;ui.refresh();
+    assert.equal(warning.textContent,translateText(WALLET_ERRORS.conflict,locale));
+  }
+  ui.choose('en');assert.equal(warning.textContent,WALLET_ERRORS.conflict);
+  assert.equal(ui.input.getAttribute('placeholder'),'My JSP card');assert.equal(cardName.textContent,'Work');
 });
