@@ -13,6 +13,7 @@ function retain(map,id,label) {
 }
 export function planJourney(db,rt,origin,destination,time=Date.now(),input={}) {
   const options=preferences(input),reverse=options.mode==='arrive',sign=reverse?-1:1,start=sign*time;
+  const zone=db?.timezone;
   // Only Leave now uses live updates. Dated plans remain reproducible timetable predictions.
   const live=options.mode==='now'?rt:null,buffer=options.minTransfer*60000;
   const walked=(m,from,to)=>input.walkingDistance?.(reverse?to:from,reverse?from:to)??m*1.3;
@@ -30,12 +31,12 @@ export function planJourney(db,rt,origin,destination,time=Date.now(),input={}) {
   const maxSeconds=[...db.times.values()].reduce((n,path)=>Math.max(n,path.at(-1)?.seconds||0),86400);
   const lookback=Math.ceil(maxSeconds/86400);
   for(let offset=-lookback;offset<=1;offset++) {
-    const day=serviceDay(offset,time),services=active(db,day);
+    const day=serviceDay(offset,time,zone),services=active(db,day);
     for(const [id,trip] of db.trips) {
       if(!services.has(trip.service_id)||(input.excludedTrips||[]).some(x=>x.tripId===id&&x.serviceDate===day.date))continue;
       let cancelled=false,prev=-Infinity,prevLive=false;
       const timed=(db.times.get(id)||[]).map(p=>{
-        const u=prediction(live,id,p.stop_id,day,time);if(u?.tripRelationship===3)cancelled=true;
+        const u=prediction(live,id,p.stop_id,day,time,Date.now(),zone);if(u?.tripRelationship===3)cancelled=true;
         const arrival=eventTime(u,'arrival',day.midnight+(p.arrivalSeconds??p.seconds)*1000),departure=eventTime(u,'departure',day.midnight+p.seconds*1000);
         if(arrival.time<prev){arrival.time=prev;arrival.live ||= prevLive;}if(departure.time<arrival.time){departure.time=arrival.time;departure.live ||= arrival.live;}prev=departure.time;prevLive=departure.live;
         return {p,arrival,departure,skip:u?.relationship===1};

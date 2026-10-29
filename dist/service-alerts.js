@@ -29,7 +29,7 @@ export function matchingAlerts(db,rt,legs,now=Date.now()){
 // Match stop/route alerts directly, and use current trip instances for selectors
 // that identify a particular trip. Cancelled/skipped calls retain their schedule.
 export function matchingStopAlerts(db,rt,stopId,routeIds,now=Date.now()){
-  const selected=routeIds==null?null:new Set(routeIds),calls=db.byStop?.get(stopId)||[],contexts=[],instances=[],days=new Map();
+  const zone=db?.timezone,selected=routeIds==null?null:new Set(routeIds),calls=db.byStop?.get(stopId)||[],contexts=[],instances=[],days=new Map();
   for(const call of calls){
     const trip=db.trips.get(call.trip_id);if(!trip||selected&&!selected.has(trip.route_id))continue;
     const route=db.routes.get(trip.route_id);if(!route)continue;
@@ -37,9 +37,9 @@ export function matchingStopAlerts(db,rt,stopId,routeIds,now=Date.now()){
     contexts.push(context);
     if(!Number.isFinite(call.seconds))continue;
     for(let offset=-Math.ceil(call.seconds/86400);offset<=1;offset++){
-      if(!days.has(offset)){const day=serviceDay(offset,now);days.set(offset,{day,services:active(db,day)});}
+      if(!days.has(offset)){const day=serviceDay(offset,now,zone);days.set(offset,{day,services:active(db,day)});}
       const {day,services}=days.get(offset);if(!services.has(trip.service_id))continue;
-      const scheduled=day.midnight+call.seconds*1000,update=prediction(rt,call.trip_id,stopId,day,now,now);
+      const scheduled=day.midnight+call.seconds*1000,update=prediction(rt,call.trip_id,stopId,day,now,now,zone);
       const estimated=eventTime(update,'departure',scheduled).time;
       const times=update?.tripRelationship===3||update?.relationship===1?new Set([scheduled,estimated]):[estimated];
       for(const time of times){

@@ -3,7 +3,7 @@ import {distance,eventTime,prediction,serviceDay,localDate} from './schedule.js?
 
 const coordinates=p=>[p.lon,p.lat];
 const collection=features=>({type:'FeatureCollection',features});
-const serviceDate=leg=>leg.serviceDate||localDate(leg.start).replaceAll('-','');
+const serviceDate=(leg,zone)=>leg.serviceDate||localDate(leg.start,zone).replaceAll('-','');
 
 // Use the same validated trip geometry as the stop map, trimmed to this leg.
 export function journeyGeometry(db,result){
@@ -52,25 +52,26 @@ export function journeyOverlay(map,geometry,step=0){
   for(const layer of ['chosen-journey-bus','chosen-journey-walk'])map.setPaintProperty(layer,'line-opacity',['case',['==',['get','step'],step],1,.55]);
 }
 
-export function journeyVehicles(rt,result,now=Date.now()){
-  const today=serviceDay(0,now).date;
-  return (rt?.vehicles||[]).filter(v=>Number.isFinite(v.lat)&&Number.isFinite(v.lon)&&now/1000-v.timestamp<=120&&v.timestamp<=now/1000+15&&result.legs.some(l=>l.type==='bus'&&l.tripId===v.tripId&&(v.date?v.date===serviceDate(l):serviceDate(l)===today)&&(!v.seq||v.seq<=l.endSeq)));
+export function journeyVehicles(rt,result,now=Date.now(),zone){
+  const today=serviceDay(0,now,zone).date;
+  return (rt?.vehicles||[]).filter(v=>Number.isFinite(v.lat)&&Number.isFinite(v.lon)&&now/1000-v.timestamp<=120&&v.timestamp<=now/1000+15&&result.legs.some(l=>l.type==='bus'&&l.tripId===v.tripId&&(v.date?v.date===serviceDate(l,zone):serviceDate(l,zone)===today)&&(!v.seq||v.seq<=l.endSeq)));
 }
 
 // Refresh this exact itinerary. Do not silently swap buses or carry old live
 // labels forward after a prediction expires.
 export function journeyStatus(db,rt,result,now=Date.now(),deadline=null){
+  const zone=db?.timezone;
   const legs=result.legs.map(leg=>{
     if(leg.type!=='bus')return {...leg};
-    const date=serviceDate(leg),day=serviceDay(0,date.replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3'));
+    const date=serviceDate(leg,zone),day=serviceDay(0,date.replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3'),zone);
     const times=db.times.get(leg.tripId)||[];
-    const departure=prediction(rt,leg.tripId,leg.from.id,day,now,now),arrival=prediction(rt,leg.tripId,leg.to.id,day,now,now);
+    const departure=prediction(rt,leg.tripId,leg.from.id,day,now,now,zone),arrival=prediction(rt,leg.tripId,leg.to.id,day,now,now,zone);
     let start,end,previous=-Infinity,previousLive=false,cancelled=departure?.tripRelationship===3||arrival?.tripRelationship===3;
     // Match the planner's whole-run chronology. A prediction before boarding or
     // at an intermediate call can constrain both boarding and alighting, even
     // when those two stops have no prediction of their own.
     for(const call of times){
-      const update=prediction(rt,leg.tripId,call.stop_id,day,now,now);
+      const update=prediction(rt,leg.tripId,call.stop_id,day,now,now,zone);
       cancelled ||= update?.tripRelationship===3;
       const scheduled=Number.isFinite(call.seconds)?day.midnight+call.seconds*1000:call.seq===leg.boardSeq?leg.start:call.seq===leg.endSeq?leg.end:NaN;
       const atStop=eventTime(update,'arrival',Number.isFinite(call.arrivalSeconds)?day.midnight+call.arrivalSeconds*1000:scheduled);

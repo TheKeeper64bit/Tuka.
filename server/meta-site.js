@@ -136,6 +136,19 @@ function decodePolyline(value) {
   return points;
 }
 
+function validShape(points) {
+  if (points.length < 2 || points.some(point => !Array.isArray(point) || !Number.isFinite(point[0]) || !Number.isFinite(point[1]) || point[0] < -73 || point[0] > -69 || point[1] < 40 || point[1] > 43.5)) return false;
+  let length = 0;
+  for (let i = 1; i < points.length; i++) {
+    const dx = (points[i][0] - points[i - 1][0]) * 82000;
+    const dy = (points[i][1] - points[i - 1][1]) * 111000;
+    const segment = Math.hypot(dx, dy);
+    if (segment > 20000) return false;
+    length += segment;
+  }
+  return length <= 500000;
+}
+
 async function bostonRouteShapes(request, env) {
   const url = new URL(request.url);
   const routeIds = [...new Set((url.searchParams.get('routes') || '').split(',').map(value => value.trim()).filter(value => /^[A-Za-z0-9:_-]{1,80}$/.test(value)))].slice(0, 12);
@@ -148,7 +161,7 @@ async function bostonRouteShapes(request, env) {
       const data = await response.json();
       return (data.data || []).flatMap(shape => {
         const coordinates = decodePolyline(String(shape.attributes?.polyline || ''));
-        return coordinates.length > 1 ? [{type: 'Feature', geometry: {type: 'LineString', coordinates}, properties: {route, shape: String(shape.id || '')}}] : [];
+        return validShape(coordinates) ? [{type: 'Feature', geometry: {type: 'LineString', coordinates}, properties: {route, shape: String(shape.id || ''), approximate: false}}] : [];
       });
     } catch { return []; }
   };

@@ -62,3 +62,22 @@ test('Boston realtime endpoint normalizes official MBTA predictions and vehicles
     assert.equal(data.vehicles[0].lat, 42.35);
   } finally { globalThis.fetch = originalFetch; }
 });
+
+test('Boston route-shapes endpoint validates and returns route geometry', async () => {
+  const form = new URLSearchParams({username: 'CerebralValley', password: 'meta'});
+  const login = await worker.fetch(new Request('https://tuka.meta-cerebralvalley.rand0m.net/auth/login', {method: 'POST', body: form}), env);
+  const cookie = login.headers.get('Set-Cookie').split(';')[0];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async request => {
+    const url = String(request.url || request);
+    assert.match(url, /\/shapes\?/);
+    return new Response(JSON.stringify({data: [{id: 'shape-1', attributes: {polyline: 'onnaG~u}pLo}@o}@o}@o}@'}}]}), {headers: {'Content-Type': 'application/json'}});
+  };
+  try {
+    const response = await worker.fetch(new Request('https://tuka.meta-cerebralvalley.rand0m.net/api/boston/route-shapes?routes=1', {headers: {Cookie: cookie}}), {...env, MBTA_API_BASE: 'https://api-v3.mbta.com'});
+    assert.equal(response.status, 200);
+    const data = await response.json();
+    assert.equal(data.features.length, 1);
+    assert.equal(data.features[0].properties.route, '1');
+  } finally { globalThis.fetch = originalFetch; }
+});
