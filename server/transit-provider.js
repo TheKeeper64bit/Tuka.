@@ -2,9 +2,6 @@ import {providerFor} from '../dist/city-providers.js';
 import {credibleShape} from '../dist/map-ui.js';
 export const REALTIME_SOURCES={
  boston:{trips:'https://cdn.mbta.com/realtime/TripUpdates.pb',vehicles:'https://cdn.mbta.com/realtime/VehiclePositions.pb',alerts:'https://cdn.mbta.com/realtime/Alerts.pb'},
- minneapolis:{trips:'https://svc.metrotransit.org/mtgtfs/tripupdates.pb',vehicles:'https://svc.metrotransit.org/mtgtfs/vehiclepositions.pb',alerts:'https://svc.metrotransit.org/mtgtfs/alerts.pb'},
- springfield:{trips:'https://ride.smtd.org/gtfsrt/trips',vehicles:'https://ride.smtd.org/gtfsrt/vehicles',alerts:'https://ride.smtd.org/gtfsrt/alerts'},
- norfolk:{trips:'https://gtfs.gohrt.com/gtfs-rt/TripUpdates.pb',alerts:'https://gtfs.gohrt.com/gtfs-rt/Alerts.pb'},
 };
 export async function transitFeed(request){
  const url=new URL(request.url),parts=url.pathname.split('/'),upstreamUrl=REALTIME_SOURCES[parts[3]]?.[parts[4]];
