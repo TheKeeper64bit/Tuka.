@@ -28,20 +28,23 @@ export function planJourney(db,rt,origin,destination,time=Date.now(),input={}) {
   const direct=distance(source,target);if(direct<=1800)finish([foot('walk',source,target,direct,start)]);
   const runs=[];
   // Include extended service from previous days, and the following civil day.
-  const maxSeconds=[...db.times.values()].reduce((n,path)=>Math.max(n,path.at(-1)?.seconds||0),86400);
+  const maxSeconds=db.maxSeconds??[...db.times.values()].reduce((n,path)=>Math.max(n,path.at(-1)?.seconds||0),86400);
   const lookback=Math.ceil(maxSeconds/86400);
   for(let offset=-lookback;offset<=1;offset++) {
     const day=serviceDay(offset,time,zone),services=active(db,day);
     for(const [id,trip] of db.trips) {
       if(!services.has(trip.service_id)||(input.excludedTrips||[]).some(x=>x.tripId===id&&x.serviceDate===day.date))continue;
+      const bounds=db.tripBounds?.get(id);
+      // Fast range check for static plans; live delays may move trips into range.
+      if(!live&&bounds){const first=day.midnight+bounds[0]*1000,last=day.midnight+bounds[1]*1000;if(reverse?(last<time-HORIZON||first>time):(last<time||first>time+HORIZON))continue;}
       let cancelled=false,prev=-Infinity,prevLive=false;
       const timed=(db.times.get(id)||[]).map(p=>{
-        const u=prediction(live,id,p.stop_id,day,time,Date.now(),zone);if(u?.tripRelationship===3)cancelled=true;
+        const u=prediction(live,id,p.stop_id,day,time,Date.now(),zone,p.seq);if(u?.tripRelationship===3)cancelled=true;
         const arrival=eventTime(u,'arrival',day.midnight+(p.arrivalSeconds??p.seconds)*1000),departure=eventTime(u,'departure',day.midnight+p.seconds*1000);
         if(arrival.time<prev){arrival.time=prev;arrival.live ||= prevLive;}if(departure.time<arrival.time){departure.time=arrival.time;departure.live ||= arrival.live;}prev=departure.time;prevLive=departure.live;
         return {p,arrival,departure,skip:u?.relationship===1};
       });
-      if(cancelled||timed.length<2)continue;
+      if(cancelled||timed.some(x=>!Number.isFinite(x.arrival.time)||!Number.isFinite(x.departure.time))||timed.length<2)continue;
       const path=reverse?timed.reverse():timed;
       if(sign*(reverse?path.at(-1).departure.time:path.at(-1).arrival.time)<start||sign*(reverse?path[0].arrival.time:path[0].departure.time)>start+HORIZON)continue;
       runs.push({id,trip,day,path});

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {polishMap,routeGeometry,routeOverlay,syncMarkers} from '../dist/map-ui.js';
+import {polishMap,routeGeometry,routeOverlay,syncMarkers,networkOverlay} from '../dist/map-ui.js';
 const paints=[],layouts=[],sources=new Map(),layers=[];
 const map={getStyle:()=>({layers:[{id:'background',type:'background'},{id:'road_trunk_primary',type:'line'},{id:'road_trunk_primary_casing',type:'line'},{id:'water',type:'fill'},{id:'road_label',type:'symbol',layout:{'text-field':['get','name']}}]}),setPaintProperty:(...x)=>paints.push(x),setLayoutProperty:(...x)=>layouts.push(x),getSource:id=>sources.get(id),getLayer:id=>id==='stops',addSource:(id,data)=>sources.set(id,{...data,setData(d){this.data=d;}}),addLayer:(l,before)=>layers.push({l,before})};
 polishMap(map);assert(paints.some(x=>x[0]==='road_trunk_primary'&&x[2]==='#ffffff'));assert(layouts.some(x=>JSON.stringify(x).includes('name:en')));
@@ -16,3 +16,15 @@ routeOverlay(map,'selected-route',[]);assert.equal(layers.length,2);assert.equal
 let created=0,removed=0;const create=v=>({marker:{remove(){removed++;}},key:v.label});const update=(entry,v)=>entry.position=v.lon;
 let state=syncMarkers(new Map(),[{label:'bus',lon:1}],v=>{created++;return create(v);},update);const marker=state.get('bus');state=syncMarkers(state,[{label:'bus',lon:2}],v=>{created++;return create(v);},update);assert.equal(created,1);assert.equal(removed,0);assert.equal(state.get('bus'),marker);assert.equal(marker.position,2);state=syncMarkers(state,[],create,update);assert.equal(removed,1);
 console.log('Passed: quiet map palette, street labels, exact route geometry, route updates/clearing, stable vehicle badges');
+
+// Real paths must remain solid; this MapLibre build accepts only constant dash arrays.
+map.setFilter=()=>{};
+networkOverlay(map,[{route:{route_id:'1'},color:'#8b51ce',points:[[21.4,42],[21.41,42]],approximate:false},{route:{route_id:'8'},color:'#1768df',points:[[21.4,42],[21.42,42]],approximate:true}],[],null);
+const solid=layers.find(x=>x.l.id==='station-network-lines').l,dashed=layers.find(x=>x.l.id==='station-network-approximate').l;
+assert.equal(solid.paint['line-dasharray'],undefined);
+assert(dashed.paint['line-dasharray'].every(Number.isFinite));
+assert.deepEqual(solid.filter,['!=',['get','approximate'],true]);assert.deepEqual(dashed.filter,['==',['get','approximate'],true]);
+assert.deepEqual(solid.paint['line-color'],['get','color']);
+assert.equal(new Set(sources.get('station-network').data.features.map(f=>f.properties.color)).size,2);
+networkOverlay(map,[],[],null);assert.equal(sources.get('station-network').data.features.length,0);
+console.log('Passed: published route colours render in a solid layer, approximate routes use supported constant dashes');

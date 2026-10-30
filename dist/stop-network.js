@@ -26,7 +26,7 @@ export function vehicleServes(db,v,from,to,now=Date.now()/1000){
 }
 export function boardingNetwork(db,from){
   db.stopNetworks??=new Map();if(db.stopNetworks.has(from))return db.stopNetworks.get(from);
-  const byId=new Map(db.stops.map(s=>[s.id,s])),patterns=new Map(),reachable=new Map(),routes=new Map();
+  const byId=db.stopIndex||new Map(db.stops.map(s=>[s.id,s])),patterns=new Map(),reachable=new Map(),routes=new Map();
   for(const call of db.byStop.get(from)||[]){
     const trip=db.trips.get(call.trip_id),route=db.routes.get(trip?.route_id),times=db.times.get(call.trip_id)||[];
     if(!trip||!route)continue;
@@ -34,21 +34,31 @@ export function boardingNetwork(db,from){
       if(times[i].stop_id!==from||!boards(times[i]))continue;
       const downstream=times.slice(i),destinations=downstream.slice(1).filter(alights);
       if(!destinations.length)continue;
-      const key=route.route_id+'|'+downstream.map(s=>s.stop_id).join('|');
+      const key=JSON.stringify([route.route_id,trip.direction_id,db.shapes.has(trip.shape_id)?trip.shape_id:null,downstream.map(s=>[s.stop_id,s.pickup_type,s.drop_off_type])]);
       if(patterns.has(key)){patterns.get(key).tripIds.add(trip.trip_id);continue;}
       const geometry=routeGeometry(db,trip);let points=geometry.points;
-      if(!geometry.approximate){
+      if(!geometry.approximate||geometry.kind==='road'){
         // Match the boarding point in order along the published geometry (including loops).
         let start=0;
         for(const s of times.slice(0,i+1)){const stop=byId.get(s.stop_id);if(!stop)continue;let best=Infinity,index=start;for(let j=start;j<points.length;j++){let d=Math.hypot((points[j][0]-stop.lon)*82500,(points[j][1]-stop.lat)*111000);if(d<best){best=d;index=j;}}start=index;}
         points=points.slice(start);
-      }else points=downstream.map(s=>byId.get(s.stop_id)).filter(Boolean).map(s=>[s.lon,s.lat]);
-      const pattern={key,trip,route,tripIds:new Set([trip.trip_id]),downstream,points,approximate:geometry.approximate,color:routeColor(route.route_id)};
+      }else points=downstream.every(s=>byId.has(s.stop_id))?downstream.map(s=>byId.get(s.stop_id)).map(s=>[s.lon,s.lat]):[];
+      const pattern={key,trip,route,tripIds:new Set([trip.trip_id]),downstream,points,approximate:geometry.approximate,geometryKind:geometry.kind,color:routeColor(route.route_id)};
       patterns.set(key,pattern);routes.set(route.route_id,route);
       for(const s of destinations){const stop=byId.get(s.stop_id);if(!stop||stop.id===from)continue;if(!reachable.has(stop.id))reachable.set(stop.id,{stop,routeIds:new Set()});reachable.get(stop.id).routeIds.add(route.route_id);}
     }
   }
-  const result={patterns:[...patterns.values()],reachable,routes};db.stopNetworks.set(from,result);return result;
+  // Resolve palette collisions across every route at this stop before filtering.
+  // A route retains its colour when another route is hidden or restored.
+  const routeColors=new Map(),used=new Set();
+  for(const id of [...routes.keys()].sort((a,b)=>String(a).localeCompare(String(b),'en',{numeric:true}))){
+    const start=colors.indexOf(routeColor(id));let color;
+    for(let n=0;n<colors.length;n++){const candidate=colors[(start+n)%colors.length];if(!used.has(candidate)){color=candidate;break;}}
+    color??=`hsl(${Math.round((routeColors.size-colors.length)*137.508+20)%360}, 70%, 43%)`;
+    used.add(color);routeColors.set(id,color);
+  }
+  for(const pattern of patterns.values())pattern.color=routeColors.get(pattern.route.route_id);
+  const result={patterns:[...patterns.values()],reachable,routes,routeColors};db.stopNetworks.set(from,result);return result;
 }
 export function visibleNetwork(network,chosen,to){
   const patterns=network.patterns.filter(p=>chosen.has(p.route.route_id)&&(!to||p.downstream.slice(1).some(s=>s.stop_id===to&&alights(s))));

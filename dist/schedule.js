@@ -12,12 +12,10 @@ function offsetMs(time,zone=ZONE){const part=formatter(zone).offset.formatToPart
 export function localTimestamp(date, time='12:00',zone=ZONE) {
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!/^\d{2}:\d{2}$/.test(time)) return NaN;
   const base=Date.parse(`${date}T${time}:00Z`),matches=[];
-  // Try every plausible civil offset. Sorting chooses the first occurrence
-  // when an autumn clock rollback makes a local time ambiguous.
-  for(let minutes=-14*60;minutes<=14*60;minutes++){
-    const t=base-minutes*60000;
-    if(localDate(t,zone)===date&&localTime(t,zone)===time)matches.push(t);
-  }
+  if(!Number.isFinite(base))return NaN;
+  // Sample offsets on both sides of DST, then verify wall-clock round trips.
+  const offsets=new Set([-2,-1,0,1,2].map(d=>offsetMs(base+d*86400000,zone)));
+  for(const offset of offsets){const t=base-offset;if(localDate(t,zone)===date&&localTime(t,zone)===time)matches.push(t);}
   return matches.length?Math.min(...matches):NaN;
 }
 export function serviceDay(offset=0, reference=Date.now(),zone=ZONE) {
@@ -32,13 +30,20 @@ export function active(db,day) {
   for(const e of db.exceptions||[]) if(e.date===day.date) { if(e.exception_type==='1') ids.add(e.service_id); else ids.delete(e.service_id); }
   return ids;
 }
-let predictionMinute, predictionDate;
-export function prediction(rt,tripId,stopId,day,queryTime,now=Date.now(),zone=ZONE) {
-  if(!rt?.updates?.size||Math.abs(now/1000-rt.timestamp)>=120||Math.abs(queryTime-now)>=120000) return null;
-  const minute=Math.floor(now/60000);if(predictionMinute!==minute){predictionMinute=minute;predictionDate=serviceDay(0,now,zone).date;}
-  const cancelled=rt.updates.get(`${tripId}|*|${day.date}`)||(day.date===predictionDate?rt.updates.get(`${tripId}|*|`):null);if(cancelled)return cancelled;
-  // Undated updates cannot safely identify yesterday's extended service or tomorrow's trip.
-  return rt.updates?.get(`${tripId}|${stopId}|${day.date}`) || (day.date===predictionDate?rt.updates?.get(`${tripId}|${stopId}|`):null);
+const predictionDates=new Map();
+export function prediction(rt,tripId,stopId,day,queryTime,now=Date.now(),zone=day?.timezone||ZONE,seq) {
+  if(!rt?.updates?.size||(!Number.isFinite(rt.timestamp)||now/1000-rt.timestamp>=120||rt.timestamp>now/1000+15)||Math.abs(queryTime-now)>=120000) return null;
+  const minute=Math.floor(now/60000),cached=predictionDates.get(zone);
+  const predictionDate=cached?.minute===minute?cached.date:localDate(now,zone).replaceAll('-','');
+  predictionDates.set(zone,{minute,date:predictionDate});
+  const dates=day.date===predictionDate?[day.date,'']:[day.date];
+  for(const date of dates){const cancelled=rt.updates.get(`${tripId}|*|${date}`);if(cancelled)return cancelled;}
+  for(const date of dates){
+    if(seq!=null){const exact=rt.updates.get(`${tripId}|${stopId}|${date}|${seq}`);if(exact)return exact;}
+    const value=rt.updates.get(`${tripId}|${stopId}|${date}`);
+    if(value&&(seq==null||value.seq==null||value.seq===seq))return value;
+  }
+  return null;
 }
 export function eventTime(update,kind,scheduled) {
   const event=update&&('arrival' in update||'departure' in update)?update[kind]:update;
@@ -47,9 +52,9 @@ export function eventTime(update,kind,scheduled) {
 }
 export const distance=(a,b)=>{const r=Math.PI/180,x=(b.lat-a.lat)*r,y=(b.lon-a.lon)*r;return 6371000*2*Math.asin(Math.sqrt(Math.sin(x/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(y/2)**2));};
 
-export function hasPublishedService(db,time,mode='leave',zone=ZONE){
+export function hasPublishedService(db,time,mode='leave',zone=db?.timezone||ZONE){
   const start=mode==='arrive'?time-4*3600000:time,end=mode==='arrive'?time:time+4*3600000;
-  const maxSeconds=[...db.times.values()].reduce((n,path)=>Math.max(n,path.at(-1)?.seconds||0),86400);
+  const maxSeconds=db.maxSeconds??[...db.times.values()].reduce((n,path)=>Math.max(n,path.at(-1)?.seconds||0),86400);
   for(let offset=-Math.ceil(maxSeconds/86400);offset<=1;offset++){
     const day=serviceDay(offset,time,zone),ids=active(db,day);
     for(const [id,trip] of db.trips){if(!ids.has(trip.service_id))continue;const path=db.times.get(id);if(path?.length&&day.midnight+path.at(-1).seconds*1000>=start&&day.midnight+path[0].seconds*1000<end)return true;}

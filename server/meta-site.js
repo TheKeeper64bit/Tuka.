@@ -1,3 +1,6 @@
+import transport from './worker.js';
+import {walkingResponse} from './walking.js';
+import {transitFeed,roadGeometry} from './transit-provider.js';
 import {CITY_CATALOG, publicCities} from './meta-catalog.js';
 
 const SESSION = 'tuka_meta_session';
@@ -184,7 +187,7 @@ const cityContextTool = {
     name: 'get_city_context',
     description: 'Return verified context for the selected Tuka city. For Boston, include a stop id only when the rider selected one so live MBTA data can be checked.',
     parameters: {type: 'object', properties: {
-      city_id: {type: 'string', enum: ['skopje', 'boston']},
+      city_id: {type: 'string', enum: CITY_CATALOG.map(city=>city.id)},
       stop_id: {type: 'string', description: 'Optional MBTA stop id selected in the Boston map.'},
     }, required: ['city_id'], additionalProperties: false},
   },
@@ -200,7 +203,7 @@ function toolResult() {
 
 async function cityContext(args, env) {
   const city = CITY_CATALOG.find(item => item.id === String(args?.city_id || '')) || CITY_CATALOG[0];
-  const result = {city: publicCities().find(item => item.id === city.id), dataFreshness: city.id === 'boston' ? 'Official MBTA GTFS snapshot at build time; live MBTA V3 checked on request.' : 'Tuka live provider data is available through the main planner.'};
+  const result = {city: publicCities().find(item => item.id === city.id), dataFreshness: city.id === 'boston' ? 'Official MBTA GTFS snapshot at build time; live MBTA V3 checked on request.' : 'The selected city timetable and any available live feeds are used by the shared planner. No live stop result has been supplied to this tool; do not invent one.'};
   if (city.id === 'boston' && args?.stop_id && /^[A-Za-z0-9:_-]{1,120}$/.test(String(args.stop_id))) {
     const response = await bostonRealtime(new Request(`https://tuka.local/api/boston/realtime?stop=${encodeURIComponent(args.stop_id)}`), env);
     result.live = await response.json();
@@ -286,6 +289,11 @@ export default {
       if (url.pathname.startsWith('/api/')) return unauthorized();
       return Response.redirect(new URL(`/login?next=${encodeURIComponent(url.pathname + url.search)}`, request.url), 303);
     }
+    if (['/api/network','/api/live','/api/arrivals'].includes(url.pathname)) return transport.fetch(new Request(url,{method:request.method,headers:{Accept:'application/json'}}));
+    if (url.pathname === '/api/walk') return walkingResponse(request,env);
+    if (url.pathname === '/auth/session') return json({authenticated:true});
+    if (/^\/api\/transit\/[^/]+\/[^/]+$/.test(url.pathname)) return transitFeed(request);
+    if (url.pathname === '/api/transit/road-geometry') return roadGeometry(request,env);
     if (url.pathname === '/api/cities' && request.method === 'GET') return json({cities: publicCities()});
     if (url.pathname === '/boston-snapshot.json' && request.method === 'GET') return env.ASSETS.fetch(new Request(url, request));
     if (url.pathname === '/api/boston/realtime' && request.method === 'GET') return bostonRealtime(request, env);
@@ -295,7 +303,7 @@ export default {
       try { body = await request.json(); } catch { return json({error: 'Send a JSON request.'}, 400); }
       const message = cleanMessage(body?.message);
       if (!message) return json({error: 'Ask Tuka Copilot a question first.'}, 400);
-      const cityId = ['skopje', 'boston'].includes(String(body?.cityId)) ? String(body.cityId) : 'boston';
+      const cityId = CITY_CATALOG.some(city=>city.id===String(body?.cityId)) ? String(body.cityId) : 'boston';
       const stopId = typeof body?.stopId === 'string' && /^[A-Za-z0-9:_-]{1,120}$/.test(body.stopId) ? body.stopId : '';
       const result = await askMeta(message, {cityId, stopId}, env);
       return result.error ? json({error: result.error}, result.status) : json(result);

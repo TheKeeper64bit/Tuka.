@@ -1,4 +1,57 @@
 {
+  "generatedAt": "2026-10-29T14:48:37.545Z",
+  "city": "boston",
+  "source": "https://cdn.mbta.com/MBTA_GTFS.zip",
+  "sha256": "fdbbe7903ee7519edf3728df9ba65da18e17cb193545169daaf0763d1e44131c",
+  "selectedDate": "2026-10-29",
+  "selectedStop": "1",
+  "timezone": "America/New_York",
+  "requiredFiles": {
+    "agency.txt": true,
+    "stops.txt": true,
+    "routes.txt": true,
+    "trips.txt": true,
+    "stop_times.txt": true
+  },
+  "optionalFiles": {
+    "shapes.txt": true,
+    "calendar.txt": true,
+    "calendar_dates.txt": true
+  },
+  "hasServiceCalendar": true,
+  "counts": {
+    "stops": 7081,
+    "routes": 369,
+    "trips": 87003,
+    "usableTrips": 86996,
+    "stopTimes": 2486683,
+    "shapes": 964
+  },
+  "relationships": {
+    "missingTripReferences": 0,
+    "missingStopReferences": 0,
+    "missingRouteReferences": 0,
+    "invalidStopCoordinates": 0,
+    "tripsWithFewerThanTwoCalls": 7,
+    "rejectedTrips": [
+      "BackBayBostonLandingOmitSouthStation-0-sample",
+      "ChelseaLynnOmitNorthStation-0-sample",
+      "ChelseaLynnOmitNorthStation-1-sample",
+      "LynnNorthStationExpress-0-sample",
+      "LynnNorthStationExpress-1-sample",
+      "LynnSwampscott-0-sample",
+      "LynnSwampscott-1-sample"
+    ],
+    "untimedCalls": 0,
+    "rowsOutOfSequenceBeforeNormalization": 0
+  },
+  "geometry": {
+    "uniqueTripPatterns": 962,
+    "publishedShapeTrips": 85985,
+    "approximateTrips": 1011,
+    "rejectedPatterns": 13,
+    "missingShapePatterns": 0
+  },
   "activeServiceIds": [
     "BUS20264-hba46011-Weekday-02",
     "BUS20264-hbb46wk1-Weekday-02",
@@ -40,257 +93,109 @@
     "RTL20264-hms46011-Weekday-01",
     "fare_regular"
   ],
-  "counts": {
-    "calendarExceptions": 79,
-    "calendarRows": 133,
-    "routes": 400,
-    "shapePoints": 386729,
-    "shapes": 1137,
-    "stopTimes": 2759436,
-    "stops": 10275,
-    "trips": 104236
-  },
-  "feed": "/tmp/mbta.zip",
-  "generatedAt": "2026-10-29T14:30:49.773130+00:00",
-  "missingRequiredFiles": [],
-  "realtime": {
-    "checked": true,
-    "predictions": {
-      "count": 5,
-      "status": 200
-    },
-    "provider": "MBTA V3 API",
-    "tripMatching": {
-      "matchedTrips": 5,
-      "providerTrips": 5,
-      "unmatchedTrips": 0
-    },
-    "vehicles": {
-      "count": 1,
-      "status": 200
-    }
-  },
-  "relationships": {
-    "invalidStopCoordinates": 605,
-    "invalidStopIds": [
-      "node-123-platform",
-      "node-124-platform",
-      "node-301-platform",
-      "node-872-lobby",
-      "node-879-lobby",
-      "node-879-platform",
-      "node-880-lobby",
-      "node-880-platform",
-      "node-andrw-dotstairs-lobby",
-      "node-andrw-farepaid",
-      "node-andrw-fareunpaid",
-      "node-andrw-ibramp-top",
-      "node-andrw-nbusstairs-lobby",
-      "node-andrw-nibstairs-lobby",
-      "node-andrw-nibstairs-platform",
-      "node-andrw-nlobbycenter",
-      "node-andrw-nobstairs-lobby",
-      "node-andrw-nobstairs-platform",
-      "node-andrw-obelstairs-lobby",
-      "node-andrw-sbusstairs-lobby",
-      "node-andrw-sibingress",
-      "node-andrw-sibstairs-platform",
-      "node-andrw-slobbycenter",
-      "node-andrw-sobstairs-lobby",
-      "node-andrw-sobstairs-platform",
-      "node-394-lobby",
-      "node-394-platform",
-      "node-395-lobby",
-      "node-395-platform",
-      "node-396-landing",
-      "node-396-lobby",
-      "node-397-landing",
-      "node-397-street",
-      "node-405-lobby",
-      "node-405-street",
-      "node-406-lobby",
-      "node-406-street",
-      "node-913-lobby",
-      "node-913-platform",
-      "node-914-lobby",
-      "node-914-platform",
-      "node-915-lobby",
-      "node-923-lobby",
-      "node-923-platform",
-      "node-924-lobby",
-      "node-924-platform",
-      "node-925-lobby",
-      "node-aqucl-atlanticstairs-lobby",
-      "node-aqucl-atlanticstairs-street",
-      "node-aqucl-atlfarepaid",
-      "node-aqucl-atlfareunpaid",
-      "node-aqucl-ebatlanticstairs-lobby",
-      "node-aqucl-ebatlanticstairs-platform",
-      "node-aqucl-ebstatestairs-lobby",
-      "node-aqucl-ebstatestairs-platform",
-      "node-aqucl-nstatestairs-landing",
-      "node-aqucl-nstatestairs-landingtop",
-      "node-aqucl-nstatestairs-lobby",
-      "node-aqucl-nstatestairs-street",
-      "node-aqucl-sstatestairs-lobby",
-      "node-aqucl-statefarepaid",
-      "node-aqucl-statefareunpaid",
-      "node-aqucl-wbatlanticstairs-lobby",
-      "node-aqucl-wbatlanticstairs-platform",
-      "node-aqucl-wbstatestairs-lobby",
-      "node-aqucl-wbstatestairs-platform",
-      "node-435-lobby",
-      "node-435-platform",
-      "node-436-lobby",
-      "node-436-platform",
-      "node-962-lobby",
-      "node-962-platform",
-      "node-963-lobby",
-      "node-963-platform",
-      "node-964-lobby",
-      "node-armnl-ebstairs-lobby",
-      "node-armnl-ebstairs-platform",
-      "node-armnl-eescstairs-escalator",
-      "node-armnl-eescstairs-lobby",
-      "node-armnl-farepaid",
-      "node-armnl-fareunpaid",
-      "node-armnl-nstairs-lobby",
-      "node-armnl-nwstairs-lobby",
-      "node-armnl-sestairs-lobby",
-      "node-armnl-swstairs-lobby",
-      "node-armnl-wbstairs-lobby",
-      "node-armnl-wbstairs-platform",
-      "node-armnl-wescstairs-escalator",
-      "node-armnl-wescstairs-lobby",
-      "node-140-lobby",
-      "node-140-platform",
-      "node-141-lobby",
-      "node-141-platform",
-      "node-142-lobby",
-      "node-142-platform",
-      "node-143-lobby",
-      "node-143-platform",
-      "node-144-lobby",
-      "node-144-platform",
-      "node-853-lobby"
-    ],
-    "missingStopReferencesInStopTimes": 0,
-    "missingTripReferencesInStopTimes": 0,
-    "shortTripIds": [
-      "BackBayBostonLandingOmitSouthStation-0-sample",
-      "ChelseaLynnOmitNorthStation-0-sample",
-      "ChelseaLynnOmitNorthStation-1-sample",
-      "LynnNorthStationExpress-0-sample",
-      "LynnNorthStationExpress-1-sample",
-      "LynnSwampscott-0-sample",
-      "LynnSwampscott-1-sample"
-    ],
-    "tripsWithFewerThanTwoUsableStops": 7
-  },
-  "requiredFiles": {
-    "agency.txt": true,
-    "calendar.txt": true,
-    "calendar_dates.txt": true,
-    "routes.txt": true,
-    "shapes.txt": true,
-    "stop_times.txt": true,
-    "stops.txt": true,
-    "trips.txt": true
-  },
-  "routeTypes": {
-    "0": 5,
-    "1": 3,
-    "2": 14,
-    "3": 369,
-    "4": 9
-  },
-  "selectedDate": "2026-10-29",
-  "selectedStop": "1",
   "selectedStopDepartures": {
-    "count": 319,
+    "count": 321,
     "sample": [
       {
-        "departure": "03:51:00",
-        "routeId": "171",
-        "tripId": "78181027"
-      },
-      {
-        "departure": "04:21:00",
-        "routeId": "171",
-        "tripId": "78181032"
-      },
-      {
-        "departure": "04:37:00",
-        "routeId": "1",
-        "tripId": "78181030"
-      },
-      {
-        "departure": "04:52:00",
-        "routeId": "1",
-        "tripId": "78181035"
-      },
-      {
-        "departure": "05:00:00",
-        "routeId": "15",
-        "tripId": "78181246"
-      },
-      {
-        "departure": "05:07:00",
-        "routeId": "1",
-        "tripId": "78181033"
-      },
-      {
-        "departure": "05:22:00",
-        "routeId": "1",
-        "tripId": "78181034"
-      },
-      {
-        "departure": "05:28:00",
-        "routeId": "47",
-        "tripId": "78181899"
-      },
-      {
-        "departure": "05:33:00",
+        "tripId": "78181640",
         "routeId": "8",
-        "tripId": "78181805"
+        "serviceDate": "20261028",
+        "departure": "2026-10-29T04:00:00.000Z",
+        "live": false
       },
       {
-        "departure": "05:37:00",
+        "tripId": "78182120",
         "routeId": "1",
-        "tripId": "78181036"
+        "serviceDate": "20261028",
+        "departure": "2026-10-29T04:00:00.000Z",
+        "live": false
       },
       {
-        "departure": "05:42:00",
+        "tripId": "78182117",
+        "routeId": "1",
+        "serviceDate": "20261028",
+        "departure": "2026-10-29T04:14:00.000Z",
+        "live": false
+      },
+      {
+        "tripId": "78182115",
+        "routeId": "1",
+        "serviceDate": "20261028",
+        "departure": "2026-10-29T04:28:00.000Z",
+        "live": false
+      },
+      {
+        "tripId": "78181893",
         "routeId": "47",
-        "tripId": "78181904"
+        "serviceDate": "20261028",
+        "departure": "2026-10-29T04:29:00.000Z",
+        "live": false
       },
       {
-        "departure": "05:46:00",
+        "tripId": "78181645",
         "routeId": "8",
-        "tripId": "78181802"
+        "serviceDate": "20261028",
+        "departure": "2026-10-29T04:36:00.000Z",
+        "live": false
+      },
+      {
+        "tripId": "78181894",
+        "routeId": "47",
+        "serviceDate": "20261028",
+        "departure": "2026-10-29T04:39:00.000Z",
+        "live": false
+      },
+      {
+        "tripId": "78182111",
+        "routeId": "1",
+        "serviceDate": "20261028",
+        "departure": "2026-10-29T04:42:00.000Z",
+        "live": false
       }
     ]
   },
-  "shapeCoverage": {
-    "rejectedShapeIds": 15,
-    "rejectedShapeSamples": [
-      "9880002",
-      "9890008",
-      "9890009",
-      "BackBayToBostonLanding-S",
-      "ChelseaToLynn-S",
-      "LynnToChelsea-S",
-      "LynnToNorthStationExpress-S",
-      "LynnToSwampscott-S",
-      "NewburyportToSalemExpress-S",
-      "NorthStationToLynnExpress-S",
-      "ProvidenceToSouthStationViaFoxboro",
-      "SalemToNewburyportExpress-S",
-      "SwampscottToLynn-S",
-      "canonical-ProvidenceToSouthStationViaFoxboro",
-      "canonical-SouFoxProv"
-    ],
-    "tripsWithShape": 104236,
-    "usedShapeIds": 1137
-  }
+  "realtime": [
+    {
+      "url": "https://cdn.mbta.com/realtime/TripUpdates.pb",
+      "status": 200,
+      "timestamp": 1793285315,
+      "ageSeconds": 2,
+      "fresh": true,
+      "providerTripIds": 1420,
+      "matchedTripIds": 1187,
+      "unmatchedTripIds": 233,
+      "rawVehicles": 0,
+      "usableVehicles": 0,
+      "rawUpdates": 25662,
+      "usableUpdates": 23112
+    },
+    {
+      "url": "https://cdn.mbta.com/realtime/VehiclePositions.pb",
+      "status": 200,
+      "timestamp": 1793285315,
+      "ageSeconds": 2,
+      "fresh": true,
+      "providerTripIds": 563,
+      "matchedTripIds": 396,
+      "unmatchedTripIds": 167,
+      "rawVehicles": 565,
+      "usableVehicles": 393,
+      "rawUpdates": 0,
+      "usableUpdates": 0
+    },
+    {
+      "url": "https://cdn.mbta.com/realtime/Alerts.pb",
+      "status": 200,
+      "timestamp": 1793285251,
+      "ageSeconds": 66,
+      "fresh": true,
+      "providerTripIds": 0,
+      "matchedTripIds": 0,
+      "unmatchedTripIds": 0,
+      "rawVehicles": 0,
+      "usableVehicles": 0,
+      "rawUpdates": 0,
+      "usableUpdates": 0
+    }
+  ]
 }

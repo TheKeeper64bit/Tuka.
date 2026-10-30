@@ -25,19 +25,21 @@ export function polishMap(map,dark=false){
   }
 }
 export function routeGeometry(db,trip,stops){
-  const byId=new Map(db.stops.map(s=>[s.id,s]));
+  const byId=db.stopIndex||new Map(db.stops.map(s=>[s.id,s]));
   const scheduled=(db.times.get(trip?.trip_id)||[]).map(s=>s.stop_id);
-  const outline=ids=>ids.map(id=>byId.get(id)).filter(Boolean).map(s=>[s.lon,s.lat]).filter(valid);
+  const outline=ids=>{const points=ids.map(id=>byId.get(id)).map(s=>s?[s.lon,s.lat]:[]);return points.every(valid)?points:[];};
   const reference=outline(scheduled.length?scheduled:stops||[]);
   const shaped=(db.shapes.get(trip?.shape_id)||[]).map(p=>p.slice(0,2));
   // A shape can be syntactically valid yet belong to another place. The 47a П
   // feed included a 1,096 km excursion while its actual stops span about 13 km.
   // Reject the whole shape; removing foreign points would invent connecting roads.
-  if(shaped.length>1&&shaped.every(valid)&&credibleShape(shaped,reference))return {points:shaped,approximate:false};
+  if(shaped.length>1&&shaped.every(valid)&&credibleShape(shaped,reference))return {points:shaped,approximate:false,kind:'published'};
+  const road=db.roadGeometries?.get(trip?.trip_id);if(road&&credibleShape(road,reference))return {points:road,approximate:true,kind:'road'};
   return {points:stops?outline(stops):reference,approximate:true,reason:shaped.length>1?'invalid-shape':'missing-shape'};
 }
-function valid(p){return p.length>=2&&Number.isFinite(p[0])&&Number.isFinite(p[1])&&Math.abs(p[0])<=180&&Math.abs(p[1])<=90;}
-function credibleShape(points,stops){
+function valid(p){return Array.isArray(p)&&p.length>=2&&Number.isFinite(p[0])&&Number.isFinite(p[1])&&Math.abs(p[0])<=180&&Math.abs(p[1])<=90;}
+export function credibleShape(points,stops){
+  if(!Array.isArray(points)||points.length<2||!points.every(valid)||!stops.every(valid))return false;
   if(stops.length<2)return false;
   const xs=stops.map(p=>p[0]),ys=stops.map(p=>p[1]),south=Math.min(...ys),north=Math.max(...ys);
   const longitudeMeters=Math.max(1,111000*Math.cos((south+north)/2*Math.PI/180));
@@ -45,7 +47,22 @@ function credibleShape(points,stops){
   // Generous padding allows normal street detours beyond the outermost stops.
   if(points.some(p=>p[0]<west||p[0]>east||p[1]<south-5000/111000||p[1]>north+5000/111000))return false;
   const length=path=>path.slice(1).reduce((sum,p,i)=>sum+Math.hypot((p[0]-path[i][0])*longitudeMeters,(p[1]-path[i][1])*111000),0);
-  return length(points)<=length(stops)*4+5000;
+  if(length(points)>length(stops)*4+5000)return false;
+  // Project each ordered stop onto the polyline in forward order. This catches
+  // reversed shapes and paths that merely share a city-sized bounding box.
+  let previous=0;
+  for(const stop of stops){
+    let best=Infinity,position=previous;
+    for(let i=Math.max(0,Math.floor(previous)-1);i<points.length-1;i++){
+      const a=points[i],b=points[i+1],dx=(b[0]-a[0])*longitudeMeters,dy=(b[1]-a[1])*111000;
+      const x=(stop[0]-a[0])*longitudeMeters,y=(stop[1]-a[1])*111000;
+      const t=Math.max(0,Math.min(1,(x*dx+y*dy)/(dx*dx+dy*dy||1)));
+      if(i+t+0.0001<previous)continue;
+      const gap=Math.hypot(x-t*dx,y-t*dy);if(gap<best){best=gap;position=i+t;}
+    }
+    if(best>600)return false;previous=position;
+  }
+  return true;
 }
 export function routeOverlay(map,id,points){
   const data={type:'FeatureCollection',features:points.length>1?[{type:'Feature',geometry:{type:'LineString',coordinates:points},properties:{}}]:[]};
@@ -62,13 +79,16 @@ export function syncMarkers(existing,vehicles,create,update){
   return retained;
 }
 export function networkOverlay(map,patterns,stops,target){
-  const data={type:'FeatureCollection',features:patterns.filter(p=>p.points.length>1).map(p=>({type:'Feature',properties:{routeId:p.route.route_id,color:p.color},geometry:{type:'LineString',coordinates:p.points}}))};
+  const data={type:'FeatureCollection',features:patterns.filter(p=>p.points.length>1).map(p=>({type:'Feature',properties:{routeId:p.route.route_id,color:p.color,approximate:!!p.approximate},geometry:{type:'LineString',coordinates:p.points}}))};
   if(map.getSource('station-network'))map.getSource('station-network').setData(data);
   else{
     map.addSource('station-network',{type:'geojson',data});
     const before=map.getLayer('stops')?'stops':undefined;
     map.addLayer({id:'station-network-halo',type:'line',source:'station-network',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':6,'line-opacity':.65}},before);
-    map.addLayer({id:'station-network-lines',type:'line',source:'station-network',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':3,'line-opacity':.8}},before);
+    // This MapLibre version does not support feature expressions in line-dasharray.
+    // Keep solid published paths and dashed approximations in separate layers.
+    map.addLayer({id:'station-network-lines',type:'line',source:'station-network',filter:['!=',['get','approximate'],true],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':3.5,'line-opacity':.95}},before);
+    map.addLayer({id:'station-network-approximate',type:'line',source:'station-network',filter:['==',['get','approximate'],true],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':3.5,'line-opacity':.95,'line-dasharray':[2,2]}},before);
   }
   const points={type:'FeatureCollection',features:stops.map(x=>({type:'Feature',properties:{id:x.stop.id},geometry:{type:'Point',coordinates:[x.stop.lon,x.stop.lat]}}))};
   if(map.getSource('reachable-stops'))map.getSource('reachable-stops').setData(points);
@@ -86,4 +106,16 @@ export function stopPinLayer(map,id,source,filter,selected=false){
   c.beginPath();c.moveTo(24,60);c.bezierCurveTo(18,49,5,36,5,23);c.arc(24,23,19,Math.PI,0);c.bezierCurveTo(43,36,30,49,24,60);c.closePath();c.fillStyle='#0865d6';c.fill();c.lineWidth=3;c.strokeStyle='#fff';c.stroke();c.beginPath();c.arc(24,23,7,0,Math.PI*2);c.fillStyle='#fff';c.fill();map.addImage('tuka-stop-pin',c.getImageData(0,0,48,64),{pixelRatio:2});
  }
  return map.addImage?{id,type:'symbol',source,minzoom:selected?0:11.5,filter,layout:{'icon-image':'tuka-stop-pin','icon-anchor':'bottom','icon-allow-overlap':selected,'icon-ignore-placement':selected,'icon-padding':2,'icon-size':selected?1.15:['interpolate',['linear'],['zoom'],11.5,.5,14,.7,17,.9]}}:{id,type:'circle',source,minzoom:selected?0:11.5,filter,paint:{'circle-radius':selected?9:4,'circle-color':'#0865d6','circle-stroke-color':'#fff','circle-stroke-width':2}};
+}
+
+export async function resolveRouteGeometry(db,trip,fetcher=fetch){
+ const initial=routeGeometry(db,trip);if(!initial.approximate||initial.kind==='road'||initial.points.length<2)return initial;
+ db.roadAttempts??=new Map();const key=initial.points.map(p=>p.join(',')).join(';');
+ if(!db.roadAttempts.has(key))db.roadAttempts.set(key,(async()=>{
+  try{const response=await fetcher('/api/transit/road-geometry',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({cityId:db.provider,points:initial.points})});if(!response.ok)return null;
+   const data=await response.json();return credibleShape(data.points,initial.points)?data.points:null;
+  }catch{return null;}
+ })());
+ const road=await db.roadAttempts.get(key);if(road){db.roadGeometries??=new Map();db.roadGeometries.set(trip.trip_id,road);db.stopNetworks?.clear();}
+ return routeGeometry(db,trip);
 }

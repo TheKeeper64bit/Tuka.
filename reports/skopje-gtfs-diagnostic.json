@@ -1,0 +1,127 @@
+{
+  "generatedAt": "2026-10-29T14:48:44.192Z",
+  "city": "skopje",
+  "source": "https://www.modeshift.app/api/v1/9814b106-2afe-47c8-919b-bdec6a5e521e/transport/gtfs/gtfs.zip",
+  "sha256": "a11fc0204f307499867752badb1e744b141e7eabe274fb140621a3c6a7c448d0",
+  "selectedDate": "2026-10-29",
+  "selectedStop": "2575",
+  "timezone": "Europe/Skopje",
+  "requiredFiles": {
+    "agency.txt": true,
+    "stops.txt": true,
+    "routes.txt": true,
+    "trips.txt": true,
+    "stop_times.txt": true
+  },
+  "optionalFiles": {
+    "shapes.txt": true,
+    "calendar.txt": true,
+    "calendar_dates.txt": true
+  },
+  "hasServiceCalendar": true,
+  "counts": {
+    "stops": 1430,
+    "routes": 107,
+    "trips": 4090,
+    "usableTrips": 4090,
+    "stopTimes": 105328,
+    "shapes": 293
+  },
+  "relationships": {
+    "missingTripReferences": 0,
+    "missingStopReferences": 0,
+    "missingRouteReferences": 0,
+    "invalidStopCoordinates": 0,
+    "tripsWithFewerThanTwoCalls": 0,
+    "rejectedTrips": [],
+    "untimedCalls": 0,
+    "rowsOutOfSequenceBeforeNormalization": 0
+  },
+  "geometry": {
+    "uniqueTripPatterns": 297,
+    "publishedShapeTrips": 3882,
+    "approximateTrips": 208,
+    "rejectedPatterns": 10,
+    "missingShapePatterns": 4
+  },
+  "activeServiceIds": [
+    "7"
+  ],
+  "selectedStopDepartures": {
+    "count": 11,
+    "sample": [
+      {
+        "tripId": "7.618764",
+        "routeId": "215",
+        "serviceDate": "20261029",
+        "departure": "2026-10-29T05:26:22.000Z",
+        "live": false
+      },
+      {
+        "tripId": "7.618765",
+        "routeId": "215",
+        "serviceDate": "20261029",
+        "departure": "2026-10-29T06:51:22.000Z",
+        "live": false
+      },
+      {
+        "tripId": "7.618766",
+        "routeId": "215",
+        "serviceDate": "20261029",
+        "departure": "2026-10-29T08:16:22.000Z",
+        "live": false
+      },
+      {
+        "tripId": "7.618767",
+        "routeId": "215",
+        "serviceDate": "20261029",
+        "departure": "2026-10-29T09:41:22.000Z",
+        "live": false
+      },
+      {
+        "tripId": "7.618768",
+        "routeId": "215",
+        "serviceDate": "20261029",
+        "departure": "2026-10-29T11:11:22.000Z",
+        "live": false
+      },
+      {
+        "tripId": "7.618769",
+        "routeId": "215",
+        "serviceDate": "20261029",
+        "departure": "2026-10-29T12:56:22.000Z",
+        "live": false
+      },
+      {
+        "tripId": "7.618770",
+        "routeId": "215",
+        "serviceDate": "20261029",
+        "departure": "2026-10-29T14:36:22.000Z",
+        "live": false
+      },
+      {
+        "tripId": "7.618771",
+        "routeId": "215",
+        "serviceDate": "20261029",
+        "departure": "2026-10-29T16:11:22.000Z",
+        "live": false
+      }
+    ]
+  },
+  "realtime": [
+    {
+      "url": "https://www.modeshift.app/api/v1/9814b106-2afe-47c8-919b-bdec6a5e521e/transport/gtfsrt/tripupdates.pb",
+      "status": 200,
+      "timestamp": 1793285323,
+      "ageSeconds": 1,
+      "fresh": true,
+      "providerTripIds": 431,
+      "matchedTripIds": 431,
+      "unmatchedTripIds": 0,
+      "rawVehicles": 158,
+      "usableVehicles": 158,
+      "rawUpdates": 12000,
+      "usableUpdates": 12000
+    }
+  ]
+}

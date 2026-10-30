@@ -39,7 +39,7 @@ export function matchingStopAlerts(db,rt,stopId,routeIds,now=Date.now()){
     for(let offset=-Math.ceil(call.seconds/86400);offset<=1;offset++){
       if(!days.has(offset)){const day=serviceDay(offset,now,zone);days.set(offset,{day,services:active(db,day)});}
       const {day,services}=days.get(offset);if(!services.has(trip.service_id))continue;
-      const scheduled=day.midnight+call.seconds*1000,update=prediction(rt,call.trip_id,stopId,day,now,now,zone);
+      const scheduled=day.midnight+call.seconds*1000,update=prediction(rt,call.trip_id,stopId,day,now,now,zone,call.seq);
       const estimated=eventTime(update,'departure',scheduled).time;
       const times=update?.tripRelationship===3||update?.relationship===1?new Set([scheduled,estimated]):[estimated];
       for(const time of times){

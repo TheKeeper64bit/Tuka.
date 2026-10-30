@@ -65,13 +65,13 @@ export function journeyStatus(db,rt,result,now=Date.now(),deadline=null){
     if(leg.type!=='bus')return {...leg};
     const date=serviceDate(leg,zone),day=serviceDay(0,date.replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3'),zone);
     const times=db.times.get(leg.tripId)||[];
-    const departure=prediction(rt,leg.tripId,leg.from.id,day,now,now,zone),arrival=prediction(rt,leg.tripId,leg.to.id,day,now,now,zone);
+    const departure=prediction(rt,leg.tripId,leg.from.id,day,now,now,zone,leg.boardSeq),arrival=prediction(rt,leg.tripId,leg.to.id,day,now,now,zone,leg.endSeq);
     let start,end,previous=-Infinity,previousLive=false,cancelled=departure?.tripRelationship===3||arrival?.tripRelationship===3;
     // Match the planner's whole-run chronology. A prediction before boarding or
     // at an intermediate call can constrain both boarding and alighting, even
     // when those two stops have no prediction of their own.
     for(const call of times){
-      const update=prediction(rt,leg.tripId,call.stop_id,day,now,now,zone);
+      const update=prediction(rt,leg.tripId,call.stop_id,day,now,now,zone,call.seq);
       cancelled ||= update?.tripRelationship===3;
       const scheduled=Number.isFinite(call.seconds)?day.midnight+call.seconds*1000:call.seq===leg.boardSeq?leg.start:call.seq===leg.endSeq?leg.end:NaN;
       const atStop=eventTime(update,'arrival',Number.isFinite(call.arrivalSeconds)?day.midnight+call.arrivalSeconds*1000:scheduled);

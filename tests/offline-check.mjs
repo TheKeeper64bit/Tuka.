@@ -78,8 +78,8 @@ test('offline upgrade publishes all assets together and preserves dependencies o
  let release;h.pauseWrite(new Promise(resolve=>release=resolve));
  const preparation=h.prepare();
  // Fetching and putting are asynchronous: wait for the staging cache to exist.
- for(let i=0;i<30&&!([...h.stores.keys()].some(k=>k.startsWith('tuka-offline-v32-')));i++)await new Promise(resolve=>setImmediate(resolve));
- assert([...h.stores.keys()].some(k=>k.startsWith('tuka-offline-v32-')));
+ for(let i=0;i<30&&!([...h.stores.keys()].some(k=>k.startsWith('tuka-offline-v33-')));i++)await new Promise(resolve=>setImmediate(resolve));
+ assert([...h.stores.keys()].some(k=>k.startsWith('tuka-offline-v33-')));
  h.setOnline(false);
  assert.equal(await (await h.request('/','navigate','during-update')).text(),'previous offline reader');
  release();await preparation;
@@ -93,7 +93,7 @@ test('Pages offline reader stays within its repository path and retains other ap
  assert(h.requests.every(path=>path.startsWith('/Tuka./')));
  assert(h.requests.includes('/Tuka./config.js?v=1'));
  assert(stores.has('tuka-v10'));assert(stores.has('tuka-offline-v24'));
- assert([...stores.keys()].some(key=>key.startsWith('tuka-offline-%2FTuka.%2F-v32-')));
+ assert([...stores.keys()].some(key=>key.startsWith('tuka-offline-%2FTuka.%2F-v33-')));
  h.setOnline(false);
  assert.equal(await (await h.request('/Tuka./')).text(),'offline reader');
  assert.equal(await (await h.request('/Tuka./index.html')).text(),'offline reader');

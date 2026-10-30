@@ -1,0 +1,201 @@
+{
+  "agency": [
+    {
+      "agency_id": "skopje",
+      "agency_timezone": "Europe/Skopje"
+    }
+  ],
+  "stops": [
+    {
+      "stop_id": "SK-000",
+      "stop_name": "Start",
+      "stop_lat": "42",
+      "stop_lon": "21.4"
+    },
+    {
+      "stop_id": "SK-001",
+      "stop_name": "Middle",
+      "stop_lat": "42",
+      "stop_lon": "21.424999999999997"
+    },
+    {
+      "stop_id": "SK-002",
+      "stop_name": "End",
+      "stop_lat": "42",
+      "stop_lon": "21.45"
+    }
+  ],
+  "routes": [
+    {
+      "route_id": "SK-route",
+      "route_short_name": "5",
+      "route_type": "3"
+    }
+  ],
+  "trips": [
+    {
+      "trip_id": "SK-out",
+      "route_id": "SK-route",
+      "service_id": "weekday",
+      "direction_id": "0",
+      "trip_headsign": "out",
+      "shape_id": "SK-out"
+    },
+    {
+      "trip_id": "SK-back",
+      "route_id": "SK-route",
+      "service_id": "weekday",
+      "direction_id": "1",
+      "trip_headsign": "back",
+      "shape_id": "SK-back"
+    },
+    {
+      "trip_id": "SK-night",
+      "route_id": "SK-route",
+      "service_id": "exception",
+      "direction_id": "0",
+      "trip_headsign": "Late service"
+    }
+  ],
+  "stop_times": [
+    {
+      "trip_id": "SK-night",
+      "stop_id": "SK-002",
+      "stop_sequence": "3",
+      "arrival_time": "24:30:00",
+      "departure_time": "24:30:00"
+    },
+    {
+      "trip_id": "SK-night",
+      "stop_id": "SK-001",
+      "stop_sequence": "2",
+      "arrival_time": "24:20:00",
+      "departure_time": "24:20:00"
+    },
+    {
+      "trip_id": "SK-night",
+      "stop_id": "SK-000",
+      "stop_sequence": "1",
+      "arrival_time": "24:10:00",
+      "departure_time": "24:10:00"
+    },
+    {
+      "trip_id": "SK-back",
+      "stop_id": "SK-000",
+      "stop_sequence": "21",
+      "arrival_time": "08:20:00",
+      "departure_time": "08:20:00",
+      "pickup_type": "0",
+      "drop_off_type": "0"
+    },
+    {
+      "trip_id": "SK-back",
+      "stop_id": "SK-001",
+      "stop_sequence": "11",
+      "arrival_time": "08:10:00",
+      "departure_time": "08:10:00",
+      "pickup_type": "0",
+      "drop_off_type": "0"
+    },
+    {
+      "trip_id": "SK-back",
+      "stop_id": "SK-002",
+      "stop_sequence": "1",
+      "arrival_time": "08:00:00",
+      "departure_time": "08:00:00",
+      "pickup_type": "0",
+      "drop_off_type": "0"
+    },
+    {
+      "trip_id": "SK-out",
+      "stop_id": "SK-002",
+      "stop_sequence": "21",
+      "arrival_time": "08:20:00",
+      "departure_time": "08:20:00",
+      "pickup_type": "0",
+      "drop_off_type": "0"
+    },
+    {
+      "trip_id": "SK-out",
+      "stop_id": "SK-001",
+      "stop_sequence": "11",
+      "arrival_time": "08:10:00",
+      "departure_time": "08:10:00",
+      "pickup_type": "0",
+      "drop_off_type": "0"
+    },
+    {
+      "trip_id": "SK-out",
+      "stop_id": "SK-000",
+      "stop_sequence": "1",
+      "arrival_time": "08:00:00",
+      "departure_time": "08:00:00",
+      "pickup_type": "0",
+      "drop_off_type": "0"
+    }
+  ],
+  "shapes": [
+    {
+      "shape_id": "SK-back",
+      "shape_pt_lat": "42",
+      "shape_pt_lon": "21.4",
+      "shape_pt_sequence": "2"
+    },
+    {
+      "shape_id": "SK-back",
+      "shape_pt_lat": "42",
+      "shape_pt_lon": "21.424999999999997",
+      "shape_pt_sequence": "1"
+    },
+    {
+      "shape_id": "SK-back",
+      "shape_pt_lat": "42",
+      "shape_pt_lon": "21.45",
+      "shape_pt_sequence": "0"
+    },
+    {
+      "shape_id": "SK-out",
+      "shape_pt_lat": "42",
+      "shape_pt_lon": "21.45",
+      "shape_pt_sequence": "2"
+    },
+    {
+      "shape_id": "SK-out",
+      "shape_pt_lat": "42",
+      "shape_pt_lon": "21.424999999999997",
+      "shape_pt_sequence": "1"
+    },
+    {
+      "shape_id": "SK-out",
+      "shape_pt_lat": "42",
+      "shape_pt_lon": "21.4",
+      "shape_pt_sequence": "0"
+    }
+  ],
+  "calendar": [
+    {
+      "service_id": "weekday",
+      "start_date": "20260101",
+      "end_date": "20261231",
+      "monday": "1",
+      "tuesday": "1",
+      "wednesday": "1",
+      "thursday": "1",
+      "friday": "1",
+      "saturday": "1",
+      "sunday": "1"
+    }
+  ],
+  "calendar_dates": [
+    {
+      "service_id": "exception",
+      "date": "20261029",
+      "exception_type": "1"
+    },
+    {
+      "service_id": "weekday",
+      "date": "20261030",
+      "exception_type": "2"
+    }
+  ]
+}
