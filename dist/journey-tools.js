@@ -1,4 +1,4 @@
-import {providerFor} from './city-providers.js?v=1';
+import {providerFor} from './city-providers.js?v=2';
 import {preferences} from './planner.js?v=24';
 
 export function place(value,cityId='skopje'){

@@ -37,3 +37,12 @@ export function cityAtLocation(point){
 export function officialNewsURL(value,cityId='skopje'){
  try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password&&!u.port&&providerFor(cityId).news.hosts.includes(u.hostname)?u.href:null;}catch{return null;}
 }
+
+// Startup never downloads an arbitrary city's timetable before GPS resolves.
+export async function locateCity(geolocation){
+ if(!geolocation)return {city:null,position:null,reason:'unavailable'};
+ return new Promise(resolve=>geolocation.getCurrentPosition(fix=>{
+  const position={lat:fix.coords.latitude,lon:fix.coords.longitude};
+  resolve({city:cityAtLocation(position),position,reason:'located'});
+ },()=>resolve({city:null,position:null,reason:'unavailable'}),{enableHighAccuracy:false,timeout:8000,maximumAge:60000}));
+}

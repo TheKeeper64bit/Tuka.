@@ -1,5 +1,5 @@
 // One normalization contract for ZIP tables and the compact, lossless bus asset.
-import {providerFor} from './city-providers.js?v=1';
+import {providerFor} from './city-providers.js?v=2';
 export function seconds(value){if(!/^\d{1,3}:[0-5]\d:[0-5]\d$/.test(value||''))return NaN;return value.split(':').reduce((n,x)=>n*60+Number(x),0);}
 const validStop=s=>s.stop_lat!==''&&s.stop_lon!==''&&Number.isFinite(+s.stop_lat)&&Number.isFinite(+s.stop_lon)&&Math.abs(+s.stop_lat)<=90&&Math.abs(+s.stop_lon)<=180;
 const timeText=s=>Number.isFinite(s)?`${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor(s/60)%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`:'';

@@ -1,0 +1,119 @@
+{
+  "checkedAt": "2026-11-02",
+  "source": "https://www.modeshift.app/api/v1/9814b106-2afe-47c8-919b-bdec6a5e521e/transport/gtfs/gtfs.zip",
+  "feed": {
+    "feed_publisher_name": "Modeshift, Inc.",
+    "feed_publisher_url": "https://www.modeshift.com",
+    "feed_lang": "mk",
+    "feed_start_date": "20261026",
+    "feed_end_date": "20270101",
+    "feed_version": "20261102092115",
+    "feed_contact_url": "https://www.modeshift.com",
+    "feed_contact_email": "info@modeshift.com"
+  },
+  "routes": 101,
+  "trips": 4051,
+  "uniquePatterns": 273,
+  "publishedBefore": 261,
+  "publishedAfter": 268,
+  "recovered": [
+    {
+      "route": "5Н",
+      "shape": "24631",
+      "trip": "7.628025",
+      "kind": "invalid-shape",
+      "points": 38,
+      "after": "published"
+    },
+    {
+      "route": "б05",
+      "shape": "301423",
+      "trip": "7.629482",
+      "kind": "invalid-shape",
+      "points": 19,
+      "after": "published"
+    },
+    {
+      "route": "63А",
+      "shape": "70075",
+      "trip": "7.630586",
+      "kind": "invalid-shape",
+      "points": 42,
+      "after": "published"
+    },
+    {
+      "route": "21",
+      "shape": "24617",
+      "trip": "7.631496",
+      "kind": "invalid-shape",
+      "points": 29,
+      "after": "published"
+    },
+    {
+      "route": "21",
+      "shape": "24615",
+      "trip": "7.631507",
+      "kind": "invalid-shape",
+      "points": 28,
+      "after": "published"
+    },
+    {
+      "route": "51",
+      "shape": "34881",
+      "trip": "7.631561",
+      "kind": "invalid-shape",
+      "points": 33,
+      "after": "published"
+    },
+    {
+      "route": "68",
+      "shape": "24582",
+      "trip": "7.631678",
+      "kind": "invalid-shape",
+      "points": 63,
+      "after": "published"
+    }
+  ],
+  "remaining": [
+    {
+      "route": "47а П",
+      "shape": "24440",
+      "trip": "7.629130",
+      "kind": "invalid-shape",
+      "points": 23,
+      "after": "invalid-shape"
+    },
+    {
+      "route": "9 П",
+      "shape": "",
+      "trip": "7.631259",
+      "kind": "missing-shape",
+      "points": 18,
+      "after": "missing-shape"
+    },
+    {
+      "route": "9 П",
+      "shape": "",
+      "trip": "7.631362",
+      "kind": "missing-shape",
+      "points": 16,
+      "after": "missing-shape"
+    },
+    {
+      "route": "8",
+      "shape": "",
+      "trip": "7.631464",
+      "kind": "missing-shape",
+      "points": 27,
+      "after": "missing-shape"
+    },
+    {
+      "route": "8",
+      "shape": "",
+      "trip": "7.631469",
+      "kind": "missing-shape",
+      "points": 25,
+      "after": "missing-shape"
+    }
+  ]
+}

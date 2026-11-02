@@ -1,6 +1,6 @@
 const root = document.body;
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-let selectedCityId = localStorage.getItem('tuka-meta-city') || 'skopje';
+let selectedCityId = localStorage.getItem('tuka-meta-city') || null;
 let selectedStopId = '';
 function ensurePanel() {
   if (document.querySelector('#meta-lab')) return document.querySelector('#meta-lab');
@@ -22,7 +22,7 @@ function init(){root.classList.add('has-city-picker');const dialog=ensurePanel()
  const cityDialog=document.createElement('dialog');cityDialog.id='city-picker';cityDialog.className='meta-dialog city-picker';cityDialog.innerHTML='<form method="dialog" class="meta-head"><div><span class="meta-kicker">YOUR LOCAL NETWORK</span><h2>Choose your city</h2><p>Stops, lines, journeys, notices and saved places follow this selection.</p></div><button class="meta-close" aria-label="Close city selection">×</button></form><div class="meta-city-section"><button type="button" class="secondary" id="city-use-location">Use my location</button><p class="notice" id="city-picker-status" role="status">Manual selection stays saved on this device.</p><div id="city-picker-list" class="meta-cities"></div></div>';root.append(cityDialog);
  cityButton.onclick=async()=>{cityDialog.showModal();const holder=cityDialog.querySelector('#city-picker-list');try{const r=await fetch('./api/cities',{credentials:'same-origin'});if(!r.ok)throw Error();const data=await r.json();holder.innerHTML=data.cities.map(c=>cityCard(c,c.id===selectedCityId)).join('');holder.querySelectorAll('[data-city-id]').forEach(b=>b.onclick=()=>{cityDialog.querySelector('#city-picker-status').textContent='Loading the selected timetable…';document.dispatchEvent(new CustomEvent('tuka-test-city',{detail:{cityId:b.dataset.cityId}}));});}catch{cityDialog.querySelector('#city-picker-status').textContent='City profiles unavailable. Please try again.';}};
  cityDialog.querySelector('#city-use-location').onclick=()=>{cityDialog.querySelector('#city-picker-status').textContent='Finding the network at your location…';document.dispatchEvent(new CustomEvent('tuka-use-location'));};
- document.addEventListener('tuka-location-ready',()=>cityDialog.close());
+ document.addEventListener('tuka-location-ready',()=>cityDialog.close());document.addEventListener('tuka-choose-city',()=>cityButton.click());
  document.addEventListener('tuka-location-unsupported',()=>{cityDialog.querySelector('#city-picker-status').textContent='Your location is outside the pilot networks. Choose a city manually.';});
  document.addEventListener('tuka-test-city-active',e=>{cityButton.title='Change city · '+e.detail.name;cityButton.setAttribute('aria-label','Change city · '+e.detail.name);cityDialog.close();});
  document.addEventListener('tuka-city-error',e=>{cityDialog.querySelector('#city-picker-status').textContent=e.detail.message;});

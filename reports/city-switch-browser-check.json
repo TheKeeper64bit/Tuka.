@@ -1,0 +1,34 @@
+[
+  {
+    "action": "switch",
+    "city": "boston",
+    "elapsedMs": 2411
+  },
+  {
+    "action": "switch",
+    "city": "tilburg",
+    "elapsedMs": 204
+  },
+  {
+    "action": "switch",
+    "city": "boston",
+    "elapsedMs": 316
+  },
+  {
+    "action": "switch",
+    "city": "tilburg",
+    "elapsedMs": 180
+  },
+  {
+    "action": "GPS overrides stale manual city",
+    "city": "tilburg",
+    "downloads": {
+      "tilburg-network.bin": 1,
+      "boston-network.bin": 1
+    }
+  },
+  {
+    "action": "GPS denied on first visit",
+    "result": "City chooser shown without a default timetable"
+  }
+]

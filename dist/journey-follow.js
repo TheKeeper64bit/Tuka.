@@ -1,4 +1,5 @@
-import {boardingNetwork,routeColor} from './stop-network.js?v=20';
+import {trimGeometry} from './map-ui.js?v=21';
+import {boardingNetwork,routeColor} from './stop-network.js?v=21';
 import {distance,eventTime,prediction,serviceDay,localDate} from './schedule.js?v=24';
 
 const coordinates=p=>[p.lon,p.lat];
@@ -17,9 +18,8 @@ export function journeyGeometry(db,result){
       const calls=board>=0&&end>board?times.slice(board,end+1):[];
       const pattern=boardingNetwork(db,leg.from.id).patterns.find(p=>p.tripIds.has(leg.tripId)&&p.downstream[0].seq===leg.boardSeq);
       if(pattern&&calls.length){
-        let last=0;
-        for(const call of calls){const stop=byId.get(call.stop_id);if(!stop)continue;let best=Infinity,at=last;for(let j=last;j<pattern.points.length;j++){const d=distance(stop,{lon:pattern.points[j][0],lat:pattern.points[j][1]});if(d<best){best=d;at=j;}}last=at;}
-        points=pattern.points.slice(0,last+1);approximate=pattern.approximate;
+        const sequence=pattern.downstream.map(s=>byId.get(s.stop_id)).map(s=>[s.lon,s.lat]);
+        points=trimGeometry(pattern.points,sequence,0,calls.length-1);approximate=pattern.approximate;
       }
       if(points.length<2){points=calls.map(s=>byId.get(s.stop_id)).filter(Boolean).map(coordinates);approximate=true;}
       stops.push({type:'Feature',geometry:{type:'Point',coordinates:coordinates(leg.from)},properties:{step:index,label:String(leg.route.route_short_name),color}});

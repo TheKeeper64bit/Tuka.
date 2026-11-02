@@ -10,9 +10,9 @@ const slow='This is taking longer than usual. You can open the map while loading
 const failure='Bus schedules could not load. Check your connection and try again.';
 function harness(saved='en',{storageBlocked=false}={}){
   let now=0,reloads=0;
-  const nodes=new Map(['boot-screen','boot-title','boot-status','boot-continue','boot-retry'].map(id=>[id,{textContent:'',hidden:['boot-continue','boot-retry'].includes(id),style:{visibility:'hidden'}}]));
+  const nodes=new Map(['.boot-city-label','boot-screen','boot-title','boot-status','boot-continue','boot-retry'].map(id=>[id,{textContent:'',hidden:['boot-continue','boot-retry'].includes(id),style:{visibility:'hidden'}}]));
   const listeners=new Map(),timers=[];
-  const document={querySelector:selector=>nodes.get(selector.slice(1)),addEventListener:(name,listener)=>listeners.set(name,listener)};
+  const document={querySelector:selector=>nodes.get(selector==='.boot-city-label'?selector:selector.slice(1)),addEventListener:(name,listener)=>listeners.set(name,listener)};
   const window={};
   vm.runInNewContext(source,{window,document,localStorage:{getItem(){if(storageBlocked)throw Error('Blocked');return saved;}},Date:{now:()=>now},setTimeout:(callback,delay)=>timers.push({callback,delay}),location:{reload(){reloads++;}}});
   return {nodes,boot:window.tukaBoot,get reloads(){return reloads;},change(locale){listeners.get('tuka-language')({detail:locale});},advance(time){now=time;for(const timer of timers.filter(t=>!t.called&&t.delay<=time)){timer.called=true;timer.callback();}}};
@@ -26,7 +26,7 @@ test('saved MK and SQ paint before the loader copy is revealed, with no app-modu
   const scripts=[...html.matchAll(/<script\b[^>]*src="boot\.js[^>]*>/g)];
   assert.equal(scripts.length,1);assert(!/\b(?:defer|async|type="module")\b/.test(scripts[0][0]));
   assert(scripts[0].index<html.indexOf('<header>'));
-  assert.equal([...html.matchAll(/>SKOPJE, IN MOTION</g)].length,2);
+  assert.equal([...html.matchAll(/>YOUR LOCATION, IN MOTION</g)].length,2);assert(!html.includes('>SKOPJE, IN MOTION<'));
   for(const locale of ['mk','sq']){
     const ui=harness(locale);
     assert.equal(ui.nodes.get('boot-title').textContent,translateText('Your next bus, almost here.',locale));
@@ -39,13 +39,12 @@ test('saved MK and SQ paint before the loader copy is revealed, with no app-modu
   }
 });
 
-test('readiness statuses and language switching preserve the ten-second loader minimum',()=>{
+test('readiness statuses remain localized and finish immediately when ready',()=>{
   const ui=harness('mk');
   ui.boot.ready('schedule');assert.equal(ui.nodes.get('boot-status').textContent,translateText('Finding your location…','mk'));
   ui.change('sq');assert.equal(ui.nodes.get('boot-status').textContent,translateText('Finding your location…','sq'));
   ui.boot.ready('location');assert.equal(ui.nodes.get('boot-status').textContent,translateText('Getting your map ready…','sq'));
-  ui.boot.ready('map');ui.advance(9999);assert.equal(ui.nodes.get('boot-screen').hidden,false);
-  ui.advance(10000);assert.equal(ui.nodes.get('boot-screen').hidden,true);
+  assert.equal(ui.nodes.get('boot-screen').hidden,false);ui.boot.ready('map');assert.equal(ui.nodes.get('boot-screen').hidden,true);
   const other=harness('sq');other.boot.ready('location');assert.equal(other.nodes.get('boot-status').textContent,translateText('Loading bus stops and routes…','sq'));
 });
 
@@ -69,3 +68,5 @@ test('first launch, unsupported languages and blocked storage safely retain Engl
     ui.change('mk');assert.equal(ui.nodes.get('boot-status').textContent,translateText(initial,'mk'));
   }
 });
+
+ test('loading names follow the selected city instead of a fixed Skopje label',()=>{const ui=harness();for(const city of ['Skopje','Boston','Tilburg']){ui.boot.city(city);assert.equal(ui.nodes.get('.boot-city-label').textContent,city.toUpperCase()+', IN MOTION');}});

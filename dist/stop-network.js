@@ -1,4 +1,4 @@
-import {routeGeometry} from './map-ui.js?v=20';
+import {routeGeometry,trimGeometry} from './map-ui.js?v=21';
 const colors=['#1768df','#8b51ce','#087f79','#bd5628','#bf3970','#607526','#5661b1','#a37915'];
 export function routeColor(id){let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))>>>0;return colors[h%colors.length];}
 const boards=s=>s.pickup_type!=='1',alights=s=>s.drop_off_type!=='1';
@@ -38,10 +38,7 @@ export function boardingNetwork(db,from){
       if(patterns.has(key)){patterns.get(key).tripIds.add(trip.trip_id);continue;}
       const geometry=routeGeometry(db,trip);let points=geometry.points;
       if(!geometry.approximate||geometry.kind==='road'){
-        // Match the boarding point in order along the published geometry (including loops).
-        let start=0;
-        for(const s of times.slice(0,i+1)){const stop=byId.get(s.stop_id);if(!stop)continue;let best=Infinity,index=start;for(let j=start;j<points.length;j++){let d=Math.hypot((points[j][0]-stop.lon)*82500,(points[j][1]-stop.lat)*111000);if(d<best){best=d;index=j;}}start=index;}
-        points=points.slice(start);
+        points=trimGeometry(points,times.map(s=>byId.get(s.stop_id)).map(s=>[s.lon,s.lat]),i);
       }else points=downstream.every(s=>byId.has(s.stop_id))?downstream.map(s=>byId.get(s.stop_id)).map(s=>[s.lon,s.lat]):[];
       const pattern={key,trip,route,tripIds:new Set([trip.trip_id]),downstream,points,approximate:geometry.approximate,geometryKind:geometry.kind,color:routeColor(route.route_id)};
       patterns.set(key,pattern);routes.set(route.route_id,route);

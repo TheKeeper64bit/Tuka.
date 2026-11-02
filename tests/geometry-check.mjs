@@ -33,3 +33,10 @@ small.shapes.set('shape',[[21.4,42],[21.402,42.003],[21.41,42]]);assert(!routeGe
 small.shapes.set('shape',Array.from({length:80},(_,i)=>i%2?[21.41,42]:[21.4,42]));assert(routeGeometry(small,trip).approximate);
 assert.deepEqual(routeGeometry(db,outbound,['2575','2590']).points,[out.points[14],out.points.at(-1)]);
 console.log('Passed: authentic 47a П corrupt shape rejected, valid return preserved, downstream/Ride geometry bounded, invalid coordinates and excessive loops rejected');
+
+const rawLoops=JSON.parse(readFileSync(new URL('./fixtures/skopje-shape-loops.json',import.meta.url)));
+const loops={...rawLoops,routes:new Map(rawLoops.routes.map(r=>[r.route_id,r])),trips:new Map(rawLoops.trips.map(t=>[t.trip_id,t])),times:new Map(Object.entries(rawLoops.times)),shapes:new Map(Object.entries(rawLoops.shapes))};
+for(const trip of loops.trips.values())assert.equal(routeGeometry(loops,trip).approximate,false,'Published loop geometry retained for '+loops.routes.get(trip.route_id).route_short_name);
+const {trimGeometry}=await import('../dist/map-ui.js');
+assert.deepEqual(trimGeometry([[0,0],[.01,0],[.02,0]],[[.002,0],[.008,0],[.018,0]],1),[[.008,0],[.01,0],[.018,0]],'Boarding trims at a segment projection instead of a distant vertex');
+console.log('Passed: all seven formerly rejected current Skopje patterns retain published paths; sparse geometry trims exactly at boarding');

@@ -48,22 +48,39 @@ export function credibleShape(points,stops){
   if(points.some(p=>p[0]<west||p[0]>east||p[1]<south-5000/111000||p[1]>north+5000/111000))return false;
   const length=path=>path.slice(1).reduce((sum,p,i)=>sum+Math.hypot((p[0]-path[i][0])*longitudeMeters,(p[1]-path[i][1])*111000),0);
   if(length(points)>length(stops)*4+5000)return false;
-  // Project each ordered stop onto the polyline in forward order. This catches
-  // reversed shapes and paths that merely share a city-sized bounding box.
-  let previous=0;
-  for(const stop of stops){
-    let best=Infinity,position=previous;
-    for(let i=Math.max(0,Math.floor(previous)-1);i<points.length-1;i++){
-      const a=points[i],b=points[i+1],dx=(b[0]-a[0])*longitudeMeters,dy=(b[1]-a[1])*111000;
-      const x=(stop[0]-a[0])*longitudeMeters,y=(stop[1]-a[1])*111000;
-      const t=Math.max(0,Math.min(1,(x*dx+y*dy)/(dx*dx+dy*dy||1)));
-      if(i+t+0.0001<previous)continue;
-      const gap=Math.hypot(x-t*dx,y-t*dy);if(gap<best){best=gap;position=i+t;}
-    }
-    if(best>600)return false;previous=position;
-  }
-  return true;
+  return !!alignStops(points,stops);
 }
+// Match stops to segments in timetable order. Global forward matching avoids
+// greedy jumps to a later visit at loops and supports sparse published vertices.
+export function alignStops(points,stops){
+ if(points.length<2||!stops.length)return null;
+ const scale=111000*Math.cos(stops[0][1]*Math.PI/180),count=points.length-1;
+ let previous=null;const history=[];
+ for(const stop of stops){
+  const row=[];let best=Infinity,bestIndex=-1;
+  for(let i=0;i<count;i++){
+   if(previous&&previous[i].cost<best){best=previous[i].cost;bestIndex=i;}
+   const a=points[i],b=points[i+1],dx=(b[0]-a[0])*scale,dy=(b[1]-a[1])*111000,x=(stop[0]-a[0])*scale,y=(stop[1]-a[1])*111000;
+   let t=Math.max(0,Math.min(1,(x*dx+y*dy)/(dx*dx+dy*dy||1))),parent=bestIndex;
+   // A match on the same segment cannot move backwards along that segment.
+   if(previous&&parent===i&&i+t<previous[parent].position)t=previous[parent].position-i;
+   const gap=Math.hypot(x-t*dx,y-t*dy),cost=gap>600?Infinity:gap*gap+(previous?best:0);
+   row.push({cost,position:i+t,parent});
+  }
+  history.push(row);previous=row;
+ }
+ let at=0;for(let i=1;i<count;i++)if(previous[i].cost<previous[at].cost)at=i;
+ if(!Number.isFinite(previous[at].cost))return null;
+ const positions=[];for(let k=history.length-1;k>=0;k--){positions[k]=history[k][at].position;at=history[k][at].parent;}
+ return positions;
+}
+export function trimGeometry(points,stops,start=0,end=stops.length-1){
+ const positions=alignStops(points,stops);if(!positions)return [];
+ const from=positions[start],to=positions[end];if(from==null||to==null||to<from)return [];
+ const at=p=>{const i=Math.min(points.length-2,Math.floor(p)),t=p-i;return [points[i][0]+(points[i+1][0]-points[i][0])*t,points[i][1]+(points[i+1][1]-points[i][1])*t];};
+ return [at(from),...points.slice(Math.floor(from)+1,Math.ceil(to)),at(to)].filter((p,i,a)=>!i||p[0]!==a[i-1][0]||p[1]!==a[i-1][1]);
+}
+
 export function routeOverlay(map,id,points){
   const data={type:'FeatureCollection',features:points.length>1?[{type:'Feature',geometry:{type:'LineString',coordinates:points},properties:{}}]:[]};
   if(map.getSource(id)){map.getSource(id).setData(data);return;}

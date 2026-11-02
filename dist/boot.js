@@ -1,5 +1,5 @@
 (()=>{
-const started=Date.now(),screen=document.querySelector('#boot-screen'),title=document.querySelector('#boot-title'),status=document.querySelector('#boot-status'),proceed=document.querySelector('#boot-continue'),retry=document.querySelector('#boot-retry'),ready=new Set();
+const screen=document.querySelector('#boot-screen'),title=document.querySelector('#boot-title'),status=document.querySelector('#boot-status'),proceed=document.querySelector('#boot-continue'),retry=document.querySelector('#boot-retry'),ready=new Set();
 // This blocking bootstrap paints saved-language copy before the app modules load.
 // The boot screen owns its text so the general translator cannot save translated
 // text as an English original when a passenger changes language during loading.
@@ -25,14 +25,15 @@ function paint(){
  title.style.visibility='';status.style.visibility='';
 }
 function finish(){finished=true;screen.hidden=true;}
-function check(){if(finished)return;if(!failed&&ready.size===3&&Date.now()-started>=10000)finish();}
+function check(){if(finished)return;if(!failed&&ready.size===3)finish();}
 window.tukaBoot={
+ city(name){const label=document.querySelector('.boot-city-label');if(label)label.textContent=(name||'Your location').toUpperCase()+', IN MOTION';},
  ready(part){ready.add(part);if(!failed){statusText=ready.has('schedule')&&!ready.has('location')?'Finding your location…':ready.has('location')&&!ready.has('schedule')?'Loading bus stops and routes…':'Getting your map ready…';paint();}check();},
  fail(message){failed=true;statusText=message;paint();retry.hidden=false;proceed.hidden=false;},
 };
 document.addEventListener('tuka-language',event=>{if(['mk','sq','en'].includes(event.detail)){locale=event.detail;paint();}});
 proceed.onclick=finish;retry.onclick=()=>location.reload();
 paint();
-setTimeout(check,10000);
+
 setTimeout(()=>{if(!finished){if(!failed)statusText='This is taking longer than usual. You can open the map while loading continues.';paint();proceed.hidden=false;retry.hidden=false;}},25000);
 })();
