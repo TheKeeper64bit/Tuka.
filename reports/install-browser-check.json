@@ -1,0 +1,12 @@
+{
+  "manifestName": "Tuka",
+  "display": "standalone",
+  "manifestErrors": [],
+  "installabilityErrors": [],
+  "worker": {
+    "scope": "http://127.0.0.1:8807/",
+    "active": true
+  },
+  "pageErrors": [],
+  "installedOnPhysicalDevice": false
+}

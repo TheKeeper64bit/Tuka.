@@ -6,7 +6,7 @@
 
 Built in Skopje. Extended to Boston. Now being tested for Tilburg.
 
-**3 city networks · one shared journey engine · official public data · Meta-powered assistance**
+**3 city networks · installable web app · one shared journey engine · Meta-powered assistance**
 
 [Explore the judging host](https://tuka.meta-cerebralvalley.rand0m.net) · [Follow the evidence](#built-to-be-inspected) · [Run it yourself](#run-tuka) · [See the roadmap](#where-tuka-goes-next)
 
@@ -43,6 +43,7 @@ The larger idea grows from that everyday experience: a rider should be able to c
 | **Keep my regulars** | City-specific saved stops, route filters, commutes and Home/Work places. |
 | **Understand a disruption** | Official notices, affected-service information, and an English option for Tilburg notices with the original retained. |
 | **Ask naturally** | Meta Copilot for city context and a structured handoff into the ordinary journey planner. |
+| **Install on my device** | A standalone web app with browser-guided installation; city selection stays in the same app. |
 | **Stay useful offline** | Downloaded timetable basics and saved information; live information requires a connection. |
 
 The same Stops, Bus lines, Journey, News and Saved screens serve all three networks. Each city brings its own data and capabilities into that shared interface.
@@ -140,7 +141,7 @@ Reliability is part of the product experience: a timetable should remain usable 
 
 | Evidence | What it establishes |
 | --- | --- |
-| **172 passing Node tests**, plus standalone regression checks | Coverage across authentication, planning, calendars, realtime matching, geometry, city isolation, saved state, offline basics, notices and translations. |
+| **175 passing Node tests**, plus standalone regression checks | Coverage across authentication, planning, calendars, realtime matching, geometry, city isolation, saved state, offline basics, notices and translations. |
 | **407,058 source calls compared; zero mismatches** | The Tilburg partition preserves the compared fields of its retained source trips. |
 | **Geometry audits across all three assessed networks** | Seven Skopje, eleven Boston and three Tilburg patterns recover legitimate published paths after fixing ordered stop-to-shape matching. |
 | **Browser GPS and city-switch checks** | Tilburg GPS overrides a stale saved Skopje preference; a first visit with denied location opens the chooser without downloading a default network. |
@@ -186,6 +187,12 @@ Tuka is a tested pilot with meaningful coverage and work still to prove:
 - **Walking and ride alerts have practical limits.** The Meta Worker currently lacks the D1 binding needed for street-walking refinement, so walks remain labelled estimates. Phone backgrounding or locking can pause tracking and alerts.
 - **Local capabilities remain local.** Skopje news, its passenger-report integration and the SkopjeBus ticket handoff do not become universal ticketing. Automatic SMS ticket capture requires native integration.
 - **Acceptance is still in progress.** Tilburg field testing, new live-model verification and deployment of the latest updates remain pending. Recent street-tile loading was unreliable in this development environment; neutral-basemap overlay checks are identified in the evidence.
+
+## Install Tuka as a web app
+
+Open the deployed build in your browser and sign in if requested. Open **More (•••) → Install** in Tuka's header. Chrome and Edge can show a native installation prompt; on iPhone or iPad, use Safari → Share → Add to Home Screen. Safari on Mac offers File → Add to Dock. The installed app opens in its own window and uses the same city-aware experience.
+
+Installation does not remove the judging build's login requirement. Downloaded timetable basics remain available through the offline reader; fresh arrivals and model features need a connection. The universal manifest and install metadata are included in this branch; availability on the judging host follows deployment.
 
 ## Run Tuka
 

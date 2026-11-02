@@ -276,6 +276,16 @@ async function askMeta(message, context, env) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    // Browsers fetch install metadata independently of the protected app session.
+    // Keep this allowlist limited to the manifest and its public branding assets.
+    const installAssets=new Set(['/manifest.webmanifest','/icon.svg','/icon-192-blue.png','/icon-512-blue.png']);
+    if(installAssets.has(url.pathname)){
+      if(!['GET','HEAD'].includes(request.method))return new Response('Read only',{status:405});
+      const asset=await env.ASSETS.fetch(request),headers=new Headers(asset.headers);
+      headers.set('Content-Type',url.pathname.endsWith('.webmanifest')?'application/manifest+json':url.pathname.endsWith('.svg')?'image/svg+xml':'image/png');
+      headers.set('Cache-Control','public, max-age=3600');headers.set('X-Content-Type-Options','nosniff');
+      return new Response(request.method==='HEAD'?null:asset.body,{status:asset.status,headers});
+    }
     if (url.pathname === '/login' && request.method === 'GET') return loginPage(request, env);
     if (url.pathname === '/auth/login' && request.method === 'POST') {
       let form;

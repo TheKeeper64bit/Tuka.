@@ -1,0 +1,134 @@
+[
+  {
+    "city": "skopje",
+    "width": 320,
+    "headerHeight": 62,
+    "pageErrors": [],
+    "overflow": false,
+    "theme": true,
+    "escape": true,
+    "installDialog": true,
+    "languageDialog": true
+  },
+  {
+    "city": "boston",
+    "width": 320,
+    "headerHeight": 62,
+    "pageErrors": [],
+    "overflow": false,
+    "theme": true,
+    "escape": true,
+    "installDialog": true,
+    "languageDialog": true
+  },
+  {
+    "city": "tilburg",
+    "width": 320,
+    "headerHeight": 62,
+    "pageErrors": [],
+    "overflow": false,
+    "theme": true,
+    "escape": true,
+    "installDialog": true,
+    "languageDialog": true
+  },
+  {
+    "city": "skopje",
+    "width": 390,
+    "headerHeight": 62,
+    "pageErrors": [],
+    "overflow": false,
+    "theme": true,
+    "escape": true,
+    "installDialog": true,
+    "languageDialog": true
+  },
+  {
+    "city": "boston",
+    "width": 390,
+    "headerHeight": 62,
+    "pageErrors": [],
+    "overflow": false,
+    "theme": true,
+    "escape": true,
+    "installDialog": true,
+    "languageDialog": true
+  },
+  {
+    "city": "tilburg",
+    "width": 390,
+    "headerHeight": 62,
+    "pageErrors": [],
+    "overflow": false,
+    "theme": true,
+    "escape": true,
+    "installDialog": true,
+    "languageDialog": true
+  },
+  {
+    "city": "skopje",
+    "width": 768,
+    "headerHeight": 62,
+    "pageErrors": [],
+    "overflow": false,
+    "theme": true,
+    "escape": true,
+    "installDialog": true,
+    "languageDialog": true
+  },
+  {
+    "city": "boston",
+    "width": 768,
+    "headerHeight": 62,
+    "pageErrors": [],
+    "overflow": false,
+    "theme": true,
+    "escape": true,
+    "installDialog": true,
+    "languageDialog": true
+  },
+  {
+    "city": "tilburg",
+    "width": 768,
+    "headerHeight": 62,
+    "pageErrors": [],
+    "overflow": false,
+    "theme": true,
+    "escape": true,
+    "installDialog": true,
+    "languageDialog": true
+  },
+  {
+    "city": "skopje",
+    "width": 1280,
+    "headerHeight": 58,
+    "pageErrors": [],
+    "overflow": false,
+    "theme": true,
+    "escape": true,
+    "installDialog": true,
+    "languageDialog": true
+  },
+  {
+    "city": "boston",
+    "width": 1280,
+    "headerHeight": 58,
+    "pageErrors": [],
+    "overflow": false,
+    "theme": true,
+    "escape": true,
+    "installDialog": true,
+    "languageDialog": true
+  },
+  {
+    "city": "tilburg",
+    "width": 1280,
+    "headerHeight": 58,
+    "pageErrors": [],
+    "overflow": false,
+    "theme": true,
+    "escape": true,
+    "installDialog": true,
+    "languageDialog": true
+  }
+]

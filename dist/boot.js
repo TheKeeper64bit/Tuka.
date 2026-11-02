@@ -27,7 +27,7 @@ function paint(){
 function finish(){finished=true;screen.hidden=true;}
 function check(){if(finished)return;if(!failed&&ready.size===3)finish();}
 window.tukaBoot={
- city(name){const label=document.querySelector('.boot-city-label');if(label)label.textContent=(name||'Your location').toUpperCase()+', IN MOTION';},
+ city(name){const label=document.querySelector('.boot-city-label');if(label)label.textContent=(name||'Your city').toUpperCase()+', IN MOTION';},
  ready(part){ready.add(part);if(!failed){statusText=ready.has('schedule')&&!ready.has('location')?'Finding your location…':ready.has('location')&&!ready.has('schedule')?'Loading bus stops and routes…':'Getting your map ready…';paint();}check();},
  fail(message){failed=true;statusText=message;paint();retry.hidden=false;proceed.hidden=false;},
 };

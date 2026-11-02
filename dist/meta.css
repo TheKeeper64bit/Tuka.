@@ -18,3 +18,33 @@ body.has-city-picker #feedstatus{min-width:0;overflow:hidden;text-overflow:ellip
  body.has-city-picker.map-mode .maplibregl-ctrl-top-right{top:calc(var(--header-height) + 232px)}
  body.has-city-picker.map-mode .correction-panel{top:calc(var(--header-height) + 100px)}
 }
+
+/* A quiet primary row; secondary actions stay together behind More. */
+body.has-city-picker header.header-polished{flex-wrap:nowrap;gap:14px;overflow:visible}
+.header-polished .headtools{flex:0 0 auto;flex-wrap:nowrap;gap:8px}
+.header-polished .brand .city{display:none}
+.header-polished #city-open{display:inline-flex;align-items:center;justify-content:center;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:40px;padding:10px 14px}
+.header-more{position:relative;flex:none}
+.header-more-toggle{display:grid;place-items:center;width:40px;height:40px;list-style:none;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);font-weight:800;font-size:17px;letter-spacing:1px;cursor:pointer}
+.header-more-toggle::-webkit-details-marker{display:none}
+.header-more-toggle:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.header-more[open] .header-more-toggle{background:var(--soft);color:var(--blue);border-color:var(--blue)}
+.header-menu{position:absolute;right:0;top:calc(100% + 12px);z-index:55;width:min(310px,calc(100vw - 36px));padding:18px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:20px;box-shadow:0 14px 45px #102c4326}
+.header-menu-label{margin:0 0 10px;font-size:14px;font-weight:750}
+.header-polished .header-menu #feedstatus{display:block;max-width:none;padding:0 0 14px;margin-bottom:14px;border:0;border-bottom:1px solid var(--line);border-radius:0;text-align:left;background:transparent;white-space:normal;font-size:12px;line-height:1.5}
+.header-menu-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.header-polished .header-menu-actions>button{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;height:auto;min-height:46px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font-size:13px;font-weight:650}
+.header-polished .header-menu-actions>button[hidden]{display:none}
+.header-menu-actions [data-action-label]::after{content:attr(data-action-label);font-size:12px;letter-spacing:0}
+.header-menu-actions .install-label{display:inline!important}
+.header-menu-actions .install-symbol{display:none!important}
+@media(max-width:799px){
+ body.has-city-picker header.header-polished{padding:10px 12px;gap:10px}
+ body.has-city-picker .header-polished .headtools{flex:0 0 auto;gap:6px}
+ .header-polished #city-open{font-size:12px;max-width:145px;padding:9px 11px}
+ .header-polished .meta-open{width:38px;height:40px;padding:8px;justify-content:center}
+ .header-polished .meta-open>span:last-child{display:none}
+ .header-polished .brand .wordmark{font-size:29px}
+}
+@media(max-width:359px){.header-polished #city-open{max-width:112px;padding:9px}.header-polished .brand .wordmark{font-size:27px}.header-polished .header-more-toggle{width:36px}}
+.header-polished .header-menu-actions #install-app{width:100%;min-width:0;padding:10px;justify-content:center}
