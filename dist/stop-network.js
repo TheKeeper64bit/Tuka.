@@ -1,4 +1,4 @@
-import {routeGeometry} from './map-ui.js?v=20';
+import {routeGeometry,trimGeometry} from './map-ui.js?v=21';
 const colors=['#1768df','#8b51ce','#087f79','#bd5628','#bf3970','#607526','#5661b1','#a37915'];
 export function routeColor(id){let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))>>>0;return colors[h%colors.length];}
 const boards=s=>s.pickup_type!=='1',alights=s=>s.drop_off_type!=='1';
@@ -38,12 +38,9 @@ export function boardingNetwork(db,from){
       if(patterns.has(key)){patterns.get(key).tripIds.add(trip.trip_id);continue;}
       const geometry=routeGeometry(db,trip);let points=geometry.points;
       if(!geometry.approximate){
-        // Match the boarding point in order along the published geometry (including loops).
-        let start=0;
-        for(const s of times.slice(0,i+1)){const stop=byId.get(s.stop_id);if(!stop)continue;let best=Infinity,index=start;for(let j=start;j<points.length;j++){let d=Math.hypot((points[j][0]-stop.lon)*82500,(points[j][1]-stop.lat)*111000);if(d<best){best=d;index=j;}}start=index;}
-        points=points.slice(start);
+        points=trimGeometry(points,times.map(s=>byId.get(s.stop_id)).map(s=>[s.lon,s.lat]),i);
       }else points=downstream.map(s=>byId.get(s.stop_id)).filter(Boolean).map(s=>[s.lon,s.lat]);
-      const pattern={key,trip,route,tripIds:new Set([trip.trip_id]),downstream,points,approximate:geometry.approximate,color:routeColor(route.route_id)};
+      const pattern={key,trip,route,tripIds:new Set([trip.trip_id]),downstream,stopCoordinates:downstream.map(s=>byId.get(s.stop_id)).map(s=>[s.lon,s.lat]),points,approximate:geometry.approximate,color:routeColor(route.route_id)};
       patterns.set(key,pattern);routes.set(route.route_id,route);
       for(const s of destinations){const stop=byId.get(s.stop_id);if(!stop||stop.id===from)continue;if(!reachable.has(stop.id))reachable.set(stop.id,{stop,routeIds:new Set()});reachable.get(stop.id).routeIds.add(route.route_id);}
     }
@@ -51,7 +48,14 @@ export function boardingNetwork(db,from){
   const result={patterns:[...patterns.values()],reachable,routes};db.stopNetworks.set(from,result);return result;
 }
 export function visibleNetwork(network,chosen,to){
-  const patterns=network.patterns.filter(p=>chosen.has(p.route.route_id)&&(!to||p.downstream.slice(1).some(s=>s.stop_id===to&&alights(s))));
+  const patterns=network.patterns.filter(p=>chosen.has(p.route.route_id)&&(!to||p.downstream.slice(1).some(s=>s.stop_id===to&&alights(s)))).map(p=>{
+    if(!to)return p;
+    p.targetPatterns??=new Map();if(p.targetPatterns.has(to))return p.targetPatterns.get(to);
+    const end=p.downstream.findIndex((s,i)=>i>0&&s.stop_id===to&&alights(s));
+    const points=!p.approximate||p.geometryKind==='road'?trimGeometry(p.points,p.stopCoordinates,0,end):p.points.slice(0,end+1);
+    const selected={...p,points,downstream:p.downstream.slice(0,end+1),stopCoordinates:p.stopCoordinates.slice(0,end+1)};
+    p.targetPatterns.set(to,selected);return selected;
+  });
   const allowed=new Set(patterns.map(p=>p.route.route_id));
   const stops=[...network.reachable.values()].filter(x=>[...x.routeIds].some(id=>allowed.has(id))&&patterns.some(p=>p.downstream.slice(1).some(s=>s.stop_id===x.stop.id&&alights(s))));
   return {patterns,stops};

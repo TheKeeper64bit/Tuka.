@@ -97,3 +97,16 @@ test('missed bus excludes only that trip instance; known street walks can invali
  const result=planJourney(db,null,stops[0],stops[2],at('08:00'),{mode:'leave',walkingDistance:(a,b)=>a===stops[0]&&b.id==='A'?1000:undefined});
  assert(!result.some(r=>routes(r).includes('one')));
 });
+
+test('avoid passing a legal exit then riding back across the road for a tiny walking saving',()=>{
+ const db=fixture();db.stops=[{id:'A',lat:42,lon:21.4},{id:'B',lat:42.03,lon:21.4},{id:'D',lat:42.06,lon:21.4},{id:'Opposite',lat:42.0306,lon:21.4}];
+ trip(db,'outbound',[['A','08:05'],['B','08:10'],['D','08:20']]);trip(db,'back',[['D','08:25'],['Opposite','08:35']]);
+ const origin=db.stops[0],destination=db.stops[3];
+ const plans=planJourney(db,null,origin,destination,at('08:00'),{mode:'leave'});
+ assert(plans.some(r=>routes(r).join(',')==='outbound'));assert(plans.every(r=>routes(r).join(',')!=='outbound,back'));
+ const barrier=planJourney(db,null,origin,destination,at('08:00'),{mode:'leave',walkingDistance:(from,to)=>from.id==='B'&&to.id==='Opposite'?2000:undefined});
+ assert(barrier.some(r=>routes(r).join(',')==='outbound,back'),'Retain a transfer when a real walking detour makes the early exit slower');
+ db.times.get('outbound')[1].drop_off_type='1';
+ const restricted=planJourney(db,null,origin,destination,at('08:00'),{mode:'leave'});
+ assert(restricted.some(r=>routes(r).join(',')==='outbound,back'),'Do not suggest alighting at a forbidden stop');
+});

@@ -1,0 +1,29 @@
+[
+  {
+    "width": 320,
+    "collapsedHeight": 54,
+    "recovery": "later departure selected on the map",
+    "destinationPreserved": true,
+    "menu": true,
+    "threeSheetPositions": true,
+    "pageErrors": []
+  },
+  {
+    "width": 390,
+    "collapsedHeight": 54,
+    "recovery": "later departure selected on the map",
+    "destinationPreserved": true,
+    "menu": true,
+    "threeSheetPositions": true,
+    "pageErrors": []
+  },
+  {
+    "width": 1280,
+    "collapsedHeight": 54,
+    "recovery": "later departure selected on the map",
+    "destinationPreserved": true,
+    "menu": true,
+    "threeSheetPositions": true,
+    "pageErrors": []
+  }
+]
