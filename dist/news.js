@@ -1,5 +1,5 @@
 import {apiURL,apiCredentials} from './config.js?v=1';
-import {providerFor,officialNewsURL} from './city-providers.js';
+import {providerFor,officialNewsURL} from './city-providers.js?v=3';
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date=value=>new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'Europe/Skopje'}).format(new Date(value));
 const datePart=(value,part)=>new Intl.DateTimeFormat('en-GB',{[part]:part==='month'?'short':'numeric',timeZone:'Europe/Skopje'}).format(new Date(value));
@@ -33,7 +33,9 @@ export function createNewsView(document,fetcher=fetch){
   });
   async function open(force=false){
     active=true;
-    const generation=version,city=cityId,provider=providerFor(city),label=provider.news.label;
+    const generation=version,city=cityId,provider=providerFor(city);
+    if(!provider.news){list.innerHTML='<div class="news-empty"><strong>Timetable imported.</strong><p>GTFS Schedule does not include news or live service notices. Check your operator for current disruptions.</p></div>';status.textContent='No news source connected for this network.';refresh.disabled=true;return;}
+    const label=provider.news.label;
     if(busy||(!force&&Date.now()-loadedAt<(city==='tilburg'?30000:30*60000)))return;
     busy=true;refresh.disabled=true;list.setAttribute('aria-busy','true');status.textContent=`Checking ${label} announcements…`;
     if(retry){clearTimeout(retry);retry=null;}
@@ -56,7 +58,7 @@ export function createNewsView(document,fetcher=fetch){
   refresh.onclick=()=>open(true);
   return {open,setCity(next){
     if(next===cityId)return;cityId=next;version++;loadedAt=0;busy=false;if(retry){clearTimeout(retry);retry=null;}list.innerHTML='';status.textContent='';refresh.disabled=false;
-    const provider=providerFor(cityId);refresh.setAttribute('aria-label','Refresh '+provider.news.label+' notices');
+    const provider=providerFor(cityId);if(!provider.news){const footer=document.querySelector('.news-footer');if(footer)footer.innerHTML='<p>Imported GTFS timetable · no operator news source connected.</p>';for(const [selector,text] of [['.news-eyebrow',provider.name+' · PUBLIC TRANSPORT'],['.news-intro','Timetable imported on this device.'],['.news-source-mark strong',provider.label]]){const el=document.querySelector(selector);if(el)el.textContent=text;}if(active)void open();return;}refresh.setAttribute('aria-label','Refresh '+provider.news.label+' notices');
     const footer=document.querySelector('.news-footer');
     const footerText=cityId==='tilburg'?'Validity comes from the operator. Publication dates are not supplied. ':'Dates reflect the original publication. ';
     if(footer){let copy=footer.querySelector('p');if(!copy){copy=document.createElement('p');footer.replaceChildren(copy);}copy.innerHTML=footerText+'<a href="'+provider.news.url+'" target="_blank" rel="noopener noreferrer">Official website ↗</a>';}

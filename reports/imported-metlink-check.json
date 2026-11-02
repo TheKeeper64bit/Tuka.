@@ -1,0 +1,83 @@
+{
+  "source": "https://static.opendata.metlink.org.nz/v1/gtfs/full.zip",
+  "officialSourcePage": "https://www.metlink.org.nz/legal/general-transit-feed-specification",
+  "checkedAt": "2026-11-02T22:09:58.985Z",
+  "sha256": "17d3a5002b9c214b54ff3df32666ac705051864d37067e8e97fac9db88ee10f5",
+  "zipBytes": 11621583,
+  "profile": {
+    "id": "gtfs-17d3a5002b9c214b54ff3df32666ac705051864d37067e8e97fac9db88ee10f5",
+    "imported": true,
+    "name": "Wellington · Metlink",
+    "label": "Madge Coachlines Limited / Uzabus + 20 agencies",
+    "timezone": "Pacific/Auckland",
+    "center": [
+      175.20312865,
+      -40.98563256999999
+    ],
+    "bounds": [
+      174.7020021,
+      -41.36810413999999,
+      175.7042552,
+      -40.603161
+    ],
+    "refreshMs": 30000,
+    "capabilities": [
+      "scheduled"
+    ],
+    "agencies": [
+      "Madge Coachlines Limited",
+      "Uzabus",
+      "New Zealand Coach Services (Exempt)",
+      "NZ Bus",
+      "Wellington Cable Car",
+      "Valley Flyer",
+      "Tranzit Coachlines",
+      "Mana Coach Services Limited",
+      "Metlink Rail",
+      "Classic Coaches",
+      "NZ Bus (Exempt)",
+      "Paraparaumu Taxis Limited",
+      "Tranzit Coachlines (Exempt)",
+      "Runcimans Motors Limited",
+      "Go Wellington",
+      "Other",
+      "Horizons Regional Council",
+      "Mana Coach Services Limited (Exempt)",
+      "Newlands Coach Services",
+      "Uzabus (Horizons)",
+      "East By West Ferry",
+      "Unallocated Bus Unit"
+    ],
+    "warnings": [],
+    "summary": {
+      "stops": 3123,
+      "routes": 245,
+      "trips": 10080,
+      "shapes": 568,
+      "agencies": 22,
+      "modes": [
+        "2",
+        "3",
+        "4",
+        "5",
+        "712"
+      ],
+      "feedStart": "20261011",
+      "feedEnd": "20261121"
+    }
+  },
+  "originalTrips": 10080,
+  "normalizedTrips": 10080,
+  "firstJourney": {
+    "date": "2026-11-03",
+    "origin": "Rongotai - Tirangi Road (near 95)",
+    "destination": "Wellington Station - Stop E",
+    "departureCount": 12,
+    "resultCount": 5,
+    "transitResult": true,
+    "geometryKind": "published",
+    "approximateGeometry": false
+  },
+  "durationMs": 9294,
+  "notes": "No provider code or city registry entry was added. Static timetable validation, not live service verification."
+}

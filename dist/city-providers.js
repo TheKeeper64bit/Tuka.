@@ -25,17 +25,27 @@ export const CITY_PROVIDERS = Object.freeze({
   }),
 });
 
+// Runtime profiles share one registry even when cached modules have different URLs.
+const imported=globalThis[Symbol.for('tuka.imported-providers')]??=new Map();
+export const providers=()=>[...Object.values(CITY_PROVIDERS),...imported.values()];
+export const hasProvider=id=>Object.hasOwn(CITY_PROVIDERS,id)||imported.has(id);
+export function registerProvider(profile){
+ if(!/^gtfs-[a-f0-9]{64}$/.test(profile?.id)||!profile.imported||!Array.isArray(profile.bounds)||profile.bounds.length!==4||!profile.bounds.every(Number.isFinite))throw Error('Invalid imported network profile');
+ new Intl.DateTimeFormat('en',{timeZone:profile.timezone});
+ imported.set(profile.id,Object.freeze({...profile}));return profile;
+}
+export function unregisterProvider(id){imported.delete(id);}
 export function providerFor(cityId = 'skopje') {
-  return CITY_PROVIDERS[cityId] || CITY_PROVIDERS.skopje;
+  return CITY_PROVIDERS[cityId] || imported.get(cityId) || CITY_PROVIDERS.skopje;
 }
 
 // Unknown positions never silently choose another city's transit system.
 export function cityAtLocation(point){
  if(!point||!Number.isFinite(point.lat)||!Number.isFinite(point.lon))return null;
- return Object.values(CITY_PROVIDERS).find(p=>{const [w,s,e,n]=p.detectionBounds||p.bounds;return point.lon>=w&&point.lon<=e&&point.lat>=s&&point.lat<=n;})||null;
+ return providers().sort((a,b)=>Number(b.imported||false)-Number(a.imported||false)).find(p=>{const [w,s,e,n]=p.detectionBounds||p.bounds;return point.lon>=w&&point.lon<=e&&point.lat>=s&&point.lat<=n;})||null;
 }
 export function officialNewsURL(value,cityId='skopje'){
- try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password&&!u.port&&providerFor(cityId).news.hosts.includes(u.hostname)?u.href:null;}catch{return null;}
+ try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password&&!u.port&&(providerFor(cityId).news?.hosts||[]).includes(u.hostname)?u.href:null;}catch{return null;}
 }
 
 // Startup never downloads an arbitrary city's timetable before GPS resolves.

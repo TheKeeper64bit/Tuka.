@@ -8,8 +8,8 @@ const HORIZON=4*3600000;
 // walk must not erase a useful low-walking option at the same stop.
 function retain(map,id,label) {
   const current=map.get(id)||[];
-  if(current.some(x=>x.time<=label.time&&x.walk<=label.walk)) return;
-  map.set(id,[...current.filter(x=>!(label.time<=x.time&&label.walk<=x.walk)),label]);
+  if(current.some(x=>x.connectionKey===label.connectionKey&&x.time<=label.time&&x.walk<=label.walk)) return;
+  map.set(id,[...current.filter(x=>!(x.connectionKey===label.connectionKey&&label.time<=x.time&&label.walk<=x.walk)),label]);
 }
 export function planJourney(db,rt,origin,destination,time=Date.now(),input={}) {
   const options=preferences(input),reverse=options.mode==='arrive',sign=reverse?-1:1,start=sign*time;
@@ -20,6 +20,25 @@ export function planJourney(db,rt,origin,destination,time=Date.now(),input={}) {
   const walkMs=(m,from,to)=>Math.ceil(walked(m,from,to)/(options.walkingSpeed*1000/3600))*1000;
   const stops=db.stops.filter(s=>db.byStop.has(s.id)),byId=new Map(stops.map(s=>[s.id,s]));
   const source=reverse?destination:origin,target=reverse?origin:destination;
+  const rules=db.transfers||[],constrained=rules.some(r=>r.from_trip_id||r.to_trip_id||r.from_route_id||r.to_route_id);
+  const matchesStop=(rule,stop)=>!rule||rule===stop?.id||rule===stop?.parent_station;
+  const forwardRules=new Map(),reverseRules=new Map(),stopAliases=new Map();
+  for(const row of rules)for(const [map,key] of [[forwardRules,row.from_stop_id],[reverseRules,row.to_stop_id]]){const id=key||'*';if(!map.has(id))map.set(id,[]);map.get(id).push(row);}
+  for(const s of stops)for(const id of [s.id,s.parent_station].filter(Boolean)){if(!stopAliases.has(id))stopAliases.set(id,[]);stopAliases.get(id).push(s);}
+  const rulesAt=(s,back=false)=>{const index=back?reverseRules:forwardRules;return [...(index.get(s.id)||[]),...(index.get(s.parent_station)||[]),...(index.get('*')||[])];};
+  function permitsTransfer(label,run,x){
+   if(!rules.length)return true;
+   const transfer=label.legs.at(-1),prior=label.legs.findLast(l=>l.type==='bus');if(transfer?.type!=='transfer'||!prior)return true;
+   const fromTrip=reverse?run.id:prior.tripId,toTrip=reverse?prior.tripId:run.id,fromRoute=reverse?run.trip.route_id:prior.route.route_id,toRoute=reverse?prior.route.route_id:run.trip.route_id;
+   let selected=[],specificity=-1;
+   for(const row of rulesAt(transfer.from)){
+    if(!matchesStop(row.from_stop_id,transfer.from)||!matchesStop(row.to_stop_id,transfer.to)||row.from_trip_id&&row.from_trip_id!==fromTrip||row.to_trip_id&&row.to_trip_id!==toTrip||row.from_route_id&&row.from_route_id!==fromRoute||row.to_route_id&&row.to_route_id!==toRoute)continue;
+    const score=8*Number(!!row.from_trip_id)+8*Number(!!row.to_trip_id)+4*Number(!!row.from_route_id)+4*Number(!!row.to_route_id)+Number(row.from_stop_id===transfer.from.id)+Number(row.to_stop_id===transfer.to.id);
+    if(score>specificity){specificity=score;selected=[row];}else if(score===specificity)selected.push(row);
+   }
+   const available=reverse?prior.start-x.arrival.time:x.departure.time-prior.end;
+   return !selected.some(row=>String(row.transfer_type)==='3'||String(row.transfer_type)==='2'&&available<Number(row.min_transfer_time||0)*1000);
+  }
   const foot=(type,from,to,meters,at)=>{const walkingMs=walkMs(meters,from,to),end=at+walkingMs+(type==='transfer'?buffer:0);return {type,from:reverse?to:from,to:reverse?from:to,meters,walkingMeters:walked(meters,from,to),walkingMs,bufferMs:type==='transfer'?buffer:0,start:reverse?-end:at,end:reverse?-at:end};};
   let labels=new Map(),results=[];
   for(const s of stops) {const meters=distance(source,s);if(meters<=800){const leg=foot('walk',source,s,meters,start);retain(labels,s.id,{time:reverse?-leg.start:leg.end,walk:leg.walkingMeters,legs:[leg]});}}
@@ -60,10 +79,10 @@ export function planJourney(db,rt,origin,destination,time=Date.now(),input={}) {
         if(x.p[reverse?'pickup_type':'drop_off_type']!=='1'&&arrive<=start+HORIZON) for(const b of boarded) {
           const first=reverse?x:b.x,last=reverse?b.x:x;
           const leg={type:'bus',route:db.routes.get(run.trip.route_id),headsign:run.trip.trip_headsign,tripId:run.id,serviceDate:run.day.date,boardSeq:first.p.seq,endSeq:last.p.seq,from:byId.get(first.p.stop_id),to:byId.get(last.p.stop_id),start:first.departure.time,end:last.arrival.time,live:first.departure.live,arrivalLive:last.arrival.live,stops:i-b.index};
-          retain(reached,x.p.stop_id,{time:arrive,walk:b.label.walk,legs:[...b.label.legs,leg]});
+          retain(reached,x.p.stop_id,{time:arrive,walk:b.label.walk,connectionKey:constrained?run.id:undefined,legs:[...b.label.legs,leg]});
         }
         if(x.p[reverse?'drop_off_type':'pickup_type']==='1'||depart<start)continue;
-        for(const label of labels.get(x.p.stop_id)||[]) if(label.time<=depart&&!label.legs.some(l=>l.tripId===run.id&&l.serviceDate===run.day.date)) {
+        for(const label of labels.get(x.p.stop_id)||[]) if(label.time<=depart&&permitsTransfer(label,run,x)&&!label.legs.some(l=>l.tripId===run.id&&l.serviceDate===run.day.date)) {
           // Once aboard the same run, lower walking cost dominates at all later stops.
           if(!boarded.some(b=>b.label.walk<=label.walk))boarded=[{label,x,index:i}];
         }
@@ -76,8 +95,14 @@ export function planJourney(db,rt,origin,destination,time=Date.now(),input={}) {
     const next=new Map();db.walkTransfers??=new Map();
     for(const [id,entries] of reached) {
       let neighbors=db.walkTransfers.get(id);
-      if(!neighbors){neighbors=stops.map(s=>({s,dist:distance(byId.get(id),s)})).filter(x=>x.dist<=250);db.walkTransfers.set(id,neighbors);}
-      for(const label of entries) for(const x of neighbors) retain(next,x.s.id,{time:label.time+walkMs(x.dist,byId.get(id),x.s)+buffer,walk:label.walk+walked(x.dist,byId.get(id),x.s),legs:[...label.legs,foot('transfer',byId.get(id),x.s,x.dist,label.time)]});
+      if(!neighbors){
+       const from=byId.get(id),destinations=new Set(stops.filter(s=>distance(from,s)<=250).map(s=>s.id));
+       for(const row of rulesAt(from,reverse)){
+        const endpoint=reverse?row.from_stop_id:row.to_stop_id;if(endpoint)for(const s of stopAliases.get(endpoint)||[])destinations.add(s.id);
+       }
+       neighbors=[...destinations].map(sid=>({s:byId.get(sid),dist:distance(from,byId.get(sid))}));db.walkTransfers.set(id,neighbors);
+      }
+      for(const label of entries) for(const x of neighbors) retain(next,x.s.id,{time:label.time+walkMs(x.dist,byId.get(id),x.s)+buffer,walk:label.walk+walked(x.dist,byId.get(id),x.s),connectionKey:label.connectionKey,legs:[...label.legs,foot('transfer',byId.get(id),x.s,x.dist,label.time)]});
     }
     labels=next;
   }

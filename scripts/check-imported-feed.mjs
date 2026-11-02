@@ -1,0 +1,22 @@
+import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {parseGTFSZip} from '../dist/gtfs-zip.js';
+import {inspectFeed} from '../dist/feed-profile.js';
+import {registerProvider,unregisterProvider} from '../dist/city-providers.js';
+import {normalizeGTFS} from '../dist/gtfs.js';
+import {departures} from '../dist/transit.js';
+import {planJourney} from '../dist/planner.js';
+import {localTimestamp,serviceDay,active,distance} from '../dist/schedule.js';
+import {routeGeometry} from '../dist/map-ui.js';
+// Usage: node scripts/check-imported-feed.mjs feed.zip 'Network name' 2026-11-03
+if(!process.argv[2])throw Error('Pass a GTFS ZIP, optional display name, and optional YYYY-MM-DD service date.');
+const bytes=readFileSync(process.argv[2]),sha=createHash('sha256').update(bytes).digest('hex'),start=performance.now();
+const tables=await parseGTFSZip(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength));
+const profile=inspectFeed(tables,'gtfs-'+sha,process.argv[3]||'Imported network');registerProvider(profile);const db=normalizeGTFS(tables,profile.id);
+const date=process.argv[4]||new Intl.DateTimeFormat('en-CA',{timeZone:db.timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(Date.now()),day=serviceDay(0,localTimestamp(date,'08:00',db.timezone),db.timezone),services=active(db,day);
+const trip=[...db.trips.values()].find(t=>{const path=db.times.get(t.trip_id);return services.has(t.service_id)&&path[0].seconds>=7*3600&&path[0].seconds<12*3600&&distance(db.stopIndex.get(path[0].stop_id),db.stopIndex.get(path.at(-1).stop_id))>3000;});if(!trip)throw Error('No suitable active trip for the sample journey. Pass a service date covered by the feed.');
+const path=db.times.get(trip.trip_id),from=db.stopIndex.get(path[0].stop_id),to=db.stopIndex.get(path.at(-1).stop_id),now=day.midnight+path[0].seconds*1000-5*60000;
+const departuresList=departures(db,null,from.id,now),journeys=planJourney(db,null,from,to,now,{mode:'leave'}),geometry=routeGeometry(db,trip);
+if(!departuresList.length||!journeys.some(r=>r.legs.some(l=>l.type==='bus')))throw Error('Unlisted real feed could not plan transit');
+const report={checkedAt:new Date().toISOString(),sha256:sha,zipBytes:bytes.length,profile,originalTrips:tables['trips.txt'].length,normalizedTrips:db.trips.size,firstJourney:{date,origin:from.name,destination:to.name,departureCount:departuresList.length,resultCount:journeys.length,transitResult:true,geometryKind:geometry.kind||'stop outline',approximateGeometry:geometry.approximate},durationMs:Math.round(performance.now()-start),notes:'No provider code or city registry entry was added. Static timetable validation, not live service verification.'};
+console.log(JSON.stringify(report,null,2));unregisterProvider(profile.id);

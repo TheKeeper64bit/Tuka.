@@ -1,0 +1,53 @@
+[
+  {
+    "width": 320,
+    "importWorker": true,
+    "unlistedNetwork": true,
+    "nativeStopSearch": true,
+    "routeAndJourney": true,
+    "reloadAndSavedState": true,
+    "duplicateIdIsolation": true,
+    "switchBack": true,
+    "removeImportedNetwork": true,
+    "invalidImportPreservesActive": true,
+    "feedUpdateKeepsSavedState": true,
+    "offlineReader": true,
+    "newsFallback": true,
+    "noCopilotMisrouting": true,
+    "pageErrors": []
+  },
+  {
+    "width": 390,
+    "importWorker": true,
+    "unlistedNetwork": true,
+    "nativeStopSearch": true,
+    "routeAndJourney": true,
+    "reloadAndSavedState": true,
+    "duplicateIdIsolation": true,
+    "switchBack": true,
+    "removeImportedNetwork": true,
+    "invalidImportPreservesActive": true,
+    "feedUpdateKeepsSavedState": true,
+    "offlineReader": true,
+    "newsFallback": true,
+    "noCopilotMisrouting": true,
+    "pageErrors": []
+  },
+  {
+    "width": 1280,
+    "importWorker": true,
+    "unlistedNetwork": true,
+    "nativeStopSearch": true,
+    "routeAndJourney": true,
+    "reloadAndSavedState": true,
+    "duplicateIdIsolation": true,
+    "switchBack": true,
+    "removeImportedNetwork": true,
+    "invalidImportPreservesActive": true,
+    "feedUpdateKeepsSavedState": true,
+    "offlineReader": true,
+    "newsFallback": true,
+    "noCopilotMisrouting": true,
+    "pageErrors": []
+  }
+]

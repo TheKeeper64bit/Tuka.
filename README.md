@@ -6,7 +6,7 @@
 
 Built in Skopje. Extended to Boston. Now being tested for Tilburg.
 
-**3 city networks · installable web app · one shared journey engine · Meta-powered assistance**
+**Bring your own GTFS network · 3 connected city pilots · installable web app · one shared journey engine**
 
 [Explore the judging host](https://tuka.meta-cerebralvalley.rand0m.net) · [Follow the evidence](#built-to-be-inspected) · [Run it yourself](#run-tuka) · [See the roadmap](#where-tuka-goes-next)
 
@@ -35,6 +35,7 @@ The larger idea grows from that everyday experience: a rider should be able to c
 | Rider action | What Tuka provides |
 | --- | --- |
 | **Find my network** | GPS-based selection among supported cities, with a manual chooser when needed. |
+| **Import my network** | Upload a compatible GTFS ZIP, review its agencies and coverage, and open its stops, lines and journeys without adding city code. Timetables stay on the device. |
 | **Tap a stop** | Boarding routes, directional paths, reachable stops and upcoming departures. |
 | **Understand the map** | Consistent route colors, validated published shapes, and clearly marked approximations where the source is incomplete. |
 | **Get somewhere on time** | Leave now, leave at or arrive by; compare journeys with up to two transfers. |
@@ -46,7 +47,25 @@ The larger idea grows from that everyday experience: a rider should be able to c
 | **Install on my device** | A standalone web app with browser-guided installation; city selection stays in the same app. |
 | **Stay useful offline** | Downloaded timetable basics and saved information; live information requires a connection. |
 
-The same Stops, Bus lines, Journey, News and Saved screens serve all three networks. Each city brings its own data and capabilities into that shared interface.
+The same screens serve the three connected pilots and locally imported GTFS networks. Imported schedules work without news, ticketing or a live-data adapter; unavailable capabilities are identified clearly.
+
+## Bring your own city. Keep the same Tuka.
+
+**Choose city → Import a network → select a GTFS ZIP → Review timetable → Import & open network.**
+
+The importer derives agencies, time zone, map coverage and counts from the data. A browser worker validates the feed before it is saved. The shared map, route overlays, departures, planner, favorites and offline reader then consume the ordinary normalized schedule contract. No entry in the built-in city registry is required.
+
+You can save a feed as a new network or update an existing imported network while keeping its saved stops and journeys. Timetables use IndexedDB on the device; imports do not need a Tuka server upload. Names in non-Latin scripts are preserved and searchable.
+
+**Tested beyond the pilots:** Wellington’s public Metlink ZIP imported with **3,123 served stops, 245 routes and all 10,080 trips**, using published geometry. The mobile browser imported it, opened a route and restored it after reload without a Wellington adapter. This verifies schedule ingestion and UI behavior, not live service operation. [Inspect the real-feed audit](reports/imported-metlink-check.json) · [Browser evidence](reports/metlink-import-browser-check.json).
+
+![Review a GTFS network before opening it in Tuka](reports/gtfs-import-review-preview.png)
+
+*Mobile browser capture using a small deterministic test network. A separate check imports the public Metlink feed.*
+
+Imports currently accept fixed-route GTFS Schedule ZIPs up to **50 MB compressed / 200 MB expanded**. Frequency expansion is bounded. National feeds need a smaller export or the future regional compilation pipeline. Live predictions, news, fares, flexible booking and operator integrations are not supplied by a Schedule ZIP. Local share links require a matching installed network.
+
+[Read the shell contract and supported boundaries](reports/universal-shell.md).
 
 ## The hackathon leap: one local app, three different transit systems
 
@@ -141,7 +160,7 @@ Reliability is part of the product experience: a timetable should remain usable 
 
 | Evidence | What it establishes |
 | --- | --- |
-| **176 passing Node tests**, plus standalone regression checks | Coverage across authentication, planning, calendars, realtime matching, geometry, city isolation, saved state, offline basics, notices and translations. |
+| **184 passing Node tests**, plus standalone regression checks | Coverage across authentication, planning, calendars, realtime matching, geometry, city isolation, saved state, offline basics, notices and translations. |
 | **407,058 source calls compared; zero mismatches** | The Tilburg partition preserves the compared fields of its retained source trips. |
 | **Geometry audits across all three assessed networks** | Seven Skopje, eleven Boston and three Tilburg patterns recover legitimate published paths after fixing ordered stop-to-shape matching. |
 | **Browser GPS and city-switch checks** | Tilburg GPS overrides a stale saved Skopje preference; a first visit with denied location opens the chooser without downloading a default network. |
@@ -168,12 +187,12 @@ The next steps have a deliberate order:
 | Stage | What it would unlock | What must be proved first |
 | --- | --- | --- |
 | **1 · Prove Tilburg in the field** | Confidence in actual stops, transfers, disruption advice and live arrival coverage. | Real journeys with the local tester, a live model round trip, and fixes from that feedback. |
-| **2 · Make city onboarding repeatable** | Add a compatible city through a provider profile and a verified ingestion pipeline. | Consistent source licensing, calendars, geometry and realtime acceptance checks. |
+| **2 · Extend generic onboarding** | Local GTFS Schedule import is implemented; next add managed refresh and optional live-feed connections. | More real-feed acceptance checks, source licensing and a stable feed-update catalog. |
 | **3 · Build the global feed library** | Discover supported networks and download only the relevant regional data. | Accepted Tilburg behavior, repeatable partitions and reliable feed refresh. |
 | **4 · Expand the travel experience** | More modes, stronger accessibility information, richer offline packs and cross-network journeys. | Suitable public sources and measured reliability for each capability. |
 | **5 · Make the platform reusable** | Explore shared components or integrations for campuses, municipalities and transport-facing services. | Operational maturity and evidence of rider demand. |
 
-These are future directions, not shipped coverage or announced partnerships. The global library remains paused until the Tilburg pilot is accepted.
+Local schedule import is implemented on this branch. The managed global library and later stages remain future work; importing a timetable does not claim a new operator partnership or field acceptance.
 
 The architecture already connects three differently shaped transit systems to one passenger interface. The opportunity is to make that process repeatable while keeping the rider experience clear and the underlying evidence visible.
 
@@ -181,7 +200,7 @@ The architecture already connects three differently shaped transit systems to on
 
 Tuka is a tested pilot with meaningful coverage and work still to prove:
 
-- **Coverage follows public sources.** Boston currently covers buses/shuttles; Tilburg covers the defined regional bus partition. Other cities and modes are not implied.
+- **Coverage follows public sources.** Boston currently covers buses/shuttles; Tilburg covers the defined regional bus partition. Imported fixed-route feeds use their own supplied modes, timetables and geometry; they do not automatically gain live integrations.
 - **Some source geometry is incomplete.** Tilburg has 41 patterns with no published shape. Two Boston shuttle patterns still fail validation. Skopje's latest audit retains one rejected shape and four patterns without shapes. Dashed bus outlines are approximate stop connections; dashed journey walking links indicate walking.
 - **Schedules have an expiry.** Boston and Tilburg static data are build-time snapshots with finite service calendars. They need rebuilding as operators publish updates. Live feeds do not extend those calendars.
 - **Walking and ride alerts have practical limits.** The Meta Worker currently lacks the D1 binding needed for street-walking refinement, so walks remain labelled estimates. Phone backgrounding or locking can pause tracking and alerts.

@@ -129,7 +129,7 @@ export async function resolveRouteGeometry(db,trip,fetcher=fetch){
  const initial=routeGeometry(db,trip);if(!initial.approximate||initial.kind==='road'||initial.points.length<2)return initial;
  db.roadAttempts??=new Map();const key=initial.points.map(p=>p.join(',')).join(';');
  if(!db.roadAttempts.has(key))db.roadAttempts.set(key,(async()=>{
-  try{const response=await fetcher('/api/transit/road-geometry',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({cityId:db.provider,points:initial.points})});if(!response.ok)return null;
+  try{if(db.provider?.startsWith('gtfs-'))return null;const response=await fetcher('/api/transit/road-geometry',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({cityId:db.provider,points:initial.points})});if(!response.ok)return null;
    const data=await response.json();return credibleShape(data.points,initial.points)?data.points:null;
   }catch{return null;}
  })());

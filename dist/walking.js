@@ -3,6 +3,7 @@ const memory=new Map();
 export const walkKey=(from,to)=>`${from.lon.toFixed(5)},${from.lat.toFixed(5)};${to.lon.toFixed(5)},${to.lat.toFixed(5)}`;
 export function knownWalk(from,to){return memory.get(walkKey(from,to))?.distance;}
 export async function walkingPath(from,to,signal,cityId='skopje'){
+ if(cityId.startsWith('gtfs-'))return null;
   const key=walkKey(from,to);if(memory.has(key))return memory.get(key);
   const [a,b]=key.split(';');
   const response=await fetch(apiURL('/api/walk?'+new URLSearchParams({from:a,to:b,...(cityId==='skopje'?{}:{city:cityId})})),{signal,credentials:apiCredentials()});
