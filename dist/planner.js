@@ -1,7 +1,7 @@
 import {distance,serviceDay,active,prediction,eventTime} from './schedule.js?v=24';
 export function preferences(input={}) {
   const number=(v,f,min,max)=>Number.isFinite(+v)&&v!==''?Math.max(min,Math.min(max,+v)):f;
-  return {preference:['fastest','transfers','walking'].includes(input.preference)?input.preference:'fastest',walkingSpeed:number(input.walkingSpeed,4.5,2,6),minTransfer:number(input.minTransfer,3,0,20),mode:['now','leave','arrive'].includes(input.mode)?input.mode:'now'};
+  return {preference:['fastest','transfers','walking'].includes(input.preference)?input.preference:'fastest',walkingSpeed:number(input.walkingSpeed,4.5,2,6),minTransfer:number(input.minTransfer,3,0,20),mode:['now','leave','arrive'].includes(input.mode)?input.mode:'now',maxWalkingMinutes:input.maxWalkingMinutes==null||input.maxWalkingMinutes===''?null:number(input.maxWalkingMinutes,null,1,120)};
 }
 const HORIZON=4*3600000;
 // Keep nondominated time/walking labels in each ride round. A faster but longer
@@ -81,6 +81,7 @@ export function planJourney(db,rt,origin,destination,time=Date.now(),input={}) {
     }
     labels=next;
   }
+  if(options.maxWalkingMinutes!==null)results=results.filter(r=>r.legs.filter(l=>l.type!=='bus').reduce((n,l)=>n+l.walkingMs,0)<=options.maxWalkingMinutes*60000);
   for(const r of results) {
     r.connections=[];
     r.legs.forEach((leg,i)=>{if(leg.type!=='transfer')return;const before=r.legs[i-1],after=r.legs[i+1];if(before?.type!=='bus'||after?.type!=='bus')return;const availableMs=after.start-before.end,marginMs=availableMs-leg.walkingMs-buffer;const connection={availableMs,walkingMs:leg.walkingMs,bufferMs:buffer,marginMs,tight:marginMs<120000,live:before.arrivalLive&&after.live};leg.connection=connection;r.connections.push(connection);});

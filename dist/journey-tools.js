@@ -21,6 +21,7 @@ export function sharedJourney(base,from,to,options={},cityId='skopje'){
   const a=place(from,cityId),b=place(to,cityId);if(!a||!b)return null;
   const url=new URL('./',base),p=preferences(options);
   for(const [key,value] of Object.entries({from:`${a.lat.toFixed(5)},${a.lon.toFixed(5)}`,to:`${b.lat.toFixed(5)},${b.lon.toFixed(5)}`,fromName:a.name,toName:b.name,preference:p.preference,speed:p.walkingSpeed,transfer:p.minTransfer}))url.searchParams.set(key,value);
+  if(p.maxWalkingMinutes!==null)url.searchParams.set('walkLimit',p.maxWalkingMinutes);
   if(cityId!=='skopje')url.searchParams.set('city',cityId);
   return url.href;
 }
@@ -28,7 +29,7 @@ export function readShared(url){
   try{const p=new URL(url).searchParams,stop=p.get('stop'),cityId=p.get('city')||'skopje';if(providerFor(cityId).id!==cityId)return null;if(stop&&stop.length<=100)return {stop,cityId};
     const point=key=>{const pair=(p.get(key)||'').split(',');return pair.length===2?place({lat:pair[0],lon:pair[1],name:p.get(key+'Name')},cityId):null;};
     const origin=point('from'),destination=point('to');
-    return origin&&destination?{origin,destination,cityId,options:preferences({preference:p.get('preference'),walkingSpeed:p.get('speed')??4.5,minTransfer:p.get('transfer')??3})}:null;
+    return origin&&destination?{origin,destination,cityId,options:preferences({preference:p.get('preference'),walkingSpeed:p.get('speed')??4.5,minTransfer:p.get('transfer')??3,maxWalkingMinutes:p.get('walkLimit')})}:null;
   }catch{return null;}
 }
 export function wheelchairAccess(db,legs){

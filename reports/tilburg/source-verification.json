@@ -1,0 +1,10 @@
+{
+  "checkedAt": "2026-10-30T07:19:30.475676+00:00",
+  "sourceSha256": "96ed2e0a0446432df2c89b684097fd51f2f3b7451d946d9a0cf11d9ae255a353",
+  "assetSha256": "bd2c5220d5f1799b298a024e4757f9daf1211faef7cef9b8f246fbe0098c23cf",
+  "exactCallsCompared": 407058,
+  "completeTripsCompared": 16873,
+  "afterMidnightCalls": 6109,
+  "mismatches": 0,
+  "method": "Every regional call compared with the national ZIP: trip ID, stop ID, sequence, arrival/departure seconds, pickup and drop-off restrictions. No missing or additional retained-trip calls."
+}

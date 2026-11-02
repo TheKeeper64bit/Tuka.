@@ -4,9 +4,11 @@ node_modules/
 .wrangler/
 .dev.vars*
 .env*
+!.env.example
 !.dev.vars.example
 worker-configuration.d.ts
 .build/
 
 # Local presentation media; never publish with either site or the repository.
 /presentation/
+__pycache__/

@@ -14,7 +14,7 @@ export function normalizeGTFS(tables,cityId='skopje',compact=null){
  const stops=f('stops').filter(validStop).map(s=>({...s,id:s.stop_id,name:s.stop_name,lat:+s.stop_lat,lon:+s.stop_lon})),stopIndex=new Map(stops.map(s=>[s.id,s]));
  const routes=new Map(f('routes').map(r=>[r.route_id,r]));
  const trips=new Map(f('trips').filter(t=>routes.has(t.route_id)).map(t=>[t.trip_id,t]));
- const db={provider:provider.id,timezone,stops,stopIndex,routes,trips,calendar:f('calendar'),exceptions:f('calendar_dates'),info:f('feed_info')[0]||{},shapes:new Map(),times:new Map(),byStop:new Map(),maxSeconds:86400,tripBounds:new Map()};
+ const db={provider:provider.id,timezone,stops,stopIndex,routes,trips,calendar:f('calendar'),exceptions:f('calendar_dates'),transfers:f('transfers'),licenses:f('licenses'),info:f('feed_info')[0]||{},shapes:new Map(),times:new Map(),byStop:new Map(),maxSeconds:86400,tripBounds:new Map()};
  const index=new Map(),raw=new Map();
  if(compact){
   for(const [id,run] of Object.entries(compact.runs)){if(trips.has(id))raw.set(id,run);}

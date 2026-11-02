@@ -1,0 +1,211 @@
+
+> test
+> node --test tests/auth-check.mjs tests/deployment-check.mjs tests/public-api-check.mjs tests/public-site-check.mjs tests/meta-site-check.mjs tests/pages-build-check.mjs tests/provider-check.mjs tests/universal-transit-check.mjs tests/tilburg-check.mjs && node --test tests/planner-check.mjs tests/offline-check.mjs tests/journey-tools-check.mjs tests/walking-check.mjs tests/journey-follow-regression-check.mjs tests/service-alert-regression-check.mjs tests/language-regression-check.mjs tests/boot-language-check.mjs && node --test tests/favourites-check.mjs tests/news-check.mjs tests/tickets-check.mjs tests/ticket-ui-check.mjs tests/ticket-store-check.mjs tests/ticket-wallet-check.mjs && node tests/community-check.mjs && node tests/ride-check.mjs && node tests/network-check.mjs && node tests/merge-check.mjs && node tests/map-check.mjs && node tests/geometry-check.mjs && node --experimental-vm-modules tests/screens-check.mjs
+
+✔ unauthenticated documents, scripts and APIs stay protected; missing configuration fails closed (22.594114ms)
+✔ new feature APIs and shared journeys retain the custom-domain gate (1.219024ms)
+✔ production HTTP upgrades to HTTPS before serving login or accepting a code (0.779352ms)
+✔ codes go only to the owner, are not returned or stored in plaintext, and escape visitor labels (9.54824ms)
+✔ a code approves only its requesting browser and grants a persistent secure session (7.943677ms)
+✔ simultaneous redemption and subsequent replay can create only one session (3.122206ms)
+✔ five incorrect attempts lock the code; expired codes cannot approve a browser (9.186278ms)
+✔ pending browser requests do not resend; per-IP limits prevent inbox flooding (5.239685ms)
+✔ cross-origin requests cannot send mail, redeem codes or log a browser out (2.39017ms)
+✔ logout and owner revocation invalidate a remembered browser at the server (6.27079ms)
+✔ expired or forged session cookies are rejected (2.403635ms)
+{"event":"access_email_failed"}
+✔ delivery failure leaves no usable challenge; oversized and invalid requests are rejected (1.481462ms)
+✔ resend waits one minute, keeps its browser and owner, and replaces the previous code (3.976042ms)
+✔ resending cannot reset the five-guess limit or send without a browser-bound challenge (3.527604ms)
+✔ concurrent resends send only one new email; resends count toward inbox rate limits (6.171684ms)
+{"event":"access_email_failed"}
+✔ failed resend preserves the prior code and attempts; pending delivery cannot redeem either code (2.614875ms)
+✔ a resend racing a valid redemption never leaves a second usable challenge after approval (1.683484ms)
+✔ private artifact adds access controls without changing the public source (27.928286ms)
+✔ private sign-in preserves shared links without external redirects (2.951151ms)
+✔ Meta site serves a real login page instead of a browser prompt (37.224596ms)
+✔ valid form login creates an HttpOnly session and exposes city registry (12.814634ms)
+✔ wrong form credentials do not create a session (1.142003ms)
+✔ Meta assistant does not pretend to work when token is missing (5.604465ms)
+✔ Boston realtime endpoint normalizes official MBTA predictions and vehicles (5.157569ms)
+✔ Boston route-shapes endpoint validates and returns route geometry (5.545555ms)
+✔ Tilburg feeds, notices and Meta interpretation require the existing login (1.23835ms)
+✔ Pages publishes only public assets and injects a cookie-free API origin (17.031749ms)
+✔ public HTML and install metadata stay inside the Pages subpath (1.681581ms)
+✔ city providers keep feed URLs and capabilities separate (0.551572ms)
+✔ shared schedule helpers resolve each agency timezone and DST (14.815973ms)
+{"event":"tuka_public_api_failed","path":"/api/news"}
+✔ only public read routes are available and client credentials never reach handlers (32.822768ms)
+✔ cross-origin access is confined to Pages and preflight permits reads without credentials (1.585706ms)
+✔ HEAD has GET semantics without a response body; writes and arbitrary queries fail closed (3.063693ms)
+✔ provider failures remain visible to Pages without exposing server details (1.770203ms)
+✔ default client API stays same-origin and Pages configuration targets its separate public origin (1.831952ms)
+{"event":"tuka_public_site_failed","path":"/index.html"}
+{"event":"tuka_public_site_failed","path":"/api/news"}
+{"event":"tuka_public_site_failed","path":"/api/news"}
+✔ the disabled demo blocks pages, cached-reader URLs, assets and APIs without calling any binding (47.65872ms)
+✔ public root serves the index without an access gate and preserves shared-link queries (1.676202ms)
+✔ public API requests retain their URL and query but never forward browser credentials or Origin (2.146988ms)
+✔ public API responses preserve data and status while removing session and cross-origin headers (0.822688ms)
+✔ HEAD requests reach the appropriate binding without returning a response body (1.245519ms)
+✔ write methods and preflight are rejected before any asset or API binding is invoked (3.078537ms)
+✔ private auth paths and unknown assets keep asset 404s instead of receiving the app shell (1.428858ms)
+✔ binding failures return a generic 503 without exposing exception details or credentials (2.122756ms)
+✔ the public custom domain uses isolated assets and a read API binding while the original site keeps its private Worker (0.585686ms)
+OVapi regional feed unavailable trips Source unavailable: 503
+✔ Tilburg snapshot has complete references, agency zone, calendars and attribution (70.223743ms)
+✔ Tilburg direct, transfer and arrive-by journeys use exact feed calls and walking limits (384.351457ms)
+✔ exception-only calendar and previous-service-day 25-hour departures work (42.252516ms)
+✔ stop route colors stay distinct, use shapes where valid, and filters preserve identity (13.726787ms)
+✔ national protobuf filtering preserves exact regional entities, drops foreign entities (0.941276ms)
+✔ OVapi proxy only accepts fixed read-only sources; failure is not a cancellation (18.482373ms)
+✔ operator notices expire, retain source advice, and never invent publication dates (2.026954ms)
+✔ real-time matching rejects stale, foreign, wrong-date and distant vehicles (1.123301ms)
+✔ Meta interpretation validates constraints and rejects model-supplied itineraries (1.700224ms)
+✔ late previous-city news responses cannot overwrite Tilburg notices (3.61787ms)
+✔ skopje: preserves IDs, orders directions, static departures and journeys (30.93506ms)
+✔ skopje: calendar exceptions and 24-hour-plus times use agency date (0.943403ms)
+✔ boston: preserves IDs, orders directions, static departures and journeys (1.719562ms)
+✔ boston: calendar exceptions and 24-hour-plus times use agency date (0.831565ms)
+✔ invalid/reversed shapes and broken stop references never invent connecting geometry (34.7214ms)
+✔ DST gaps, overlaps and simultaneous city prediction caches remain independent (0.527877ms)
+✔ fresh predictions match exact sequence; stale/unknown/wrong-route vehicles are discarded (1.379175ms)
+✔ saved stops and commutes are isolated by city without migrating legacy Skopje keys (0.269592ms)
+✔ fixed feed proxy does not forward judge credentials or arbitrary URLs (3.403241ms)
+✔ Boston saved places and share links preserve the selected city (1.458901ms)
+✔ an untimed call does not suppress timed departures at the same stop (0.594697ms)
+✔ each boarding route has a distinct matching colour that survives filtering (1.177553ms)
+ℹ tests 66
+ℹ suites 0
+ℹ pass 66
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 961.466541
+✔ saved MK and SQ paint before the loader copy is revealed, with no app-module dependency (5.449188ms)
+✔ readiness statuses and language switching preserve the ten-second loader minimum (1.876451ms)
+✔ slow-loading and failure messages, retry and continue remain localized and functional (1.691656ms)
+✔ first launch, unsupported languages and blocked storage safely retain English (2.544281ms)
+✔ intermediate live calls invalidate a previously safe transfer just as in the planner (25.738517ms)
+✔ updates before boarding constrain boarding time, and propagated live flags expire (4.642401ms)
+✔ overnight propagation uses the exact service date, never an undated or other-day update (2.228896ms)
+✔ cancellation anywhere in the run is retained; only skipped boarding or exit disrupts this leg (0.965786ms)
+✔ refined final street walk warns when an arrive-by journey exceeds its deadline (0.824911ms)
+✔ walking-only arrive-by journeys also use updated duration for lateness (0.572916ms)
+✔ shared journeys round-trip places and preferences, never carry live times (2.06053ms)
+✔ journey links retain a GitHub Pages repository path and clear old queries (0.7497ms)
+✔ Home and Work stay on this device and invalid stored points are ignored (0.317148ms)
+✔ suburban JSP stops can be saved and shared on either side of the city (0.572267ms)
+✔ invalid saved-place updates fail without erasing existing Home and Work (0.652786ms)
+✔ wheelchair labels require bus and both stops, with unknown and explicit negatives preserved (0.256525ms)
+✔ official alerts match all selector fields, service date and affected period, and expire with the feed (1.034776ms)
+✔ selected journey drops stale live labels and flags a street walk that misses the bus (20.197417ms)
+✔ language labels keep proper names and use complete translated warning phrases (4.845641ms)
+✔ complete planner and offline warnings translate without leaving English fragments (6.482887ms)
+✔ deadline and connection templates preserve their actual values in both languages (0.620504ms)
+✔ composite labels translate without changing dynamic names or identifiers (2.316417ms)
+✔ DOM translations are reversible, update dynamically and protect names and source notices (3.552535ms)
+✔ first launch requires a language choice and stores the selected language (1.449896ms)
+✔ QR wallet instructions, controls, accessibility labels and errors translate as complete messages (1.204432ms)
+✔ QR wallet names remain untouched while dynamic warnings and labels change language (1.938441ms)
+✔ public offline reader prepares without any session check; APIs and unknown routes are never cached (35.886686ms)
+✔ online error responses are not replaced by cached content (2.037256ms)
+✔ incomplete installation cannot create a working offline reader (1.184603ms)
+✔ offline wallet assets are available at both deployment paths and missing assets cannot publish a partial reader (10.201705ms)
+✔ the public app has no sign-out control or session script and old session scripts are inert (0.709554ms)
+✔ worker activation retains the old public reader while a replacement is unavailable (2.672346ms)
+✔ failed cache writes do not corrupt the previous reader or publish a partial generation (2.416002ms)
+✔ offline upgrade publishes all assets together and preserves dependencies of the old open reader (10.786791ms)
+✔ Pages offline reader stays within its repository path and retains other applications caches (3.885329ms)
+✔ private build mode checks the session before caching an offline reader (5.789342ms)
+✔ date inputs use Skopje time and GTFS noon origin across DST (24.099597ms)
+✔ fastest, fewer transfers, tight margin and a simpler alternative (10.432389ms)
+✔ least walking retains a slower option and walking speed changes reachability (1.620348ms)
+✔ arrive by searches backward, includes the final walk and applies transfer buffer (1.690068ms)
+✔ selected weekday and calendar exceptions, not today, control service (1.774896ms)
+✔ previous service day and trips crossing midnight work in both directions (2.34793ms)
+✔ pickup/drop-off restrictions and arrival/departure dwell are respected (1.420518ms)
+✔ future searches never borrow live predictions; stale live data expires (4.09271ms)
+✔ exact destination beats similarly named hotels, including Cyrillic (0.757382ms)
+✔ saved commutes survive reload without treating a timetable as confirmed service (5.25557ms)
+✔ calendar metadata alone does not promise published future trips (0.788844ms)
+✔ arrive-by includes egress walking and cannot slip past the deadline (0.59049ms)
+✔ trip-level cancellation excludes a bus even without stop events (1.351244ms)
+✔ each displayed transfer margin belongs to its own journey (0.863875ms)
+✔ missed bus excludes only that trip instance; known street walks can invalidate a boarding (2.458475ms)
+✔ a cancelled or skipped last departure cannot hide a stop closure (4.53259ms)
+✔ route filters, direction and exact trip date still constrain stop alerts (1.794362ms)
+✔ an upcoming dated closure remains visible for a cancelled scheduled trip (0.568942ms)
+✔ matching a refreshed journey uses the delayed impact window (1.110148ms)
+✔ a delayed departure retains its trip-specific alert after its scheduled time has passed (1.416704ms)
+✔ delayed calls match the live impact window while skipped calls retain scheduled coverage (1.057885ms)
+✔ pedestrian directions reject car routes, remote snapped points and malformed paths (1.94415ms)
+✔ walking API caches results, has a shared rate budget and never forwards credentials (39.706383ms)
+ℹ tests 59
+ℹ suites 0
+ℹ pass 59
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 174.667358
+✔ legacy saved stops retain all routes; malformed storage does not break startup (2.1597ms)
+✔ Rekord with only bus 5 persists across reload; bus 7 never matches the saved filter (0.515452ms)
+✔ empty selections stay empty, destinations persist, and explicit all-lines tracks new routes (0.254656ms)
+✔ JSP parser keeps official source/date/content, rejects hostile URLs, and deduplicates (2.24043ms)
+✔ model output cannot replace source URLs, dates or titles, duplicate sources or omit articles (2.855842ms)
+✔ cache avoids duplicate paid calls and unchanged feed never regenerates (20.296235ms)
+{"event":"jsp_news_generation_unavailable"}
+✔ concurrent requests acquire one lease; provider failure shows original text and retries later (1.754004ms)
+{"event":"jsp_news_source_unavailable","reason":""}
+✔ source outages retain dated cached articles; arbitrary input cannot trigger writes or upstream fetches (1.721388ms)
+{"event":"jsp_news_generation_unavailable"}
+✔ new notices appear immediately as originals during the two-hour AI gap; failed calls consume quota (2.194588ms)
+{"event":"jsp_news_source_unavailable","reason":"JSP feed too large"}
+✔ missing key shows official originals; oversized feeds fail without generation (2.025982ms)
+✔ article UI escapes source and model text and never renders an external source URL (9.892985ms)
+✔ news fetch is lazy, refresh restores controls after errors, and old content remains visible (0.432248ms)
+✔ cards retain original image bytes and counters after reopening, isolated by app path (8.787167ms)
+✔ one-step undo restores both the prior count and last-use timestamp, only once (3.761312ms)
+✔ simultaneous clicks and stale tabs cannot spend twice or overwrite newer changes (2.06211ms)
+✔ editing validates the combined values, resets undo, and deletion requires a current version (1.609322ms)
+✔ bad fields and images never create a card (7.827964ms)
+✔ the ten-card limit is atomic across concurrent tabs (12.942116ms)
+✔ quota and failed writes preserve the old image, count, version and undo metadata (1.911474ms)
+✔ unavailable, denied and blocked storage return actionable errors (0.57326ms)
+✔ ticket markup escapes official text and rejects invalid identifiers and fares (11.545841ms)
+✔ Android handoff is explicit, package-scoped and has the official store fallback (0.276981ms)
+✔ catalogue loading uses the authenticated API and does not reload on every open (28.86726ms)
+✔ an unavailable catalogue keeps the official app handoff usable and shows an honest error (0.38134ms)
+✔ import accepts bounded raster images and rejects active/vector or oversized files (9.654396ms)
+✔ image decoding preserves original bytes and releases temporary object URLs on success/failure (1.510377ms)
+✔ saved card displays manual counts, safe passenger names and exhausted/undo states (0.490753ms)
+✔ normalizes real catalogue fields and leaves opaque validity rules out of displayed fares (2.403938ms)
+✔ rejects malformed catalogues and excludes inactive, duplicate, dynamic and invalid-price products (1.590136ms)
+✔ fresh cache is shared across query strings and never forwards credentials or arbitrary URLs (39.687577ms)
+✔ upstream outage keeps dated fares, limits retries, and never serves fares older than one day (8.523211ms)
+✔ unavailable or malformed upstream results use a clear 503 and brief shared retry delay (2.961636ms)
+✔ cache failures do not hide a valid live catalogue; writes are never sent upstream (2.868806ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 33
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 238.417698
+Passed: optional prompt on observed disappearance, expiry, revised ETA, unmatched trips, stop changes and nearby gating
+Passed: fifth-stop sequence, early and exit alerts once, inaccurate/off-route/stale fixes rejected, implausible boarding jump rejected
+Passed: late boarding, sparse shapes and GPS-resume reacquisition
+Passed: all boarding routes, directional downstream reach, repeated trips deduplication, boarding/alighting restrictions, live progress, exact destination connections
+Passed: freshness, future timestamps, route geometry, assignment, sequence, conflict preference, ambiguous trips, arrival deduplication
+Passed: quiet map palette, street labels, exact route geometry, route updates/clearing, stable vehicle badges
+Passed: published route colours render in a solid layer, approximate routes use supported constant dashes
+Passed: authentic 47a П corrupt shape rejected, valid return preserved, downstream/Ride geometry bounded, invalid coordinates and excessive loops rejected
+Passed: stop selection draws route, stable home badges, line detail route and vehicle rendering
+Passed: saved filters and destination restoration, empty filters, theme toggling
+Passed: visible arrive-by deadline warning and current-time/stop closure alerts
+Passed: city-specific shared screens, route overlays, both directions, and stale load/realtime race protection
+(node:58294) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)

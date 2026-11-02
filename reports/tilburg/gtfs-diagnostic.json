@@ -1,0 +1,160 @@
+{
+  "generatedAt": "2026-10-30T07:10:11.188Z",
+  "city": "tilburg",
+  "source": "https://gtfs.ovapi.nl/nl/gtfs-nl.zip",
+  "sha256": "25c7a31041b7d5c712839f4c5aba84abecc2871fd4d40803dba37be5a3ab6d4f",
+  "selectedDate": "2026-10-30",
+  "selectedStop": "4220128",
+  "timezone": "Europe/Amsterdam",
+  "requiredFiles": {
+    "agency.txt": true,
+    "stops.txt": true,
+    "routes.txt": true,
+    "trips.txt": true,
+    "stop_times.txt": true
+  },
+  "optionalFiles": {
+    "shapes.txt": true,
+    "calendar.txt": false,
+    "calendar_dates.txt": true
+  },
+  "hasServiceCalendar": true,
+  "counts": {
+    "stops": 3231,
+    "routes": 100,
+    "trips": 16873,
+    "usableTrips": 16873,
+    "stopTimes": 407058,
+    "shapes": 393
+  },
+  "relationships": {
+    "missingTripReferences": 0,
+    "missingStopReferences": 0,
+    "missingRouteReferences": 0,
+    "invalidStopCoordinates": 0,
+    "tripsWithFewerThanTwoCalls": 0,
+    "rejectedTrips": [],
+    "untimedCalls": 0,
+    "rowsOutOfSequenceBeforeNormalization": 0
+  },
+  "geometry": {
+    "uniqueTripPatterns": 434,
+    "publishedShapeTrips": 15719,
+    "approximateTrips": 1154,
+    "rejectedPatterns": 3,
+    "missingShapePatterns": 41
+  },
+  "activeServiceIds": [
+    "566",
+    "678",
+    "1153",
+    "1166",
+    "1260",
+    "1334"
+  ],
+  "selectedStopDepartures": {
+    "count": 123,
+    "sample": [
+      {
+        "tripId": "393767433",
+        "routeId": "162921",
+        "serviceDate": "20261030",
+        "departure": "2026-10-30T04:54:00.000Z",
+        "live": false
+      },
+      {
+        "tripId": "393767365",
+        "routeId": "162919",
+        "serviceDate": "20261030",
+        "departure": "2026-10-30T05:08:00.000Z",
+        "live": false
+      },
+      {
+        "tripId": "393767272",
+        "routeId": "162921",
+        "serviceDate": "20261030",
+        "departure": "2026-10-30T05:23:00.000Z",
+        "live": false
+      },
+      {
+        "tripId": "393767379",
+        "routeId": "163723",
+        "serviceDate": "20261030",
+        "departure": "2026-10-30T05:24:00.000Z",
+        "live": false
+      },
+      {
+        "tripId": "393770074",
+        "routeId": "163828",
+        "serviceDate": "20261030",
+        "departure": "2026-10-30T05:32:00.000Z",
+        "live": false
+      },
+      {
+        "tripId": "393767367",
+        "routeId": "162919",
+        "serviceDate": "20261030",
+        "departure": "2026-10-30T05:39:00.000Z",
+        "live": false
+      },
+      {
+        "tripId": "393767229",
+        "routeId": "163723",
+        "serviceDate": "20261030",
+        "departure": "2026-10-30T05:47:00.000Z",
+        "live": false
+      },
+      {
+        "tripId": "393767325",
+        "routeId": "162920",
+        "serviceDate": "20261030",
+        "departure": "2026-10-30T05:47:00.000Z",
+        "live": false
+      }
+    ]
+  },
+  "realtime": [
+    {
+      "url": "https://gtfs.ovapi.nl/nl/tripUpdates.pb",
+      "status": 200,
+      "timestamp": 1793344166,
+      "ageSeconds": 45,
+      "fresh": true,
+      "providerTripIds": 14131,
+      "matchedTripIds": 1216,
+      "unmatchedTripIds": 12915,
+      "rawVehicles": 0,
+      "usableVehicles": 0,
+      "rawUpdates": 146100,
+      "usableUpdates": 10604
+    },
+    {
+      "url": "https://gtfs.ovapi.nl/nl/vehiclePositions.pb",
+      "status": 200,
+      "timestamp": 1793344166,
+      "ageSeconds": 43,
+      "fresh": true,
+      "providerTripIds": 4543,
+      "matchedTripIds": 305,
+      "unmatchedTripIds": 4238,
+      "rawVehicles": 4549,
+      "usableVehicles": 297,
+      "rawUpdates": 0,
+      "usableUpdates": 0
+    },
+    {
+      "url": "https://gtfs.ovapi.nl/nl/alerts.pb",
+      "status": 200,
+      "timestamp": 1793344166,
+      "ageSeconds": 43,
+      "fresh": true,
+      "providerTripIds": 0,
+      "matchedTripIds": 0,
+      "unmatchedTripIds": 0,
+      "rawVehicles": 0,
+      "usableVehicles": 0,
+      "rawUpdates": 0,
+      "usableUpdates": 0
+    }
+  ]
+}

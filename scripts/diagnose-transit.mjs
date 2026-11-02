@@ -25,7 +25,7 @@ for(const trip of db.trips.values()){
  if(!tested.has(key))tested.set(key,routeGeometry(db,trip));
  const geometry=tested.get(key);geometry.approximate?approximate++:published++;
 }
-const provider=providerFor(city),urls=REALTIME_SOURCES[city]?Object.values(REALTIME_SOURCES[city]):[provider.realtime.url];
+const provider=providerFor(city),urls=city==='tilburg'?['tripUpdates','vehiclePositions','alerts'].map(kind=>'https://gtfs.ovapi.nl/nl/'+kind+'.pb'):REALTIME_SOURCES[city]?Object.values(REALTIME_SOURCES[city]):[provider.realtime.url];
 const realtime=await Promise.all(urls.map(async url=>{
  try{const response=await fetch(url,{signal:AbortSignal.timeout(15000)});if(!response.ok)return {url,status:response.status};
  const raw=decodeRealtime(new Uint8Array(await response.arrayBuffer()),provider.label),now=Date.now(),matched=normalizeRealtime(raw,db,now);

@@ -4,7 +4,7 @@ import {load,departures,planJourney} from './transit.js?v=24';
 import {localDate,localTime,localTimestamp,hasPublishedService} from './schedule.js?v=24';
 import {readFavourites,savedRouteMatches} from './favourites.js?v=20';
 import {readJourneys} from './journey-store.js?v=24';
-const cityId=providerFor(new URL(location.href).searchParams.get('city')||'skopje').id,storage=cityStorage(localStorage,cityId);
+const cityId=providerFor(new URL(location.href).searchParams.get('city')||localStorage.getItem('tuka-meta-city')||'skopje').id,storage=cityStorage(localStorage,cityId);
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const when=t=>localTime(t,db?.timezone)+' · '+localDate(t,db?.timezone);
 if(localStorage.getItem('tuka-dark')==='1')document.body.classList.add('dark');

@@ -20,7 +20,7 @@ export async function load({offlineOnly=false,cityId='skopje'}={}){
  if(!cached&&typeof caches!=='undefined')try{const cache=await caches.open('tuka-schedule'),headers=new Headers(copy.headers);headers.set('x-tuka-downloaded-at',db.downloadedAt);await cache.put(url,new Response(copy.body,{headers}));}catch{}
  return db;
 }
-function fields(b){let p=0,out={};function varint(){let v=0n,shift=0n;while(p<b.length){let c=b[p++];v|=BigInt(c&127)<<shift;if(!(c&128))return Number(BigInt.asIntN(64,v));shift+=7n}throw Error('Invalid protobuf')}while(p<b.length){let tag=varint(),k=tag>>3,w=tag&7,val;if(w===0)val=varint();else if(w===2){let n=varint();val=b.slice(p,p+n);p+=n}else if(w===1){p+=8;continue}else if(w===5){val=new DataView(b.buffer,b.byteOffset+p,4).getFloat32(0,true);p+=4}else throw Error('Unsupported protobuf');(out[k]??=[]).push(val)}return out}
+export function fields(b){let p=0,out={};function varint(){let v=0n,shift=0n;while(p<b.length){let c=b[p++];v|=BigInt(c&127)<<shift;if(!(c&128))return Number(BigInt.asIntN(64,v));shift+=7n}throw Error('Invalid protobuf')}while(p<b.length){let tag=varint(),k=tag>>3,w=tag&7,val;if(w===0)val=varint();else if(w===2){let n=varint();val=b.slice(p,p+n);p+=n}else if(w===1){p+=8;continue}else if(w===5){val=new DataView(b.buffer,b.byteOffset+p,4).getFloat32(0,true);p+=4}else throw Error('Unsupported protobuf');(out[k]??=[]).push(val)}return out}
 const str=b=>b?new TextDecoder().decode(b):'';const first=(f,k)=>f[k]?.[0];
 function readEvent(raw){if(!raw)return null;const f=fields(raw);let delay=first(f,1);if(delay>2147483647)delay-=4294967296;return {time:first(f,2),delay};}
 export function decodeRealtime(bytes,source='Modeshift'){let f=fields(bytes),head=fields(first(f,1)),timestamp=first(head,3),updates=new Map(),vehicles=[],alerts=[];for(let raw of f[2]||[]){let entity=fields(raw);if(first(entity,2))continue;if(first(entity,5))alerts.push(decodeAlert(first(entity,5),fields));if(first(entity,4)){let v=fields(first(entity,4)),td=first(v,1)?fields(first(v,1)):{},p=first(v,2)?fields(first(v,2)):{},descriptor=first(v,8)?fields(first(v,8)):{};if(first(p,1)!=null&&first(p,2)!=null)vehicles.push({id:str(first(descriptor,1))||str(first(entity,1)),label:str(first(descriptor,2)),tripId:str(first(td,1)),routeId:str(first(td,5)),date:str(first(td,3)),lat:first(p,1),lon:first(p,2),bearing:first(p,3),timestamp:first(v,5)||timestamp,seq:first(v,3),stopId:str(first(v,7))})}if(!first(entity,3))continue;let u=fields(first(entity,3)),trip=fields(first(u,1)),id=str(first(trip,1)),start=str(first(trip,3)),rel=first(trip,4);if(rel===3)updates.set(id+'|*|'+start,{tripRelationship:rel});for(let rawstop of u[2]||[]){let s=fields(rawstop),event=first(s,2)||first(s,3),ev=event?fields(event):{},delay=first(ev,1);if(delay>2147483647)delay-=4294967296;updates.set(id+'|'+str(first(s,4))+'|'+start+'|'+(first(s,1)??''),{time:first(ev,2),delay,arrival:readEvent(first(s,2)),departure:readEvent(first(s,3)),relationship:first(s,5),tripRelationship:rel,seq:first(s,1),tripId:id,stopId:str(first(s,4)),serviceDate:start,source})}}return {timestamp,alertTimestamp:timestamp,alerts,updates,vehicles:vehicles.map(v=>({...v,source})),modeshift:source==='Modeshift'}}
@@ -51,6 +51,14 @@ export function normalizeRealtime(feed,db,now=Date.now()){
   let day;try{day=serviceDay(0,v.date?v.date.replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3'):now,db.timezone);}catch{return false;}
   if(v.date&&day.date!==v.date)return false;
   if(!active(db,day).has(trip.service_id))return false;
+  // Reject a distant position even when the provider supplies a valid trip ID.
+  // Tilburg's validated shape is preferred; missing shapes use a generous stop corridor.
+  if(db.provider==='tilburg'){
+   const points=db.shapes.get(trip.shape_id)||path.map(p=>{const s=db.stopIndex.get(p.stop_id);return [s.lon,s.lat];});
+   const scale=111000*Math.cos(v.lat*Math.PI/180);let nearest=Infinity;
+   for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],x=(v.lon-a[0])*scale,y=(v.lat-a[1])*111000,dx=(b[0]-a[0])*scale,dy=(b[1]-a[1])*111000,t=Math.max(0,Math.min(1,(x*dx+y*dy)/(dx*dx+dy*dy||1)));nearest=Math.min(nearest,Math.hypot(x-t*dx,y-t*dy));}
+   if(nearest>1500)return false;
+  }
   if(!Number.isInteger(v.seq)){const matches=path.filter(p=>p.stop_id===v.stopId);if(matches.length!==1)return false;v.seq=matches[0].seq;}
   return path.some(p=>p.seq===v.seq&&(!v.stopId||p.stop_id===v.stopId));
  });

@@ -1,0 +1,18 @@
+{
+  "checkedAt": "2026-11-02T07:35:42.886Z",
+  "checks": [
+    "Manual Tilburg startup",
+    "Copilot opening preserves city",
+    "Mocked AI intent produces real arrive-by timetable results",
+    "Tilburg saved stop",
+    "Boston routes and Saved isolate city",
+    "Manual city persists despite Tilburg GPS",
+    "GPS selects Tilburg",
+    "Tilburg Saved restored",
+    "Five distinct route colors",
+    "News response: 16 official notices",
+    "Phone layout 390x844 without horizontal overflow"
+  ],
+  "errors": [],
+  "ai": "Meta interpretation mocked; actual timetable planner used. Live AI token test deferred by user."
+}

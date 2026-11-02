@@ -16,6 +16,13 @@ export const CITY_PROVIDERS = Object.freeze({
     realtime: Object.freeze({kind:'gtfsrt',feeds:['/api/transit/boston/trips','/api/transit/boston/vehicles','/api/transit/boston/alerts']}),
   }),
 
+  tilburg: Object.freeze({
+    id:'tilburg',name:'Tilburg',country:'Netherlands',label:'Arriva / Bravo · OVapi',timezone:'Europe/Amsterdam',
+    center:[5.083,51.5606],bounds:[4.3,51.1,6.1,52.1],detectionBounds:[5.00,51.49,5.16,51.63],refreshMs:30000,
+    capabilities:['scheduled','predicted','vehicles','alerts'],scheduleAsset:'./tilburg-network.bin',
+    gtfsUrl:'https://gtfs.ovapi.nl/nl/gtfs-nl.zip',realtime:liveFeeds('tilburg'),
+    news:{label:'Arriva / Bravo',url:'https://www.bravo.info/reizen/omleidingen-en-storingen-bus',hosts:['www.bravo.info','www.arriva.nl','arriva.nl','bravo.info']},
+  }),
 });
 
 export function providerFor(cityId = 'skopje') {
@@ -25,7 +32,7 @@ export function providerFor(cityId = 'skopje') {
 // Unknown positions never silently choose another city's transit system.
 export function cityAtLocation(point){
  if(!point||!Number.isFinite(point.lat)||!Number.isFinite(point.lon))return null;
- return Object.values(CITY_PROVIDERS).find(p=>{const [w,s,e,n]=p.bounds;return point.lon>=w&&point.lon<=e&&point.lat>=s&&point.lat<=n;})||null;
+ return Object.values(CITY_PROVIDERS).find(p=>{const [w,s,e,n]=p.detectionBounds||p.bounds;return point.lon>=w&&point.lon<=e&&point.lat>=s&&point.lat<=n;})||null;
 }
 export function officialNewsURL(value,cityId='skopje'){
  try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password&&!u.port&&providerFor(cityId).news.hosts.includes(u.hostname)?u.href:null;}catch{return null;}

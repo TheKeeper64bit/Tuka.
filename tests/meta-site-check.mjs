@@ -22,7 +22,7 @@ test('valid form login creates an HttpOnly session and exposes city registry', a
   const response = await worker.fetch(new Request('https://tuka.meta-cerebralvalley.rand0m.net/api/cities', {headers: {Cookie: cookie.split(';')[0]}}), env);
   assert.equal(response.status, 200);
   const data = await response.json();
-  assert.deepEqual(data.cities.map(city => city.id), ['skopje', 'boston']);
+  assert.deepEqual(data.cities.map(city => city.id), ['skopje', 'boston', 'tilburg']);
   assert.equal(data.cities[0].timezone, 'Europe/Skopje');
   assert.equal(data.cities[1].timezone, 'America/New_York');
 });
@@ -80,4 +80,11 @@ test('Boston route-shapes endpoint validates and returns route geometry', async 
     assert.equal(data.features.length, 1);
     assert.equal(data.features[0].properties.route, '1');
   } finally { globalThis.fetch = originalFetch; }
+});
+
+test('Tilburg feeds, notices and Meta interpretation require the existing login',async()=>{
+ for(const path of ['/api/transit/tilburg/trips','/api/transit/tilburg/vehicles','/api/transit/tilburg/alerts','/api/news?city=tilburg','/api/meta/interpret']){
+  const response=await worker.fetch(new Request('https://tuka.meta-cerebralvalley.rand0m.net'+path),env);
+  assert.equal(response.status,401);
+ }
 });

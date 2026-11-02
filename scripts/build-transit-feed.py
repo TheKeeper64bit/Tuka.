@@ -11,7 +11,7 @@ def build(source, target, city='boston', source_url='https://cdn.mbta.com/MBTA_G
         def rows(name):
             if name not in z.namelist(): return iter(())
             return csv.DictReader(io.TextIOWrapper(z.open(name), encoding='utf-8-sig', newline=''))
-        routes=[r for r in rows('routes.txt') if r['route_type']=='3']
+        routes=[r for r in rows('routes.txt') if r['route_type']=='3' or 700<=int(r['route_type'])<800]
         route_ids={r['route_id'] for r in routes}
         trips=[t for t in rows('trips.txt') if t['route_id'] in route_ids]
         trip_ids={t['trip_id'] for t in trips}
@@ -36,8 +36,9 @@ def build(source, target, city='boston', source_url='https://cdn.mbta.com/MBTA_G
         for r in rows('shapes.txt'):
             if r['shape_id'] in shape_ids: shapes[r['shape_id']].append([float(r['shape_pt_lon']),float(r['shape_pt_lat']),int(r['shape_pt_sequence'])])
         for shape in shapes.values(): shape.sort(key=lambda x:x[2])
-        result={'format':'tuka-gtfs-patterns-v1','cityId':city,'source':source_url,'sha256':hashlib.file_digest(open(source,'rb'),'sha256').hexdigest(),'tables':{name:list(rows(name+'.txt')) for name in ['agency','calendar','calendar_dates','feed_info']},'patterns':patterns,'runs':runs,'shapes':dict(shapes)}
-        result['tables'].update(stops=[s for s in rows('stops.txt') if s['stop_id'] in stop_ids],routes=routes,trips=trips)
+        result={'format':'tuka-gtfs-patterns-v1','cityId':city,'source':source_url,'sha256':hashlib.file_digest(open(source,'rb'),'sha256').hexdigest(),'tables':{name:list(rows(name+'.txt')) for name in ['agency','calendar','calendar_dates','feed_info','transfers','licenses']},'patterns':patterns,'runs':runs,'shapes':dict(shapes)}
+        all_stops=list(rows('stops.txt'));stop_ids|={s.get('parent_station') for s in all_stops if s['stop_id'] in stop_ids}
+        result['tables'].update(stops=[s for s in all_stops if s['stop_id'] in stop_ids],routes=routes,trips=trips)
         raw=json.dumps(result,separators=(',',':')).encode()
         with open(target,'wb') as f: f.write(gzip.compress(raw,mtime=0))
         print(json.dumps({'stops':len(result['tables']['stops']),'routes':len(routes),'trips':len(trips),'patterns':len(patterns),'bytes':len(raw),'compressed':__import__('os').path.getsize(target)}))
