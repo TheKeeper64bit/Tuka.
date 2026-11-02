@@ -1,3 +1,4 @@
+import {translateNotice} from './notice-translation.js';
 import {interpretJourney} from './meta-intent.js';
 import {netherlandsFeed,tilburgNotices} from './netherlands.js';
 import transport from './worker.js';
@@ -294,6 +295,7 @@ export default {
     if (['/api/network','/api/live','/api/arrivals'].includes(url.pathname)) return transport.fetch(new Request(url,{method:request.method,headers:{Accept:'application/json'}}));
     if (url.pathname === '/api/walk') return walkingResponse(request,env);
     if (url.pathname === '/auth/session') return json({authenticated:true});
+    if(url.pathname==='/api/news/translate')return translateNotice(request,env);
     if(url.pathname==='/api/meta/interpret')return interpretJourney(request,env);
     if(url.pathname.startsWith('/api/transit/tilburg/')) return netherlandsFeed(request,env);
     if(url.pathname==='/api/news'&&url.searchParams.get('city')==='tilburg'&&request.method==='GET')return tilburgNotices(request,env);

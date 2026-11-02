@@ -1,3 +1,4 @@
+import {noticeId} from './notice-id.js';
 // OVapi's national feeds are filtered here, before being delivered to a browser.
 import {fields,decodeRealtime} from '../dist/transit.js';
 const first=(value,key)=>value[key]?.[0],text=bytes=>bytes?new TextDecoder().decode(bytes):'';
@@ -51,7 +52,12 @@ export async function tilburgNotices(request,env,options={}){
   const title=translated(a.title),description=translated(a.description);if(!title||seen.has(title+'|'+description))continue;seen.add(title+'|'+description);
   const candidate=translated(a.url);let sourceUrl='https://www.bravo.info/reizen/omleidingen-en-storingen-bus';
   try{const u=new URL(candidate);if(u.protocol==='https:'&&['www.arriva.nl','arriva.nl','www.bravo.info','bravo.info'].includes(u.hostname)&&!u.username&&!u.password&&!u.port)sourceUrl=u.href;}catch{}
-  articles.push({title,summary:description.slice(0,400),paragraphs:[description||title],publishedAt:null,sourceUrl,aiEdited:false,kind:'operator-notice',periods:a.periods,selectors:a.selectors});
+  const dutch=values=>(values?.find(v=>v.language==='nl')||values?.[0])?.text||'';
+  const original={title:dutch(a.title),paragraphs:[dutch(a.description)||dutch(a.title)]};
+  const englishTitle=a.title?.find(v=>v.language==='en')?.text,englishDescription=a.description?.find(v=>v.language==='en')?.text;
+  const language=englishTitle&&englishDescription?'en':'nl';
+  const shownTitle=language==='en'?englishTitle:original.title,shownDescription=language==='en'?englishDescription:original.paragraphs[0];
+  articles.push({translationId:await noticeId(original.title,original.paragraphs),original,originalLanguage:a.title?.some(v=>v.language==='nl')&&a.description?.some(v=>v.language==='nl')?'nl':'und',language,title:shownTitle,summary:shownDescription.slice(0,400),paragraphs:[shownDescription],publishedAt:null,sourceUrl,aiEdited:false,kind:'operator-notice',periods:a.periods,selectors:a.selectors});
  }
  return Response.json({articles:articles.slice(0,60),checkedAt:new Date(decoded.timestamp*1000).toISOString(),sourceUrl:'https://www.bravo.info/reizen/omleidingen-en-storingen-bus'},{headers:{'Cache-Control':'private, max-age=30'}});
 }

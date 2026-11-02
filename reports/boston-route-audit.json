@@ -1,0 +1,95 @@
+{
+  "city": "boston",
+  "asset": "boston-network.bin",
+  "source": "https://cdn.mbta.com/MBTA_GTFS.zip",
+  "checkedAt": "2026-11-02",
+  "routes": 369,
+  "trips": 86996,
+  "patterns": 962,
+  "published": 960,
+  "recovered": [
+    {
+      "route": "112",
+      "trip": "78260505",
+      "shape": "1120200",
+      "kind": "published"
+    },
+    {
+      "route": "112",
+      "trip": "78260507",
+      "shape": "1120199",
+      "kind": "published"
+    },
+    {
+      "route": "119",
+      "trip": "78532716",
+      "shape": "1190106",
+      "kind": "published"
+    },
+    {
+      "route": "119",
+      "trip": "78540279",
+      "shape": "1190105",
+      "kind": "published"
+    },
+    {
+      "route": "120",
+      "trip": "78532710",
+      "shape": "1200184",
+      "kind": "published"
+    },
+    {
+      "route": "120",
+      "trip": "78533013",
+      "shape": "1200187",
+      "kind": "published"
+    },
+    {
+      "route": "216",
+      "trip": "78854301",
+      "shape": "2160192",
+      "kind": "published"
+    },
+    {
+      "route": "216",
+      "trip": "78854410",
+      "shape": "2160193",
+      "kind": "published"
+    },
+    {
+      "route": "216",
+      "trip": "78854443",
+      "shape": "2160195",
+      "kind": "published"
+    },
+    {
+      "route": "217",
+      "trip": "78853981",
+      "shape": "2170143",
+      "kind": "published"
+    },
+    {
+      "route": "94",
+      "trip": "78260928",
+      "shape": "940206",
+      "kind": "published"
+    }
+  ],
+  "missing": [],
+  "invalid": [
+    {
+      "route": "Newburyport Line Shuttle",
+      "trip": "NewburyportSalemExpressBeverly-0-sample",
+      "shape": "SalemToNewburyportExpress-S",
+      "kind": "invalid-shape"
+    },
+    {
+      "route": "Newburyport Line Shuttle",
+      "trip": "NewburyportSalemExpressBeverly-1-sample",
+      "shape": "NewburyportToSalemExpress-S",
+      "kind": "invalid-shape"
+    }
+  ],
+  "collapsedColocatedTermini": 61,
+  "nonColocatedTrimFailures": 0
+}

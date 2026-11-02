@@ -1,0 +1,281 @@
+{
+  "city": "tilburg",
+  "asset": "tilburg-network.bin",
+  "source": "https://gtfs.ovapi.nl/nl/gtfs-nl.zip",
+  "checkedAt": "2026-11-02",
+  "routes": 100,
+  "trips": 16873,
+  "patterns": 434,
+  "published": 393,
+  "recovered": [
+    {
+      "route": "131",
+      "trip": "393763914",
+      "shape": "1709987",
+      "kind": "published"
+    },
+    {
+      "route": "4",
+      "trip": "393752923",
+      "shape": "1711110",
+      "kind": "published"
+    },
+    {
+      "route": "4",
+      "trip": "393752976",
+      "shape": "1711109",
+      "kind": "published"
+    }
+  ],
+  "missing": [
+    {
+      "route": "45",
+      "trip": "382769002",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "45",
+      "trip": "382769039",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "45",
+      "trip": "382769040",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "45",
+      "trip": "382769502",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "45",
+      "trip": "382769596",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "45",
+      "trip": "382769598",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "45",
+      "trip": "382769616",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "45",
+      "trip": "382769629",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "45",
+      "trip": "382769941",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "45",
+      "trip": "382769997",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "45",
+      "trip": "382769998",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "454",
+      "trip": "382770046",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "454",
+      "trip": "382770066",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "455",
+      "trip": "382770076",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "455",
+      "trip": "382770085",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "455",
+      "trip": "382770086",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "456",
+      "trip": "382770097",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "456",
+      "trip": "382770098",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "456",
+      "trip": "382770108",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "456",
+      "trip": "382770109",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "458",
+      "trip": "382770128",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "458",
+      "trip": "382770133",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "459",
+      "trip": "382770140",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "459",
+      "trip": "382770144",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "Snelbus ipv trein",
+      "trip": "389508914",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "Snelbus ipv trein",
+      "trip": "389508924",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "Snelbus ipv trein",
+      "trip": "389506864",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "Snelbus ipv trein",
+      "trip": "389506870",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "Snelbus ipv trein",
+      "trip": "389506872",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "Snelbus ipv trein",
+      "trip": "389513908",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "Snelbus ipv trein",
+      "trip": "389513961",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "Snelbus ipv trein",
+      "trip": "389513964",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "Stopbus ipv trein",
+      "trip": "389506842",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "Stopbus ipv trein",
+      "trip": "389506844",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "Snelbus ipv trein",
+      "trip": "389510684",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "Snelbus ipv trein",
+      "trip": "389511555",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "Snelbus ipv trein",
+      "trip": "389517157",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "Stopbus ipv trein",
+      "trip": "389506868",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "Snelbus ipv trein",
+      "trip": "391489077",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "Snelbus ipv trein",
+      "trip": "394300716",
+      "shape": "",
+      "kind": "missing-shape"
+    },
+    {
+      "route": "Snelbus ipv trein",
+      "trip": "394300717",
+      "shape": "",
+      "kind": "missing-shape"
+    }
+  ],
+  "invalid": [],
+  "collapsedColocatedTermini": 7,
+  "nonColocatedTrimFailures": 0
+}

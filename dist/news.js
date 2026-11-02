@@ -9,13 +9,28 @@ export function articleMarkup(article,index,cityId='skopje'){
   const source=officialNewsURL(article.sourceUrl,cityId);
   if(!source||(!Number.isFinite(Date.parse(article.publishedAt))&&article.kind!=='operator-notice')||!Array.isArray(article.paragraphs))return '';
   const featured=index===0;
+  const original=article.original;
+  const translationControls=cityId==='tilburg'&&original?`<div class="notice-language">${article.language!=='en'&&/^[a-f0-9]{64}$/.test(article.translationId||'')?`<button class="textbtn" data-translate-notice="${esc(article.translationId)}">Read in English</button>`:`<span>${article.machineTranslated?'Machine translation · check the Dutch original for exact advice.':'Official English version'}</span>`}<p class="notice-translation-status" role="status" aria-live="polite"></p></div>`:'';
+  const originalMarkup=cityId==='tilburg'&&original?`<details class="news-detail notice-original" data-no-translate><summary>Original ${article.originalLanguage==='nl'?'Dutch':'operator'} notice</summary><div class="news-body"><h3>${esc(original.title)}</h3>${original.paragraphs.map(p=>`<p>${esc(p)}</p>`).join('')}</div></details>`:'';
   const periods=(article.periods||[]).map(p=>[p.start?'From '+new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:provider.timezone}).format(new Date(p.start*1000)):'',p.end?'until '+new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:provider.timezone}).format(new Date(p.end*1000)):''].filter(Boolean).join(' ')).join(' · ');
   const stamp=article.kind==='operator-notice'?`<div class="news-story-meta"><span class="news-latest">Operator notice</span><span>${esc(periods||'See operator advice for validity')}</span></div>`:featured?`<div class="news-story-meta"><span class="news-latest">Latest announcement</span><time datetime="${esc(article.publishedAt)}">${date(article.publishedAt)}</time></div>`:`<time class="news-date" datetime="${esc(article.publishedAt)}" aria-label="${date(article.publishedAt)}"><span>${datePart(article.publishedAt,'month')}</span><strong>${datePart(article.publishedAt,'day')}</strong><span>${datePart(article.publishedAt,'year')}</span></time>`;
-  return `<article class="news-story ${featured?'news-story--featured':'news-story--row'} ${article.kind==='operator-notice'?'news-story--notice':''}" aria-labelledby="news-title-${index}">${stamp}<div class="news-story-content"><h2 id="news-title-${index}">${esc(article.title)}</h2><p class="news-summary">${esc(article.summary)}</p><details class="news-detail"><summary><span class="news-read">Read article</span><span class="news-collapse">Close article</span><span class="news-read-icon">${arrow}</span></summary><div class="news-body" id="news-article-${index}">${article.paragraphs.map(p=>`<p>${esc(p)}</p>`).join('')}<div class="news-source"><span>${article.aiEdited?'Adapted with Gemini from the official notice.':article.kind==='operator-notice'?'Original operator notice via OVapi.':`Original ${label} notice.`}</span><a href="${esc(source)}" target="_blank" rel="noopener noreferrer">Open ${label} source <span aria-hidden="true">↗</span></a></div></div></details></div></article>`;
+  return `<article class="news-story ${featured?'news-story--featured':'news-story--row'} ${article.kind==='operator-notice'?'news-story--notice':''}" aria-labelledby="news-title-${index}">${stamp}<div class="news-story-content"><h2 id="news-title-${index}">${esc(article.title)}</h2><p class="news-summary">${esc(article.summary)}</p>${translationControls}${originalMarkup}<details class="news-detail"><summary><span class="news-read">Read article</span><span class="news-collapse">Close article</span><span class="news-read-icon">${arrow}</span></summary><div class="news-body" id="news-article-${index}">${article.paragraphs.map(p=>`<p>${esc(p)}</p>`).join('')}<div class="news-source"><span>${article.aiEdited?'Adapted with Gemini from the official notice.':article.kind==='operator-notice'?'Original operator notice via OVapi.':`Original ${label} notice.`}</span><a href="${esc(source)}" target="_blank" rel="noopener noreferrer">Open ${label} source <span aria-hidden="true">↗</span></a></div></div></details></div></article>`;
 }
 export function createNewsView(document,fetcher=fetch){
   const list=document.querySelector('#news-list'),status=document.querySelector('#news-status'),refresh=document.querySelector('#news-refresh');
-  let loadedAt=0,busy=false,retry=null,active=false,cityId='skopje',version=0;
+  let loadedAt=0,busy=false,retry=null,active=false,cityId='skopje',version=0,currentArticles=[];const translated=new Map();
+  const withTranslation=a=>a.language==='en'?a:translated.has(a.translationId)?{...a,...translated.get(a.translationId),language:'en'}:a;
+  list.addEventListener?.('click',async event=>{
+    const button=event.target.closest('[data-translate-notice]');if(!button||cityId!=='tilburg'||button.disabled)return;
+    const id=button.dataset.translateNotice,index=currentArticles.findIndex(a=>a.translationId===id);if(index<0)return;
+    const generation=version,article=button.closest('article'),feedback=article.querySelector('.notice-translation-status');button.disabled=true;feedback.textContent='Translating the official notice…';
+    try{const r=await fetcher(apiURL('/api/news/translate'),{method:'POST',credentials:apiCredentials(),headers:{'Content-Type':'application/json'},body:JSON.stringify({id}),signal:AbortSignal.timeout(45000)});const data=await r.json();
+      if(generation!==version||!button.isConnected)return;
+      if(!r.ok||data.id!==id||!data.translation||typeof data.translation.title!=='string'||!Array.isArray(data.translation.paragraphs))throw Error(data.error||'English translation is unavailable. Read the Dutch original.');
+      const value={title:data.translation.title,summary:data.translation.paragraphs.join(' ').slice(0,400),paragraphs:data.translation.paragraphs};translated.set(id,{...value,machineTranslated:data.kind==='machine'});
+      article.outerHTML=articleMarkup({...currentArticles[index],...value,language:'en',machineTranslated:data.kind==='machine'},index,'tilburg');
+    }catch(error){if(generation===version&&button.isConnected){feedback.textContent=error.message;button.disabled=false;}}
+  });
   async function open(force=false){
     active=true;
     const generation=version,city=cityId,provider=providerFor(city),label=provider.news.label;
@@ -30,8 +45,8 @@ export function createNewsView(document,fetcher=fetch){
       if(generation!==version)return;
       if(!r.ok)throw Error();
       if(data.pending){status.textContent='Preparing the latest articles…';if(active)retry=setTimeout(()=>open(true),5000);return;}
-      const articles=[];
-      for(const article of data.articles||[]){const markup=articleMarkup(article,articles.length,city);if(markup)articles.push(markup);}
+      currentArticles=data.articles||[];const articles=[];
+      for(const article of currentArticles.map(withTranslation)){const markup=articleMarkup(article,articles.length,city);if(markup)articles.push(markup);}
       list.innerHTML=articles.length?articles[0]+(articles.length>1?'<div class="news-list-label">More from '+esc(label)+'<span>'+String(articles.length-1)+(articles.length===2?' announcement':' announcements')+'</span></div>'+articles.slice(1).join(''):''):'<div class="news-empty"><strong>You’re all caught up.</strong><p>No local announcements are available yet. Check back soon.</p></div>';
       status.textContent=data.stale?`${label} could not be reached. Showing the last available articles.`:data.checkedAt?'Last checked '+new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:provider.timezone}).format(new Date(data.checkedAt))+' · '+provider.timezone:`Official ${label} announcements`;
       loadedAt=Date.now();
