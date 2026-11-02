@@ -108,3 +108,12 @@ The dataset is a build-time snapshot. Rebuild the binary and its regional realti
 - `npm run build:meta` and Wrangler Worker bundling with `--dry-run` pass. No deployment was performed.
 - `.env` is prepared locally, ignored, and explicitly loaded by `npm run dev:meta`. Only the blank `.env.example` is tracked. Existing `.dev.vars` remains ignored. Baseten is a reserved token field, not an enabled integration.
 - Publishing this branch is authorized. The main branch and production sites are not changed.
+
+
+## November 2 — Meta branch continuation
+
+The four Tilburg pilot commits are incorporated into `codex/meta-hackathon` by fast-forward from the original Meta head `0d4fbe1` through `fa30e36`. Existing Skopje and Boston implementations remain covered by the regression suite.
+
+Journey interpretation now supports an optional Baseten Model APIs fallback. Configure both `BASETEN_API_KEY` and an account-available, tool-capable `BASETEN_MODEL` server-side. Meta remains primary. Baseten is attempted once after network/timeout, authentication, rate-limit or service errors, or directly when Meta has no configured token. Schema failures and invalid generated travel constraints are not retried. Both providers must return the same validated constraint tool; the deterministic transit planner still supplies journeys. General Copilot chat remains on Meta. Redirects are rejected for these credential-bearing requests, upstream exception details are hidden, and each provider attempt has a ten-second timeout.
+
+Verification: 163 Node tests passed, plus the standalone community, ride, network, realtime matching, map, geometry and screen regressions. The protected Meta asset build and Worker deployment dry-run passed. New mocked tests cover provider priority, fallback status codes, network failures, credential isolation, explicit model configuration, invalid tool fields, malformed input and exhausted providers. No real provider request or production deployment was performed. External Tilburg acceptance and global expansion remain pending as documented above. This section supersedes the earlier statement that Baseten is only a reserved token field.

@@ -39,7 +39,7 @@ npm run build:meta
 npm run dev:meta
 ```
 
-Copy `.env.example` to the ignored `.env` and set `META_AUTH_PASSWORD` for login and `MODEL_API_KEY` for Copilot. `npm run dev:meta` explicitly loads `.env` so an existing `.dev.vars` does not hide these values. `BASETEN_API_KEY` is a reserved placeholder; no Baseten integration is enabled. Do not commit secrets. The username is configured in `wrangler.meta.jsonc`.
+Copy `.env.example` to the ignored `.env` and set `META_AUTH_PASSWORD` for login and `MODEL_API_KEY` for Copilot. `npm run dev:meta` explicitly loads `.env` so an existing `.dev.vars` does not hide these values. For optional journey-interpretation fallback, set server-only `BASETEN_API_KEY` and `BASETEN_MODEL` to a tool-capable model available in your Baseten account. Meta is primary; Baseten is tried once on network, timeout, authentication, rate-limit or service failures, or used directly when Meta is unconfigured. Both use the same validated tool contract; neither supplies itinerary times. Malformed model output does not trigger another paid request. The general Copilot chat still uses Meta. See [Baseten Chat Completions](https://docs.baseten.co/reference/inference-api/chat-completions). Do not commit secrets. The username is configured in `wrangler.meta.jsonc`.
 
 Open **City**, choose **Tilburg**, **Boston** or **Skopje**, and use the normal Stops, Bus lines and Journey tabs. **Use my location** selects a supported network when location access is available. **Correct location** lets you choose a manual starting point on the current map.
 
