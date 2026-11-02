@@ -40,7 +40,7 @@ export function boardingNetwork(db,from){
       if(!geometry.approximate||geometry.kind==='road'){
         points=trimGeometry(points,times.map(s=>byId.get(s.stop_id)).map(s=>[s.lon,s.lat]),i);
       }else points=downstream.every(s=>byId.has(s.stop_id))?downstream.map(s=>byId.get(s.stop_id)).map(s=>[s.lon,s.lat]):[];
-      const pattern={key,trip,route,tripIds:new Set([trip.trip_id]),downstream,points,approximate:geometry.approximate,geometryKind:geometry.kind,color:routeColor(route.route_id)};
+      const pattern={key,trip,route,tripIds:new Set([trip.trip_id]),downstream,stopCoordinates:downstream.map(s=>byId.get(s.stop_id)).map(s=>[s.lon,s.lat]),points,approximate:geometry.approximate,geometryKind:geometry.kind,color:routeColor(route.route_id)};
       patterns.set(key,pattern);routes.set(route.route_id,route);
       for(const s of destinations){const stop=byId.get(s.stop_id);if(!stop||stop.id===from)continue;if(!reachable.has(stop.id))reachable.set(stop.id,{stop,routeIds:new Set()});reachable.get(stop.id).routeIds.add(route.route_id);}
     }
@@ -58,7 +58,14 @@ export function boardingNetwork(db,from){
   const result={patterns:[...patterns.values()],reachable,routes,routeColors};db.stopNetworks.set(from,result);return result;
 }
 export function visibleNetwork(network,chosen,to){
-  const patterns=network.patterns.filter(p=>chosen.has(p.route.route_id)&&(!to||p.downstream.slice(1).some(s=>s.stop_id===to&&alights(s))));
+  const patterns=network.patterns.filter(p=>chosen.has(p.route.route_id)&&(!to||p.downstream.slice(1).some(s=>s.stop_id===to&&alights(s)))).map(p=>{
+    if(!to)return p;
+    p.targetPatterns??=new Map();if(p.targetPatterns.has(to))return p.targetPatterns.get(to);
+    const end=p.downstream.findIndex((s,i)=>i>0&&s.stop_id===to&&alights(s));
+    const points=!p.approximate||p.geometryKind==='road'?trimGeometry(p.points,p.stopCoordinates,0,end):p.points.slice(0,end+1);
+    const selected={...p,points,downstream:p.downstream.slice(0,end+1),stopCoordinates:p.stopCoordinates.slice(0,end+1)};
+    p.targetPatterns.set(to,selected);return selected;
+  });
   const allowed=new Set(patterns.map(p=>p.route.route_id));
   const stops=[...network.reachable.values()].filter(x=>[...x.routeIds].some(id=>allowed.has(id))&&patterns.some(p=>p.downstream.slice(1).some(s=>s.stop_id===x.stop.id&&alights(s))));
   return {patterns,stops};

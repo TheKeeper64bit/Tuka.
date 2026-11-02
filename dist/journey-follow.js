@@ -1,5 +1,5 @@
 import {trimGeometry} from './map-ui.js?v=21';
-import {boardingNetwork,routeColor} from './stop-network.js?v=21';
+import {boardingNetwork,routeColor} from './stop-network.js?v=22';
 import {distance,eventTime,prediction,serviceDay,localDate} from './schedule.js?v=24';
 
 const coordinates=p=>[p.lon,p.lat];

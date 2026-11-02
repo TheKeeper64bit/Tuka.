@@ -40,3 +40,17 @@ for(const trip of loops.trips.values())assert.equal(routeGeometry(loops,trip).ap
 const {trimGeometry}=await import('../dist/map-ui.js');
 assert.deepEqual(trimGeometry([[0,0],[.01,0],[.02,0]],[[.002,0],[.008,0],[.018,0]],1),[[.008,0],[.01,0],[.018,0]],'Boarding trims at a segment projection instead of a distant vertex');
 console.log('Passed: all seven formerly rejected current Skopje patterns retain published paths; sparse geometry trims exactly at boarding');
+
+const bus56=JSON.parse(readFileSync(new URL('./fixtures/56-geometry.json',import.meta.url)));
+const fiftySix={...bus56,routes:new Map([[bus56.route.route_id,bus56.route]]),trips:new Map(bus56.trips.map(t=>[t.trip_id,t])),times:new Map(Object.entries(bus56.times)),shapes:new Map(Object.entries(bus56.shapes)),byStop:new Map()};
+for(const calls of fiftySix.times.values())for(const call of calls){if(!fiftySix.byStop.has(call.stop_id))fiftySix.byStop.set(call.stop_id,[]);fiftySix.byStop.get(call.stop_id).push(call);}
+const {visibleNetwork}=await import('../dist/stop-network.js');
+for(const trip of fiftySix.trips.values()){
+ const calls=fiftySix.times.get(trip.trip_id),from=calls[0].stop_id,target=calls[Math.min(3,calls.length-2)].stop_id;
+ const network=boardingNetwork(fiftySix,from),full=network.patterns.find(p=>p.tripIds.has(trip.trip_id));
+ const visible=visibleNetwork(network,new Set([trip.route_id]),target),selected=visible.patterns.find(p=>p.tripIds.has(trip.trip_id));
+ assert.equal(selected.downstream.at(-1).stop_id,target);assert(selected.points.length<full.points.length,'56 path ends at the selected destination');
+ assert(!selected.downstream.some(c=>c.stop_id===calls.at(-1).stop_id));
+ assert.equal(full.downstream.length,calls.length,'The full line retains its complete published itinerary');
+}
+console.log('Passed: all five route 56 patterns stop at the selected exit without changing full-line coverage');

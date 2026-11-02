@@ -82,6 +82,18 @@ export function planJourney(db,rt,origin,destination,time=Date.now(),input={}) {
     labels=next;
   }
   if(options.maxWalkingMinutes!==null)results=results.filter(r=>r.legs.filter(l=>l.type!=='bus').reduce((n,l)=>n+l.walkingMs,0)<=options.maxWalkingMinutes*60000);
+  // Remove a small-walk saving that sends the rider past their exit and back.
+  // Only an actually generated, legal earlier exit on the same boarded run can
+  // replace it; walking limits and pickup/drop-off rules have already applied.
+  const simpler=results.filter(r=>r.transfers===0&&r.legs.some(l=>l.type==='bus'));
+  results=results.filter(r=>{
+    if(!r.transfers)return true;
+    const first=r.legs.find(l=>l.type==='bus'),last=r.legs.findLast(l=>l.type==='bus');
+    return !simpler.some(a=>{
+      const exit=a.legs.find(l=>l.type==='bus');
+      return exit.tripId===first.tripId&&exit.serviceDate===first.serviceDate&&exit.boardSeq===first.boardSeq&&exit.endSeq<first.endSeq&&distance(exit.to,last.to)<=250&&a.arrival<=r.arrival-120000&&a.walkingMeters<=r.walkingMeters+150;
+    });
+  });
   for(const r of results) {
     r.connections=[];
     r.legs.forEach((leg,i)=>{if(leg.type!=='transfer')return;const before=r.legs[i-1],after=r.legs[i+1];if(before?.type!=='bus'||after?.type!=='bus')return;const availableMs=after.start-before.end,marginMs=availableMs-leg.walkingMs-buffer;const connection={availableMs,walkingMs:leg.walkingMs,bufferMs:buffer,marginMs,tight:marginMs<120000,live:before.arrivalLive&&after.live};leg.connection=connection;r.connections.push(connection);});

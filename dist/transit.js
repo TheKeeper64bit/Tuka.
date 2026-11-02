@@ -6,7 +6,7 @@ import {providerFor} from './city-providers.js?v=2';
 export const BASE=providerFor('skopje').gtfsUrl.replace(/gtfs\/gtfs\.zip$/,'');
 import {serviceDay,active,prediction,eventTime} from './schedule.js?v=24';
 export {serviceDay,active,distance} from './schedule.js?v=24';
-export {planJourney} from './planner.js?v=24';
+export {planJourney} from './planner.js?v=25';
 function csv(s){let rows=[],row=[],v='',q=false;for(let i=0;i<s.length;i++){let c=s[i];if(c==='"'){if(q&&s[i+1]==='"'){v+='"';i++}else q=!q}else if(c===','&&!q){row.push(v);v=''}else if(c==='\n'&&!q){row.push(v.replace(/\r$/,''));rows.push(row);row=[];v=''}else v+=c}if(v||row.length){row.push(v.replace(/\r$/,''));rows.push(row)}let h=rows.shift();return rows.filter(r=>r.length===h.length).map(r=>Object.fromEntries(h.map((k,i)=>[k.replace(/^\uFEFF/,''),r[i]])))}
 export async function parseGTFSZip(ab){let v=new DataView(ab),b=new Uint8Array(ab),out={};let e=b.length-22;while(e>=0&&v.getUint32(e,true)!==0x06054b50)e--;if(e<0)throw Error('Invalid ZIP');let p=v.getUint32(e+16,true),n=v.getUint16(e+10,true);for(let i=0;i<n;i++){let method=v.getUint16(p+10,true),size=v.getUint32(p+20,true),nl=v.getUint16(p+28,true),el=v.getUint16(p+30,true),cl=v.getUint16(p+32,true),local=v.getUint32(p+42,true),name=new TextDecoder().decode(b.slice(p+46,p+46+nl));let start=local+30+v.getUint16(local+26,true)+v.getUint16(local+28,true),data=b.slice(start,start+size);if(name.endsWith('.txt')){if(method===8)data=new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());else if(method!==0)throw Error('Unsupported ZIP');out[name]=csv(new TextDecoder().decode(data))}p+=46+nl+el+cl}return out}
 const loadedCities=new Map(),pendingCities=new Map();
