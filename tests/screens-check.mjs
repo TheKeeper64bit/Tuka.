@@ -9,7 +9,8 @@ const db={routes:new Map([['r',route]]),trips:new Map([['t',trip]]),stops:[stop,
 const rt={timestamp:Date.now()/1000,sources:{modeshift:true,skopska:true},vehicles:[{id:'1',label:'1001',tripId:'t',routeId:'r',lat:42,lon:21.401,timestamp:Date.now()/1000,seq:1,source:'Modeshift'}]};
 let gpsCallback;
 const context=vm.createContext({console,Date,Intl,Map,Set,Math,JSON,String,Number,Object,Promise,URL,URLSearchParams,AbortSignal,AbortController,clearTimeout,crypto,fetch:async()=>({ok:true,json:async()=>({articles:[]})}),setTimeout,setInterval(){},queueMicrotask,document,window:{maplibregl:true,scrollTo(){},addEventListener(){}},maplibregl:{Map:MapStub,Marker,Popup,LngLatBounds:Bounds,NavigationControl:class{}},location:{href:'http://localhost/',origin:'http://localhost'},localStorage:{getItem(){return null;},setItem(){}},navigator:{geolocation:{watchPosition(fn){gpsCallback=fn;return 1;},getCurrentPosition(ok){ok({coords:{latitude:42,longitude:21.4,accuracy:15}});}}}});
-const transit=new vm.SyntheticModule(['load','realtime','departures','distance','planJourney'],function(){this.setExport('load',async()=>db);this.setExport('realtime',async()=>rt);this.setExport('departures',()=>[{trip,s:{seq:1},route,time:Date.now()+120000,day:{date:'20261001'}}]);this.setExport('distance',()=>100);this.setExport('planJourney',()=>[]);},{context});
+let planFor=()=>[];
+const transit=new vm.SyntheticModule(['load','realtime','departures','distance','planJourney'],function(){this.setExport('load',async()=>db);this.setExport('realtime',async()=>rt);this.setExport('departures',()=>[{trip,s:{seq:1},route,time:Date.now()+120000,day:{date:'20261001'}}]);this.setExport('distance',()=>100);this.setExport('planJourney',(...args)=>planFor(...args));},{context});
 const ui=new vm.SourceTextModule(fs.readFileSync('dist/map-ui.js','utf8'),{context});await ui.link(()=>{});
 const network=new vm.SourceTextModule(fs.readFileSync('dist/stop-network.js','utf8'),{context});await network.link(()=>ui);
 const rideModule=new vm.SourceTextModule(fs.readFileSync('dist/ride.js','utf8'),{context});await rideModule.link(()=>{});
@@ -19,7 +20,7 @@ const configModule=new vm.SourceTextModule(fs.readFileSync('dist/config.js','utf
 const newsModule=new vm.SourceTextModule(fs.readFileSync('dist/news.js','utf8'),{context});await newsModule.link(()=>configModule);
 const plannerModules=new Map();async function plannerModule(spec){const file=spec.split('?')[0];if(file==='./config.js')return configModule;if(file==='./stop-network.js')return network;if(file==='./map-ui.js')return ui;if(plannerModules.has(file))return plannerModules.get(file);const module=new vm.SourceTextModule(fs.readFileSync('dist/'+file.slice(2),'utf8'),{context});plannerModules.set(file,module);await module.link(plannerModule);return module;}
 for(const file of ['./schedule.js','./planner.js','./journey-store.js','./journey-tools.js'])await plannerModule(file);
-const app=new vm.SourceTextModule(fs.readFileSync('dist/app.js','utf8')+'\nglobalThis.test={activate,selectStop,selectTargetStop,openLine,updateVehicles,clearBoardingStop,prepareRide,chooseRideExit,startRide,endRide,rideState:()=>ride,showJourney,endJourney,selectJourneyStep,moveJourneyStep,journeyState:()=>activeJourney,setJourneyResults:r=>journeyResults=r,setJourneyContext:c=>journeyContext=c,updateJourneyInfo,stopNotices,renderSaved,saveForTest:id=>saved.set(id,{routeIds:null,targetStopId:null}),saveStop,filterForTest:ids=>chosenLines=new Set(ids),selection:()=>[...chosenLines],savedState:()=>saved,boarding:()=>stopId,target:()=>targetStopId,vehicleMarkers:()=>vehicleMarkers};',{context});await app.link(spec=>['./schedule.js','./planner.js','./journey-store.js','./place-search.js','./journey-follow.js','./journey-tools.js','./i18n.js','./walking.js','./service-alerts.js'].includes(spec.split('?')[0])?plannerModule(spec):spec.split('?')[0]==='./favourites.js'?favouritesModule:spec.split('?')[0]==='./news.js'?newsModule:spec.split('?')[0]==='./community.js'?communityModule:spec.split('?')[0]==='./ride.js'?rideModule:spec.split('?')[0]==='./map-ui.js'?ui:spec.split('?')[0]==='./stop-network.js'?network:transit);await app.evaluate();
+const app=new vm.SourceTextModule(fs.readFileSync('dist/app.js','utf8')+'\nglobalThis.test={state:()=>({tab}),replanJourney,setSheet,activate,selectStop,selectTargetStop,openLine,updateVehicles,clearBoardingStop,prepareRide,chooseRideExit,startRide,endRide,rideState:()=>ride,showJourney,endJourney,selectJourneyStep,moveJourneyStep,journeyState:()=>activeJourney,setJourneyResults:r=>journeyResults=r,setJourneyContext:c=>journeyContext=c,updateJourneyInfo,stopNotices,renderSaved,saveForTest:id=>saved.set(id,{routeIds:null,targetStopId:null}),saveStop,filterForTest:ids=>chosenLines=new Set(ids),selection:()=>[...chosenLines],savedState:()=>saved,boarding:()=>stopId,target:()=>targetStopId,vehicleMarkers:()=>vehicleMarkers};',{context});await app.link(spec=>['./schedule.js','./planner.js','./journey-store.js','./place-search.js','./journey-follow.js','./journey-tools.js','./i18n.js','./walking.js','./service-alerts.js'].includes(spec.split('?')[0])?plannerModule(spec):spec.split('?')[0]==='./favourites.js'?favouritesModule:spec.split('?')[0]==='./news.js'?newsModule:spec.split('?')[0]==='./community.js'?communityModule:spec.split('?')[0]==='./ride.js'?rideModule:spec.split('?')[0]==='./map-ui.js'?ui:spec.split('?')[0]==='./stop-network.js'?network:transit);await app.evaluate();
 context.test.selectStop('a');await Promise.resolve();assert.equal(maps[0].getSource('station-network').data.features[0].geometry.coordinates.length,3);assert(maps[0].fitted);assert.equal(maps[0].getLayer('reachable-stops').type,'circle');assert.equal(maps[0].getLayer('reachable-stops').minzoom,undefined);assert.equal(document.querySelector('#map-title').textContent,'Grand Prestizh');context.test.selectTargetStop('b');assert.equal(context.test.boarding(),'a');assert.equal(context.test.target(),'b');assert(document.querySelector('#home-content').innerHTML.includes('Direct buses: 5'));
 context.test.selectStop('a');assert.equal(context.test.boarding(),null);assert.equal(document.querySelector('#change-stop').hidden,true);context.test.selectStop('b');assert.equal(context.test.boarding(),'b');context.test.clearBoardingStop();assert.equal(context.test.boarding(),null);context.test.selectStop('a');
 let marker=context.test.vehicleMarkers().home.get('1001');context.test.updateVehicles();assert.equal(context.test.vehicleMarkers().home.get('1001'),marker);
@@ -83,3 +84,32 @@ context.test.selectStop('a');
 assert(context.test.stopNotices().includes('Stop closed'));
 rt.alerts=[];rt.updates.clear();
 console.log('Passed: visible arrive-by deadline warning and current-time/stop closure alerts');
+
+{
+// Missed-transfer recovery stays on the map, recalculates from fresh GPS,
+// excludes the upcoming trip and retains the original arrival deadline.
+const missed={...selectedJourney,legs:[
+ {type:'bus',tripId:'done',serviceDate:'20261001',route,from:db.stops[0],to:db.stops[1],start:Date.now()-600000,end:Date.now()-120000,boardSeq:1,endSeq:2,meters:800},
+ {type:'transfer',from:db.stops[1],to:db.stops[1],meters:0,walkingMs:0,bufferMs:180000,start:Date.now()-120000,end:Date.now()+60000},
+ {type:'bus',tripId:'missed',serviceDate:'20261001',route,from:db.stops[1],to:db.stops[0],start:Date.now()+60000,end:Date.now()+600000,boardSeq:1,endSeq:2,meters:800},
+ selectedJourney.legs.at(-1)
+]};
+const deadline=Date.now()+1800000;
+context.test.setJourneyResults([missed]);context.test.setJourneyContext({origin:db.stops[0],destination:missed.legs.at(-1).to,options:{mode:'arrive',maxWalkingMinutes:10},time:deadline});
+context.test.showJourney(0);context.test.selectJourneyStep(1);fix();let recoveryRequest;
+const replacement={...selectedJourney,departure:Date.now()+120000,arrival:Date.now()+900000};
+planFor=(network,live,from,to,time,options)=>{recoveryRequest={from,to,options};return [replacement];};
+await context.test.replanJourney();
+assert.equal(context.test.state().tab,'home');assert(context.test.journeyState());assert.equal(context.test.journeyState().context.deadline,deadline);
+assert(recoveryRequest.options.excludedTrips.some(x=>x.tripId==='missed'));
+assert(!recoveryRequest.options.excludedTrips.some(x=>x.tripId==='done'));
+assert.equal(recoveryRequest.from.lon,21.401);
+assert(document.querySelector('#home-content').innerHTML.includes('Journey updated'));
+const kept=context.test.journeyState();planFor=()=>[];await context.test.replanJourney();assert.equal(context.test.journeyState(),kept);assert.equal(context.test.state().tab,'home');assert(document.querySelector('#home-content').innerHTML.includes('No replacement found'));
+context.test.setSheet('collapsed');assert(document.body.classList.contains('sheet-collapsed'));assert(document.querySelector('.sheet-scroll').hidden);
+context.test.setSheet('normal');assert(!document.querySelector('.sheet-scroll').hidden);context.test.setSheet(true);assert(document.body.classList.contains('sheet-expanded'));
+context.test.endJourney();
+console.log('Passed: missed-transfer recovery recalculates on the map, keeps the destination/deadline and preserves guidance when no replacement exists; three sheet positions work');
+
+}
+
