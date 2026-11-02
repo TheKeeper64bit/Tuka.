@@ -10,7 +10,7 @@ import {preferences} from './planner.js?v=24';
 import {readJourneys,writeJourneys,savedJourney,commuteStatus} from './journey-store.js?v=24';
 import {rankPlaces,placeType} from './place-search.js?v=24';
 import {readFavourites,writeFavourites,savedSelection,sameSelection,savedRouteMatches} from './favourites.js?v=20';
-import {createNewsView} from './news.js?v=21';
+import {createNewsView} from './news.js?v=22';
 import {PassengerReports} from './community.js?v=16';
 import {createProgress,advance} from './ride.js?v=16';
 import {boardingNetwork,visibleNetwork,arrivalConnects,vehicleServes,routeColor} from './stop-network.js?v=20';
@@ -70,8 +70,8 @@ async function switchCity(cityId,{automatic=false,position=null}={}){
   applyOrigin(position||{lon:provider.center[0],lat:provider.center[1]},position?'Your location':`${provider.name} · manual location`);
   $('#locationdetail').textContent=position?'Network selected from your location.':'Choose a stop or use Correct location to set your starting point.';
   homeMap?.flyTo({center:provider.center,zoom:13,duration:400});
-  setLabel('#map-title',`${provider.name} bus network`,true);
-  const brand=document.querySelector('.city');if(brand)brand.textContent=provider.name;const kicker=document.querySelector('.map-kicker');if(kicker)kicker.textContent=provider.name.toUpperCase()+', IN MOTION';
+  setLabel('#map-title','Find your next bus.');
+  const brand=document.querySelector('.city');if(brand)brand.textContent=provider.name.toUpperCase();const kicker=document.querySelector('.map-kicker');if(kicker)kicker.textContent=provider.name.toUpperCase()+', IN MOTION';
   document.title=`Tuka · ${provider.name}`;transitAttribution(homeMap);
   $('#journey-date').value=localDate(Date.now(),db.timezone);$('#journey-date').min=$('#journey-date').value;$('#journey-time').value=localTime(Date.now()+3600000,db.timezone);
   updatePlannerControls();renderLines();renderSaved();activate('home');
@@ -164,7 +164,7 @@ function updateVehicles(){
    entry.vehicle=v;let t=db.trips.get(v.tripId),r=db.routes.get(t?.route_id||v.routeId),label=line(r)||'Bus';
    entry.el.style.width=Math.max(44,Math.min(72,label.length*9+22))+'px';entry.el.textContent=label;
    entry.el.setAttribute('aria-label',`Bus ${label} · ${name(t?.trip_headsign||v.headsign)}`);
-   entry.marker.setLngLat([v.lon,v.lat]);entry.marker.getPopup().setHTML(`<div class="bus-popup"><strong>Bus ${esc(label)}</strong><br>${esc(name(t?.trip_headsign||v.headsign||''))}<br>${esc(v.source||'Modeshift')} GPS · ${clock(v.timestamp*1000)}<br>Vehicle ${esc(v.label||v.id)}</div>`);
+   entry.marker.setLngLat([v.lon,v.lat]);entry.marker.getPopup().setHTML(`<div class="bus-popup"><strong>Bus ${esc(label)}</strong><br>${esc(name(t?.trip_headsign||v.headsign||''))}<br>${esc(v.source||providerFor(activeCityId).label)} GPS · ${clock(v.timestamp*1000)}<br>Vehicle ${esc(v.label||v.id)}</div>`);
   });
  }
  updateHomeRoute();

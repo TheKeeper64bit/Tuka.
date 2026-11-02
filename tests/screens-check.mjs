@@ -108,3 +108,19 @@ let finishLive;realtimeFor=current=>current===db?new Promise(resolve=>finishLive
 const oldRefresh=context.test.refresh();loadFor=async()=>boston;await context.test.switchCity('boston');finishLive(rt);await oldRefresh;
 assert.equal(context.test.state().rt.vehicles.length,0,'Late Skopje realtime cannot draw buses in Boston');
 console.log('Passed: city-specific shared screens, route overlays, both directions, and stale load/realtime race protection');
+
+// Each provider must render through Skopje's existing screen components.
+for(const city of ['boston','tilburg']){
+ const sharedDB=normalizeGTFS(JSON.parse(fs.readFileSync('tests/fixtures/boston-gtfs.json')),city);
+ loadFor=async()=>sharedDB;realtimeFor=async()=>({timestamp:0,updates:new Map(),vehicles:[],alerts:[]});
+ await context.test.switchCity(city);
+ assert.equal(document.querySelector('#map-title').textContent,'Find your next bus.');
+ assert.equal(document.querySelector('.city').textContent,city.toUpperCase());
+ const id=[...sharedDB.byStop.keys()][0];context.test.selectStop(id);
+ const markup=document.querySelector('#home-content').innerHTML;
+ for(const component of ['class="panel"','class="stop-title"','class="chips"','id="arrivals"','data-share-stop','data-network-overview'])assert(markup.includes(component),city+' retains shared stop component '+component);
+ assert(!markup.includes('test-city-card'),city+' does not use a separate explorer');
+ context.test.activate('lines');assert(document.querySelector('#line-list').innerHTML.includes('class="linecard"'));
+ context.test.activate('saved');assert(document.querySelector('#offline-status').innerHTML.includes(city==='boston'?'Boston':'Tilburg'));
+}
+console.log('Passed: Boston and Tilburg use the Skopje stop panels, route chips, line cards, saved screen and home heading');

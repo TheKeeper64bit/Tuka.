@@ -42,7 +42,9 @@ export function createNewsView(document,fetcher=fetch){
   return {open,setCity(next){
     if(next===cityId)return;cityId=next;version++;loadedAt=0;busy=false;if(retry){clearTimeout(retry);retry=null;}list.innerHTML='';status.textContent='';refresh.disabled=false;
     const provider=providerFor(cityId);refresh.setAttribute('aria-label','Refresh '+provider.news.label+' notices');
-    const footer=document.querySelector('.news-footer');if(footer)footer.innerHTML=cityId==='tilburg'?'Validity comes from the operator. Publication dates are not supplied. <a href="'+provider.news.url+'" target="_blank" rel="noopener noreferrer">Official operator notices ↗</a>':'Dates reflect the original publication. <a href="'+provider.news.url+'" target="_blank" rel="noopener noreferrer">Official website ↗</a>';
+    const footer=document.querySelector('.news-footer');
+    const footerText=cityId==='tilburg'?'Validity comes from the operator. Publication dates are not supplied. ':'Dates reflect the original publication. ';
+    if(footer){let copy=footer.querySelector('p');if(!copy){copy=document.createElement('p');footer.replaceChildren(copy);}copy.innerHTML=footerText+'<a href="'+provider.news.url+'" target="_blank" rel="noopener noreferrer">Official website ↗</a>';}
     for(const [selector,text] of [['.news-eyebrow',provider.name+' · PUBLIC TRANSPORT'],['.news-intro','Official announcements and service notices for '+provider.name+'.'],['.news-source-mark strong',provider.news.label]]){const el=document.querySelector(selector);if(el)el.textContent=text;}
     const link=document.querySelector('.news-footer a');if(link){link.href=provider.news.url;link.textContent=provider.news.label+' official website ↗';}
     if(active)void open();
