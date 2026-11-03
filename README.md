@@ -1,18 +1,20 @@
 # tuka.
 
-**Tuka v1 final update:** Dutch is now available in the language chooser. [Development log](CHANGELOG.md) · [Architecture baseline for v2](docs/architecture-baseline.md).
+**One transit app. A different city. The same way to find your bus.**
 
-### Your city changes. Your way home should still feel familiar.
+Tuka is a map-first public transport app built in Skopje, with connected networks in Boston and Tilburg. Import a GTFS timetable to use the same stop map, route explorer, and journey planner on your own network.
 
-**A map-first public transport app becoming a shared transit experience across cities, countries and languages.**
+**Meta AI Hackathon · Tuka v1**
 
-Built in Skopje. Extended to Boston. Now being tested for Tilburg.
+[Open the judging demo](https://tuka.meta-cerebralvalley.rand0m.net) · [Run locally](#run-tuka) · [Development log](CHANGELOG.md)
 
-**Bring your own GTFS network · 3 connected city pilots · installable web app · one shared journey engine**
+Try this in the demo:
 
-[Explore the judging host](https://tuka.meta-cerebralvalley.rand0m.net) · [Follow the evidence](#built-to-be-inspected) · [Run it yourself](#run-tuka) · [See the roadmap](#where-tuka-goes-next)
+1. **Tap a stop.** See its routes and departures, with live estimates labeled where available.
+2. **Open Meta Copilot → Plan a journey.** Try “Get me to the station by 8:30.” Copilot turns your request into planner inputs you can review.
+3. **Find journeys.** Tuka’s transit engine checks the timetable and shows the actual route and transfers on the map.
 
-> **Submission status:** this branch, `codex/meta-hackathon`, contains the latest published implementation. The judging host requires credentials. Deployment of the latest branch updates and Tilburg field acceptance remain pending; the hosted demo may show an earlier build.
+The judging host requires credentials and may serve an earlier revision. The v1 interface supports English, Macedonian, Albanian, and Dutch.
 
 ![Tuka's Tilburg pilot: a selected stop, colored bus routes and reachable stops in one shared interface](reports/tilburg/routes-desktop.png)
 
