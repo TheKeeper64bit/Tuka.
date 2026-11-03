@@ -1,10 +1,16 @@
-# tuka.
+# Tuka. | Meta AI Hackathon Build
 
-**One transit app. A different city. The same way to find your bus.**
+**One transit app. Any compatible GTFS network. A familiar way to travel.**
 
-Tuka is a map-first public transport app built in Skopje, with connected networks in Boston and Tilburg. Import a GTFS timetable to use the same stop map, route explorer, and journey planner on your own network.
+Tuka is an AI-powered public transportation companion that adapts to different cities without requiring a different application for each network.
 
-**Meta AI Hackathon · Tuka v1**
+Starting in Skopje, North Macedonia, Tuka expanded during the Meta AI Hackathon to Boston and Tilburg. It now supports importing compatible GTFS Schedule ZIP files from other cities.
+
+Tuka successfully imported Wellington’s public Metlink network, demonstrating that its shared transit engine can support additional networks without city-specific application code.
+
+With Meta Copilot, passengers can describe where they want to go in natural language. Tuka interprets the request, validates the journey constraints, and calculates routes using actual timetable data.
+
+**The goal is to make public transportation understandable wherever you travel.**
 
 [Open the judging demo](https://tuka.meta-cerebralvalley.rand0m.net) · [Run locally](#run-tuka) · [Development log](CHANGELOG.md)
 
@@ -71,22 +77,21 @@ Imports currently accept fixed-route GTFS Schedule ZIPs up to **50 MB compressed
 
 [Read the shell contract and supported boundaries](reports/universal-shell.md).
 
-## The hackathon leap: one local app, three different transit systems
+## What we built during the hackathon
 
-Tuka began as a working Skopje PWA. The hackathon work extends that foundation into a city-aware system rather than building a separate app for every new place.
+Tuka started as a map-first Skopje bus app with arrivals and a journey planner. During the hackathon, that foundation became a shared transit app for three connected networks and locally imported timetables.
 
-### What existed before
-
-The Skopje foundation already included the map, arrivals, transfer planning, saved journeys, offline basics, news, language selection, dark mode and a local QR-card wallet. These are established product capabilities, **not claimed as new hackathon work**.
-
-### What this submission adds
+- **Bring your own city.** Import a compatible GTFS ZIP and get a stop map, departures, route exploration, and journey planning without adding city-specific code. Tuka keeps the timetable on the device.
+- **Plan in your own words.** Meta Copilot turns a transit request into journey inputs you can review. Tuka’s planner calculates the actual route from the selected network.
+- **Start while already riding.** The redesigned Journey tab can start from an existing bus ride. Choose your line, direction, and next stop, then compare staying aboard with transferring downstream.
+- **Ride in your language.** Added Dutch to the interface, alongside English, Macedonian, and Albanian.
 
 - **A shared city-provider architecture.** Boston and Tilburg replace the actual timetable and saved state used by the main application. Their maps and planner use their own networks.
 - **A complete Boston bus timetable.** Official MBTA data is compiled into a compact asset with calendars, original identifiers, stop calls, shapes and directional variants preserved.
 - **A regional Netherlands ingestion pipeline.** Tuka extracts complete bus trips serving Tilburg and its defined connection area from the national feed, retaining calls beyond the selection boundary.
 - **Official realtime adapters.** Trip updates, vehicle positions and service alerts enter the common transit engine with identity, freshness and service-date checks.
 - **City-aware behavior throughout.** Time zones, after-midnight service, shared links, saved places, notices and asynchronous requests follow the selected city.
-- **A grounded AI workflow.** Natural-language requests become validated planner constraints. Meta provides the primary model integration; Baseten can supply a configured fallback for journey interpretation and notice translation.
+- **A transit-focused Copilot.** The model gateway supports Meta and Baseten. Copilot uses available network context, and trip requests pass through validation before reaching the planner.
 - **English access to Tilburg notices.** Prefer official English text; otherwise request a labelled machine translation while keeping the original advice available.
 - **Evidence and regression coverage.** Source comparisons, geometry audits and browser checks accompany the implementation.
 
@@ -157,6 +162,14 @@ For Tilburg news, **Read in English** translates a current official notice on de
 The stop capture comes from the earlier Tilburg pilot. The English-notice capture is a browser test using a mocked translation and example disruption; it does not claim that disruption is currently active.
 
 </details>
+
+## Local Beta Testing — Tilburg, Netherlands
+
+A Tilburg resident familiar with the city’s public transport network explored Tuka’s routes, stops, and transit information and gave feedback on usability and accuracy.
+
+The initial feedback was very positive. The tester described Tuka as the best transit app they had used and said its transport information appeared highly accurate. That feedback is encouraging for an app originally built for Skopje and adapted to other networks.
+
+**Testing scope.** This was an initial user evaluation. The tester explored the app without taking a bus journey, so boarding, transfer guidance, and arrival predictions still need independent field validation. Further field testing is planned.
 
 ## Built to be inspected
 
@@ -302,7 +315,7 @@ OVapi's source metadata identifies **CC0-1.0** for general tables and **ODbL-1.0
 
 ---
 
-**Built by [Ignatij Tasevski](https://github.com/TheKeeper64bit), from Skopje.**
+**Built by [Ignatij Tasevski](https://github.com/TheKeeper64bit), from Skopje, with development assistance from ChatGPT Work.**
 
 **Tuka starts with a stop near you. Its ambition is to make every supported city feel a little more familiar.**
 
