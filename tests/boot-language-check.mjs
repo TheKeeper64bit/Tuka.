@@ -27,7 +27,7 @@ test('saved MK and SQ paint before the loader copy is revealed, with no app-modu
   assert.equal(scripts.length,1);assert(!/\b(?:defer|async|type="module")\b/.test(scripts[0][0]));
   assert(scripts[0].index<html.indexOf('<header>'));
   assert.equal([...html.matchAll(/>YOUR CITY, IN MOTION</g)].length,2);assert(!html.includes('>SKOPJE, IN MOTION<'));
-  for(const locale of ['mk','sq']){
+  for(const locale of ['mk','sq','nl']){
     const ui=harness(locale);
     assert.equal(ui.nodes.get('boot-title').textContent,translateText('Your next bus, almost here.',locale));
     assert.equal(ui.nodes.get('boot-status').textContent,translateText(initial,locale));

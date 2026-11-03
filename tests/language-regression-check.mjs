@@ -178,3 +178,12 @@ test('QR wallet names remain untouched while dynamic warnings and labels change 
   ui.choose('en');assert.equal(warning.textContent,WALLET_ERRORS.conflict);
   assert.equal(ui.input.getAttribute('placeholder'),'My JSP card');assert.equal(cardName.textContent,'Work');
 });
+
+
+test('Dutch covers the existing catalogue, keeps names and translates dynamic journey facts',()=>{
+ assert.equal(languages.nl,'Nederlands');assert.equal(language({getItem:()=> 'nl'}),'nl');
+ for(const [key,values] of Object.entries(messages))assert.equal(typeof values[2],'string',key);
+ for(const [input,output] of [['Stops','Haltes'],['Journey','Reis'],['Hide panel','Paneel verbergen'],['3 transfers','3 overstappen'],['YOUR JOURNEY · STEP 2 OF 4','JE REIS · STAP 2 VAN 4'],['Arrive by 08:45 · 5 min spare','Aankomen vóór 08:45 · 5 min over']])assert.equal(translateText(input,'nl'),output);
+ for(const name of ['Tilburg, Centraal Station','Work Hotel','Bushalte 42, Spoorlaan','Nieuwlandstraat 24'])assert.equal(translateText(name,'nl'),name);
+ assert.equal(translateText('Stops','en'),'Stops');
+});

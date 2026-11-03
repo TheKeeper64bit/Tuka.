@@ -1,4 +1,4 @@
-import {language,languages,translateText} from './i18n.js?v=32';
+import {language,languages,translateText} from './i18n.js?v=33';
 let locale=language(),scheduled=false,opener=null;
 const originals=new WeakMap(),attributes=new WeakMap();
 const sourceContent='script,style,[data-no-translate],.news-summary,.news-body p,.news-story h2,.maplibregl-ctrl-attrib';
@@ -21,7 +21,7 @@ function apply(){
 }
 const observer=new MutationObserver(()=>{if(!scheduled){scheduled=true;requestAnimationFrame(()=>{scheduled=false;apply();});}});
 const dialog=document.createElement('dialog');dialog.className='language-dialog';dialog.setAttribute('aria-labelledby','language-title');dialog.setAttribute('data-no-translate','');
-dialog.innerHTML='<span class="language-brand">tuka<span>.</span></span><h2 id="language-title">Choose your language</h2><p>Изберете јазик · Zgjidhni gjuhën</p><div class="language-choices">'+Object.entries(languages).map(([code,label])=>`<button data-language="${code}"><strong>${label}</strong><span>${{mk:'MK',sq:'SQ',en:'EN'}[code]}</span></button>`).join('')+'</div><button class="language-close" aria-label="Close">×</button>';
+dialog.innerHTML='<span class="language-brand">tuka<span>.</span></span><h2 id="language-title">Choose your language</h2><p>Изберете јазик · Zgjidhni gjuhën · Kies je taal</p><div class="language-choices">'+Object.entries(languages).map(([code,label])=>`<button data-language="${code}"><strong>${label}</strong><span>${{mk:'MK',sq:'SQ',en:'EN',nl:'NL'}[code]}</span></button>`).join('')+'</div><button class="language-close" aria-label="Close">×</button>';
 document.body.append(dialog);
 let chosen;try{chosen=languages[localStorage.getItem('tuka-language')];}catch{}
 function open(trigger){if(dialog.open)return;opener=trigger||null;dialog.querySelector('.language-close').hidden=!chosen;dialog.showModal();}
