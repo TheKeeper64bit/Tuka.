@@ -12,6 +12,7 @@ function retain(map,id,label) {
   map.set(id,[...current.filter(x=>!(x.connectionKey===label.connectionKey&&label.time<=x.time&&label.walk<=x.walk)),label]);
 }
 export function planJourney(db,rt,origin,destination,time=Date.now(),input={}) {
+  const excludedStops=new Set(input.excludedStops||[]);
   const options=preferences(input),reverse=options.mode==='arrive',sign=reverse?-1:1,start=sign*time;
   const zone=db?.timezone;
   // Only Leave now uses live updates. Dated plans remain reproducible timetable predictions.
@@ -74,7 +75,7 @@ export function planJourney(db,rt,origin,destination,time=Date.now(),input={}) {
     for(const run of runs) {
       let boarded=[];
       for(let i=0;i<run.path.length;i++) {
-        const x=run.path[i];if(x.skip||!byId.has(x.p.stop_id))continue;
+        const x=run.path[i];if(x.skip||excludedStops.has(x.p.stop_id)||!byId.has(x.p.stop_id))continue;
         const arrive=sign*(reverse?x.departure.time:x.arrival.time),depart=sign*(reverse?x.arrival.time:x.departure.time);
         if(x.p[reverse?'pickup_type':'drop_off_type']!=='1'&&arrive<=start+HORIZON) for(const b of boarded) {
           const first=reverse?x:b.x,last=reverse?b.x:x;

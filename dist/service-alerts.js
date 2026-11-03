@@ -5,7 +5,7 @@ const string=b=>b?new TextDecoder().decode(b):'';
 export function decodeAlert(raw,fields){
   const f=fields(raw),text=k=>(f[k]||[]).flatMap(b=>(fields(b)[1]||[]).map(t=>{const v=fields(t);return {text:string(first(v,1)),language:string(first(v,2))};}));
   const ranges=k=>(f[k]||[]).map(b=>{const v=fields(b);return {start:first(v,1),end:first(v,2)};});
-  return {periods:ranges(3).length?ranges(3):ranges(1),communication:ranges(2),title:text(10),description:text(11),url:text(8),selectors:(f[5]||[]).map(b=>{
+  return {effect:first(f,7),cause:first(f,6),periods:ranges(3).length?ranges(3):ranges(1),communication:ranges(2),title:text(10),description:text(11),url:text(8),selectors:(f[5]||[]).map(b=>{
     const v=fields(b),t=first(v,4)?fields(first(v,4)):{};
     return {agency:string(first(v,1)),route:string(first(v,2)),routeType:first(v,3),stop:string(first(v,5)),direction:first(v,6),trip:string(first(t,1)),date:string(first(t,3)),tripRoute:string(first(t,5)),tripDirection:first(t,6),startTime:string(first(t,2))};
   })};

@@ -1,3 +1,4 @@
+import {guardianResponse} from './guardian.js';
 import {journeyCompletion,modelProviders} from './model-provider.js';
 import {translateNotice} from './notice-translation.js';
 import {interpretJourney} from './meta-intent.js';
@@ -307,6 +308,7 @@ export default {
     if (url.pathname === '/api/walk') return walkingResponse(request,env);
     if (url.pathname === '/auth/session') return json({authenticated:true});
     if(url.pathname==='/api/news/translate')return translateNotice(request,env);
+    if(url.pathname==='/api/meta/guardian')return guardianResponse(request,env);
     if(url.pathname==='/api/meta/interpret')return interpretJourney(request,env);
     if(url.pathname.startsWith('/api/transit/tilburg/')) return netherlandsFeed(request,env);
     if(url.pathname==='/api/news'&&url.searchParams.get('city')==='tilburg'&&request.method==='GET')return tilburgNotices(request,env);

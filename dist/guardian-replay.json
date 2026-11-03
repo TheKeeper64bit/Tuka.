@@ -1,0 +1,917 @@
+{
+  "label": "Replay of a real captured MBTA prediction; not current live service",
+  "source": "https://cdn.mbta.com/realtime/TripUpdates.pb",
+  "capturedAt": "2026-11-03T18:30:49.000Z",
+  "timestamp": 1793730649,
+  "staticSource": "https://cdn.mbta.com/MBTA_GTFS.zip",
+  "network": "boston",
+  "candidate": {
+    "tripId": "78854559",
+    "stopId": "3518",
+    "date": "20261103",
+    "seq": 3,
+    "index": 2,
+    "scheduled": 1793730660000,
+    "predicted": 1793730814000,
+    "delayMs": 154000,
+    "from": {
+      "stop_id": "3518",
+      "stop_code": "3518",
+      "stop_name": "Washington St @ Edwards St",
+      "stop_desc": "",
+      "platform_code": "",
+      "platform_name": "",
+      "stop_lat": "42.249969",
+      "stop_lon": "-70.995394",
+      "zone_id": "LocalBus",
+      "stop_address": "",
+      "stop_url": "https://www.mbta.com/stops/3518",
+      "level_id": "",
+      "location_type": "0",
+      "parent_station": "",
+      "wheelchair_boarding": "1",
+      "municipality": "Quincy",
+      "on_street": "Washington Street",
+      "at_street": "",
+      "vehicle_type": "3",
+      "id": "3518",
+      "name": "Washington St @ Edwards St",
+      "lat": 42.249969,
+      "lon": -70.995394
+    },
+    "to": {
+      "stop_id": "13844",
+      "stop_code": "13844",
+      "stop_name": "Pleasant St opp Mutton Ln",
+      "stop_desc": "",
+      "platform_code": "",
+      "platform_name": "",
+      "stop_lat": "42.199411",
+      "stop_lon": "-70.924629",
+      "zone_id": "LocalBus",
+      "stop_address": "",
+      "stop_url": "https://www.mbta.com/stops/13844",
+      "level_id": "",
+      "location_type": "0",
+      "parent_station": "",
+      "wheelchair_boarding": "0",
+      "municipality": "Weymouth",
+      "on_street": "Pleasant Street",
+      "at_street": "Mutton Lane",
+      "vehicle_type": "3",
+      "id": "13844",
+      "name": "Pleasant St opp Mutton Ln",
+      "lat": 42.199411,
+      "lon": -70.924629
+    },
+    "route": {
+      "route_id": "222",
+      "agency_id": "1",
+      "route_short_name": "222",
+      "route_long_name": "Lovell Corners - Quincy Center Station",
+      "route_desc": "Local Bus",
+      "route_type": "3",
+      "route_url": "https://www.mbta.com/schedules/222",
+      "route_color": "FFC72C",
+      "route_text_color": "000000",
+      "route_sort_order": "52220",
+      "route_fare_class": "Local Bus",
+      "line_id": "line-222",
+      "listed_route": "",
+      "network_id": "local_bus"
+    },
+    "updates": [
+      [
+        "78854559|3515|20261103|2",
+        {
+          "time": 1793730708,
+          "arrival": {
+            "time": 1793730708
+          },
+          "departure": {
+            "time": 1793730708
+          },
+          "seq": 2,
+          "tripId": "78854559",
+          "stopId": "3515",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3518|20261103|3",
+        {
+          "time": 1793730814,
+          "arrival": {
+            "time": 1793730814
+          },
+          "departure": {
+            "time": 1793730814
+          },
+          "seq": 3,
+          "tripId": "78854559",
+          "stopId": "3518",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3520|20261103|4",
+        {
+          "time": 1793730838,
+          "arrival": {
+            "time": 1793730838
+          },
+          "departure": {
+            "time": 1793730838
+          },
+          "seq": 4,
+          "tripId": "78854559",
+          "stopId": "3520",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3521|20261103|5",
+        {
+          "time": 1793730849,
+          "arrival": {
+            "time": 1793730849
+          },
+          "departure": {
+            "time": 1793730849
+          },
+          "seq": 5,
+          "tripId": "78854559",
+          "stopId": "3521",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3522|20261103|6",
+        {
+          "time": 1793730865,
+          "arrival": {
+            "time": 1793730865
+          },
+          "departure": {
+            "time": 1793730865
+          },
+          "seq": 6,
+          "tripId": "78854559",
+          "stopId": "3522",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3524|20261103|7",
+        {
+          "time": 1793730885,
+          "arrival": {
+            "time": 1793730885
+          },
+          "departure": {
+            "time": 1793730885
+          },
+          "seq": 7,
+          "tripId": "78854559",
+          "stopId": "3524",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3526|20261103|8",
+        {
+          "time": 1793730963,
+          "arrival": {
+            "time": 1793730963
+          },
+          "departure": {
+            "time": 1793730963
+          },
+          "seq": 8,
+          "tripId": "78854559",
+          "stopId": "3526",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3528|20261103|9",
+        {
+          "time": 1793731031,
+          "arrival": {
+            "time": 1793731031
+          },
+          "departure": {
+            "time": 1793731031
+          },
+          "seq": 9,
+          "tripId": "78854559",
+          "stopId": "3528",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3530|20261103|10",
+        {
+          "time": 1793731096,
+          "arrival": {
+            "time": 1793731096
+          },
+          "departure": {
+            "time": 1793731096
+          },
+          "seq": 10,
+          "tripId": "78854559",
+          "stopId": "3530",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3531|20261103|11",
+        {
+          "time": 1793731210,
+          "arrival": {
+            "time": 1793731210
+          },
+          "departure": {
+            "time": 1793731210
+          },
+          "seq": 11,
+          "tripId": "78854559",
+          "stopId": "3531",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3532|20261103|12",
+        {
+          "time": 1793731230,
+          "arrival": {
+            "time": 1793731230
+          },
+          "departure": {
+            "time": 1793731230
+          },
+          "seq": 12,
+          "tripId": "78854559",
+          "stopId": "3532",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3533|20261103|13",
+        {
+          "time": 1793731245,
+          "arrival": {
+            "time": 1793731245
+          },
+          "departure": {
+            "time": 1793731245
+          },
+          "seq": 13,
+          "tripId": "78854559",
+          "stopId": "3533",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3535|20261103|14",
+        {
+          "time": 1793731268,
+          "arrival": {
+            "time": 1793731268
+          },
+          "departure": {
+            "time": 1793731268
+          },
+          "seq": 14,
+          "tripId": "78854559",
+          "stopId": "3535",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3536|20261103|15",
+        {
+          "time": 1793731276,
+          "arrival": {
+            "time": 1793731276
+          },
+          "departure": {
+            "time": 1793731276
+          },
+          "seq": 15,
+          "tripId": "78854559",
+          "stopId": "3536",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3538|20261103|16",
+        {
+          "time": 1793731289,
+          "arrival": {
+            "time": 1793731289
+          },
+          "departure": {
+            "time": 1793731289
+          },
+          "seq": 16,
+          "tripId": "78854559",
+          "stopId": "3538",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3539|20261103|17",
+        {
+          "time": 1793731298,
+          "arrival": {
+            "time": 1793731298
+          },
+          "departure": {
+            "time": 1793731298
+          },
+          "seq": 17,
+          "tripId": "78854559",
+          "stopId": "3539",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3660|20261103|18",
+        {
+          "time": 1793731333,
+          "arrival": {
+            "time": 1793731333
+          },
+          "departure": {
+            "time": 1793731333
+          },
+          "seq": 18,
+          "tripId": "78854559",
+          "stopId": "3660",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3661|20261103|19",
+        {
+          "time": 1793731353,
+          "arrival": {
+            "time": 1793731353
+          },
+          "departure": {
+            "time": 1793731353
+          },
+          "seq": 19,
+          "tripId": "78854559",
+          "stopId": "3661",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3662|20261103|20",
+        {
+          "time": 1793731381,
+          "arrival": {
+            "time": 1793731381
+          },
+          "departure": {
+            "time": 1793731381
+          },
+          "seq": 20,
+          "tripId": "78854559",
+          "stopId": "3662",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3664|20261103|21",
+        {
+          "time": 1793731406,
+          "arrival": {
+            "time": 1793731406
+          },
+          "departure": {
+            "time": 1793731406
+          },
+          "seq": 21,
+          "tripId": "78854559",
+          "stopId": "3664",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3665|20261103|22",
+        {
+          "time": 1793731413,
+          "arrival": {
+            "time": 1793731413
+          },
+          "departure": {
+            "time": 1793731413
+          },
+          "seq": 22,
+          "tripId": "78854559",
+          "stopId": "3665",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3666|20261103|23",
+        {
+          "time": 1793731429,
+          "arrival": {
+            "time": 1793731429
+          },
+          "departure": {
+            "time": 1793731429
+          },
+          "seq": 23,
+          "tripId": "78854559",
+          "stopId": "3666",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3667|20261103|24",
+        {
+          "time": 1793731438,
+          "arrival": {
+            "time": 1793731438
+          },
+          "departure": {
+            "time": 1793731438
+          },
+          "seq": 24,
+          "tripId": "78854559",
+          "stopId": "3667",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3668|20261103|25",
+        {
+          "time": 1793731473,
+          "arrival": {
+            "time": 1793731473
+          },
+          "departure": {
+            "time": 1793731473
+          },
+          "seq": 25,
+          "tripId": "78854559",
+          "stopId": "3668",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3669|20261103|26",
+        {
+          "time": 1793731497,
+          "arrival": {
+            "time": 1793731497
+          },
+          "departure": {
+            "time": 1793731497
+          },
+          "seq": 26,
+          "tripId": "78854559",
+          "stopId": "3669",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3670|20261103|27",
+        {
+          "time": 1793731505,
+          "arrival": {
+            "time": 1793731505
+          },
+          "departure": {
+            "time": 1793731505
+          },
+          "seq": 27,
+          "tripId": "78854559",
+          "stopId": "3670",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|36701|20261103|28",
+        {
+          "time": 1793731527,
+          "arrival": {
+            "time": 1793731527
+          },
+          "departure": {
+            "time": 1793731527
+          },
+          "seq": 28,
+          "tripId": "78854559",
+          "stopId": "36701",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3671|20261103|29",
+        {
+          "time": 1793731536,
+          "arrival": {
+            "time": 1793731536
+          },
+          "departure": {
+            "time": 1793731536
+          },
+          "seq": 29,
+          "tripId": "78854559",
+          "stopId": "3671",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3672|20261103|30",
+        {
+          "time": 1793731551,
+          "arrival": {
+            "time": 1793731551
+          },
+          "departure": {
+            "time": 1793731551
+          },
+          "seq": 30,
+          "tripId": "78854559",
+          "stopId": "3672",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3673|20261103|31",
+        {
+          "time": 1793731563,
+          "arrival": {
+            "time": 1793731563
+          },
+          "departure": {
+            "time": 1793731563
+          },
+          "seq": 31,
+          "tripId": "78854559",
+          "stopId": "3673",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3674|20261103|32",
+        {
+          "time": 1793731582,
+          "arrival": {
+            "time": 1793731582
+          },
+          "departure": {
+            "time": 1793731582
+          },
+          "seq": 32,
+          "tripId": "78854559",
+          "stopId": "3674",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3675|20261103|33",
+        {
+          "time": 1793731600,
+          "arrival": {
+            "time": 1793731600
+          },
+          "departure": {
+            "time": 1793731600
+          },
+          "seq": 33,
+          "tripId": "78854559",
+          "stopId": "3675",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3676|20261103|34",
+        {
+          "time": 1793731654,
+          "arrival": {
+            "time": 1793731654
+          },
+          "departure": {
+            "time": 1793731654
+          },
+          "seq": 34,
+          "tripId": "78854559",
+          "stopId": "3676",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3677|20261103|35",
+        {
+          "time": 1793731661,
+          "arrival": {
+            "time": 1793731661
+          },
+          "departure": {
+            "time": 1793731661
+          },
+          "seq": 35,
+          "tripId": "78854559",
+          "stopId": "3677",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3678|20261103|36",
+        {
+          "time": 1793731670,
+          "arrival": {
+            "time": 1793731670
+          },
+          "departure": {
+            "time": 1793731670
+          },
+          "seq": 36,
+          "tripId": "78854559",
+          "stopId": "3678",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3679|20261103|37",
+        {
+          "time": 1793731689,
+          "arrival": {
+            "time": 1793731689
+          },
+          "departure": {
+            "time": 1793731689
+          },
+          "seq": 37,
+          "tripId": "78854559",
+          "stopId": "3679",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3682|20261103|38",
+        {
+          "time": 1793731711,
+          "arrival": {
+            "time": 1793731711
+          },
+          "departure": {
+            "time": 1793731711
+          },
+          "seq": 38,
+          "tripId": "78854559",
+          "stopId": "3682",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|36821|20261103|39",
+        {
+          "time": 1793731724,
+          "arrival": {
+            "time": 1793731724
+          },
+          "departure": {
+            "time": 1793731724
+          },
+          "seq": 39,
+          "tripId": "78854559",
+          "stopId": "36821",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|3683|20261103|40",
+        {
+          "time": 1793731776,
+          "arrival": {
+            "time": 1793731776
+          },
+          "departure": {
+            "time": 1793731776
+          },
+          "seq": 40,
+          "tripId": "78854559",
+          "stopId": "3683",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|13851|20261103|41",
+        {
+          "time": 1793731800,
+          "arrival": {
+            "time": 1793731800
+          },
+          "departure": {
+            "time": 1793731800
+          },
+          "seq": 41,
+          "tripId": "78854559",
+          "stopId": "13851",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|13852|20261103|42",
+        {
+          "time": 1793731819,
+          "arrival": {
+            "time": 1793731819
+          },
+          "departure": {
+            "time": 1793731819
+          },
+          "seq": 42,
+          "tripId": "78854559",
+          "stopId": "13852",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|13853|20261103|43",
+        {
+          "time": 1793731837,
+          "arrival": {
+            "time": 1793731837
+          },
+          "departure": {
+            "time": 1793731837
+          },
+          "seq": 43,
+          "tripId": "78854559",
+          "stopId": "13853",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|13854|20261103|44",
+        {
+          "time": 1793731853,
+          "arrival": {
+            "time": 1793731853
+          },
+          "departure": {
+            "time": 1793731853
+          },
+          "seq": 44,
+          "tripId": "78854559",
+          "stopId": "13854",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|13855|20261103|45",
+        {
+          "time": 1793731875,
+          "arrival": {
+            "time": 1793731875
+          },
+          "departure": {
+            "time": 1793731875
+          },
+          "seq": 45,
+          "tripId": "78854559",
+          "stopId": "13855",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|13856|20261103|46",
+        {
+          "time": 1793731893,
+          "arrival": {
+            "time": 1793731893
+          },
+          "departure": {
+            "time": 1793731893
+          },
+          "seq": 46,
+          "tripId": "78854559",
+          "stopId": "13856",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|13857|20261103|47",
+        {
+          "time": 1793731922,
+          "arrival": {
+            "time": 1793731922
+          },
+          "departure": {
+            "time": 1793731922
+          },
+          "seq": 47,
+          "tripId": "78854559",
+          "stopId": "13857",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|13858|20261103|48",
+        {
+          "time": 1793731971,
+          "arrival": {
+            "time": 1793731971
+          },
+          "departure": {
+            "time": 1793731971
+          },
+          "seq": 48,
+          "tripId": "78854559",
+          "stopId": "13858",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|13859|20261103|49",
+        {
+          "time": 1793732017,
+          "arrival": {
+            "time": 1793732017
+          },
+          "departure": {
+            "time": 1793732017
+          },
+          "seq": 49,
+          "tripId": "78854559",
+          "stopId": "13859",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ],
+      [
+        "78854559|13844|20261103|50",
+        {
+          "time": 1793732036,
+          "arrival": {
+            "time": 1793732036
+          },
+          "departure": null,
+          "seq": 50,
+          "tripId": "78854559",
+          "stopId": "13844",
+          "serviceDate": "20261103",
+          "source": "MBTA"
+        }
+      ]
+    ]
+  }
+}

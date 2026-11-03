@@ -1,0 +1,32 @@
+[
+  {
+    "width": 320,
+    "tilburgBundledTimetable": true,
+    "dutchUi": true,
+    "fourLanguageSwitches": true,
+    "persistedAfterReload": true,
+    "changeStop": true,
+    "sheetSelectionPreserved": true,
+    "pageErrors": []
+  },
+  {
+    "width": 390,
+    "tilburgBundledTimetable": true,
+    "dutchUi": true,
+    "fourLanguageSwitches": true,
+    "persistedAfterReload": true,
+    "changeStop": true,
+    "sheetSelectionPreserved": true,
+    "pageErrors": []
+  },
+  {
+    "width": 1280,
+    "tilburgBundledTimetable": true,
+    "dutchUi": true,
+    "fourLanguageSwitches": true,
+    "persistedAfterReload": true,
+    "changeStop": true,
+    "sheetSelectionPreserved": true,
+    "pageErrors": []
+  }
+]

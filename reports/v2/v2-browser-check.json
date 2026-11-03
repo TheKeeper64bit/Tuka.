@@ -1,0 +1,63 @@
+[
+  {
+    "width": 320,
+    "changeStop": true,
+    "keyboardCollapseRestore": true,
+    "drag": true,
+    "normalJourney": true,
+    "delay": true,
+    "officialClosure": true,
+    "stale": true,
+    "noFeasibleAlternative": true,
+    "providerTimeoutFallback": true,
+    "privateContextExcluded": true,
+    "localPlannerMapSelection": true,
+    "modelessCopilot": true,
+    "aiRequests": 3,
+    "mockedModelCalls": 3,
+    "pageErrors": []
+  },
+  {
+    "width": 390,
+    "changeStop": true,
+    "keyboardCollapseRestore": true,
+    "drag": true,
+    "normalJourney": true,
+    "delay": true,
+    "officialClosure": true,
+    "stale": true,
+    "noFeasibleAlternative": true,
+    "providerTimeoutFallback": true,
+    "privateContextExcluded": true,
+    "localPlannerMapSelection": true,
+    "modelessCopilot": true,
+    "aiRequests": 3,
+    "mockedModelCalls": 3,
+    "pageErrors": []
+  },
+  {
+    "width": 1280,
+    "changeStop": true,
+    "keyboardCollapseRestore": true,
+    "drag": true,
+    "normalJourney": true,
+    "delay": true,
+    "officialClosure": true,
+    "stale": true,
+    "noFeasibleAlternative": true,
+    "providerTimeoutFallback": true,
+    "privateContextExcluded": true,
+    "localPlannerMapSelection": true,
+    "modelessCopilot": true,
+    "aiRequests": 3,
+    "mockedModelCalls": 3,
+    "pageErrors": []
+  },
+  {
+    "historicalReplay": true,
+    "realMbtaPrediction": true,
+    "localAlternatives": true,
+    "mockedExplanation": true,
+    "mapUpdate": true
+  }
+]

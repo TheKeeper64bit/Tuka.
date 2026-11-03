@@ -22,16 +22,16 @@ export function journeyGeometry(db,result){
         points=trimGeometry(pattern.points,sequence,0,calls.length-1);approximate=pattern.approximate;
       }
       if(points.length<2){points=calls.map(s=>byId.get(s.stop_id)).filter(Boolean).map(coordinates);approximate=true;}
-      stops.push({type:'Feature',geometry:{type:'Point',coordinates:coordinates(leg.from)},properties:{step:index,label:String(leg.route.route_short_name),color}});
-      stops.push({type:'Feature',geometry:{type:'Point',coordinates:coordinates(leg.to)},properties:{step:index,label:'↓',color}});
+      stops.push({type:'Feature',geometry:{type:'Point',coordinates:coordinates(leg.from)},properties:{step:index,label:String(leg.route.route_short_name),color,kind:result.legs.slice(0,index).some(l=>l.type==='bus')?'transfer':'origin'}});
+      stops.push({type:'Feature',geometry:{type:'Point',coordinates:coordinates(leg.to)},properties:{step:index,label:'↓',color,kind:'alight'}});
     }
     if(leg.type!=='bus'&&leg.walkingPath){points=leg.walkingPath;approximate=false;}
     if(points.length<2){points=[coordinates(leg.from),coordinates(leg.to)];approximate=true;}
     features.push({type:'Feature',geometry:{type:'LineString',coordinates:points},properties:{step:index,color,walk:leg.type!=='bus',approximate}});
   });
-  const start=result.legs[0];if(start&&!stops.some(s=>distance(start.from,{lon:s.geometry.coordinates[0],lat:s.geometry.coordinates[1]})<20))stops.unshift({type:'Feature',geometry:{type:'Point',coordinates:coordinates(start.from)},properties:{step:0,label:'S',color:'#0865d6'}});
+  const start=result.legs[0];if(start&&!stops.some(s=>distance(start.from,{lon:s.geometry.coordinates[0],lat:s.geometry.coordinates[1]})<20))stops.unshift({type:'Feature',geometry:{type:'Point',coordinates:coordinates(start.from)},properties:{step:0,label:'S',kind:'origin',color:'#0865d6'}});
   const end=result.legs.at(-1);
-  if(end)stops.push({type:'Feature',geometry:{type:'Point',coordinates:coordinates(end.to)},properties:{step:result.legs.length-1,label:'D',color:'#cf3b79'}});
+  if(end)stops.push({type:'Feature',geometry:{type:'Point',coordinates:coordinates(end.to)},properties:{step:result.legs.length-1,label:'D',kind:'destination',color:'#cf3b79'}});
   const distinct=stops.filter((s,i)=>!stops.slice(i+1).some(next=>next.properties.label==='D'&&distance({lon:s.geometry.coordinates[0],lat:s.geometry.coordinates[1]},{lon:next.geometry.coordinates[0],lat:next.geometry.coordinates[1]})<10));
   return {paths:collection(features),stops:collection(distinct)};
 }
@@ -44,12 +44,13 @@ export function journeyOverlay(map,geometry,step=0){
   if(!map.getLayer('chosen-journey-bus')){
     const before='stops',layout={'line-cap':'round','line-join':'round'};
     map.addLayer({id:'chosen-journey-halo',type:'line',source:'chosen-journey',layout,paint:{'line-color':'#fff','line-width':8,'line-opacity':.7}},before);
-    map.addLayer({id:'chosen-journey-bus',type:'line',source:'chosen-journey',filter:['==',['get','walk'],false],layout,paint:{'line-color':['get','color'],'line-width':5}},before);
+    map.addLayer({id:'chosen-journey-bus',type:'line',source:'chosen-journey',filter:['all',['==',['get','walk'],false],['!=',['get','approximate'],true]],layout,paint:{'line-color':['get','color'],'line-width':5}},before);
+    map.addLayer({id:'chosen-journey-bus-approx',type:'line',source:'chosen-journey',filter:['all',['==',['get','walk'],false],['==',['get','approximate'],true]],layout,paint:{'line-color':['get','color'],'line-width':5,'line-dasharray':[2,1.5]}},before);
     map.addLayer({id:'chosen-journey-walk',type:'line',source:'chosen-journey',filter:['==',['get','walk'],true],paint:{'line-color':'#728595','line-width':4,'line-dasharray':[2,2]}},before);
-    map.addLayer({id:'chosen-journey-stops',type:'circle',source:'chosen-journey-stops',paint:{'circle-color':['get','color'],'circle-radius':10,'circle-stroke-color':'#fff','circle-stroke-width':2}});
+    map.addLayer({id:'chosen-journey-stops',type:'circle',source:'chosen-journey-stops',paint:{'circle-color':['get','color'],'circle-radius':['case',['==',['get','kind'],'transfer'],12,['==',['get','kind'],'destination'],12,10],'circle-stroke-color':'#fff','circle-stroke-width':3}});
     map.addLayer({id:'chosen-journey-labels',type:'symbol',source:'chosen-journey-stops',layout:{'text-field':['get','label'],'text-font':['Noto Sans Regular'],'text-size':11,'text-allow-overlap':true},paint:{'text-color':'#fff'}});
   }
-  for(const layer of ['chosen-journey-bus','chosen-journey-walk'])map.setPaintProperty(layer,'line-opacity',['case',['==',['get','step'],step],1,.55]);
+  for(const layer of ['chosen-journey-bus','chosen-journey-bus-approx','chosen-journey-walk'])map.setPaintProperty(layer,'line-opacity',['case',['==',['get','step'],step],1,.55]);
 }
 
 export function journeyVehicles(rt,result,now=Date.now(),zone){

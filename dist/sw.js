@@ -4,9 +4,9 @@
 const PRIVATE_ACCESS=false;
 const BASE_PATH=new URL('./',self.registration.scope).pathname;
 const CACHE_PREFIX=BASE_PATH==='/'?'tuka-offline-':'tuka-offline-'+encodeURIComponent(BASE_PATH)+'-';
-const OFFLINE_CACHE=CACHE_PREFIX+'v36';
+const OFFLINE_CACHE=CACHE_PREFIX+'v37';
 const ownReaderCache=key=>BASE_PATH==='/'?/^tuka-offline-v\d+(?:-|$)/.test(key):key.startsWith(CACHE_PREFIX);
-const FILES=['offline.html','offline.js','feed-store.js?v=1','gtfs-zip.js?v=1','offline.css','ticket-wallet.js?v=1','ticket-wallet.css?v=1','ticket-store.js?v=1','config.js?v=1','transit.js?v=26','gtfs.js?v=2','city-providers.js?v=3','schedule.js?v=24','planner.js?v=26','journey-store.js?v=24','favourites.js?v=20','live.js?v=16','language.js?v=32','language.css?v=31','i18n.js?v=33','i18n-nl.js?v=1','service-alerts.js?v=26'].map(path=>BASE_PATH+path);
+const FILES=['offline.html','offline.js','feed-store.js?v=1','gtfs-zip.js?v=1','offline.css','ticket-wallet.js?v=1','ticket-wallet.css?v=1','ticket-store.js?v=1','config.js?v=1','transit.js?v=27','gtfs.js?v=2','city-providers.js?v=3','schedule.js?v=24','planner.js?v=27','journey-store.js?v=24','favourites.js?v=20','live.js?v=16','language.js?v=32','language.css?v=31','i18n.js?v=33','i18n-nl.js?v=1','service-alerts.js?v=27'].map(path=>BASE_PATH+path);
 const PUBLIC_FILES=new Set(FILES.map(path=>path.split('?')[0]));
 const readerClients=new Map();
 let preparing,generation=0;
