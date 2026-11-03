@@ -5,6 +5,7 @@ export function modelProviders(env) {
   const token = env.MODEL_API_KEY || env.META_AI_TOKEN || env.META_API_KEY;
   if (token) providers.push({name: 'meta', token, endpoint: env.META_API_URL || 'https://api.meta.ai/v1/chat/completions', model: env.META_MODEL || 'muse-spark-1.3'});
   if (env.BASETEN_API_KEY && env.BASETEN_MODEL?.trim()) providers.push({name: 'baseten', token: env.BASETEN_API_KEY, endpoint: 'https://inference.baseten.co/v1/chat/completions', model: env.BASETEN_MODEL.trim()});
+  if (env.MODEL_PROVIDER === 'baseten') providers.sort((a, b) => Number(b.name === 'baseten') - Number(a.name === 'baseten'));
   return providers;
 }
 
@@ -15,7 +16,7 @@ export async function journeyCompletion(env, body, {fetcher = fetch} = {}) {
     const p = providers[i];
     try {
       const response = await fetcher(p.endpoint, {
-        method: 'POST', redirect: 'error',
+        method: 'POST', redirect: 'manual',
         headers: {Authorization: `Bearer ${p.token}`, 'Content-Type': 'application/json'},
         signal: AbortSignal.timeout(10000),
         body: JSON.stringify({...body, model: p.model}),

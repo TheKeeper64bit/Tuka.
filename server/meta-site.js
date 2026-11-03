@@ -1,3 +1,4 @@
+import {journeyCompletion, modelProviders} from './model-provider.js';
 import {translateNotice} from './notice-translation.js';
 import {interpretJourney} from './meta-intent.js';
 import {netherlandsFeed,tilburgNotices} from './netherlands.js';
@@ -215,10 +216,9 @@ async function cityContext(args, env) {
 }
 
 async function askMeta(message, context, env) {
-  const token = env.MODEL_API_KEY || env.META_AI_TOKEN || env.META_API_KEY;
-  if (!token) return {error: 'Meta AI is not configured for this deployment.', status: 503};
-  const endpoint = String(env.META_API_URL || 'https://api.meta.ai/v1/chat/completions').replace(/\/$/, '');
-  const model = String(env.META_MODEL || 'muse-spark-1.3');
+  const providers = modelProviders(env);
+  if (!providers.length) return {error: 'Meta AI is not configured for this deployment.', status: 503};
+  const model = providers[0].model;
   const system = [
     'You are Tuka Copilot, a transit assistant for a hackathon demo.',
     'Use only verified city/provider profiles and the supplied app context.',
@@ -229,7 +229,10 @@ async function askMeta(message, context, env) {
   ].join(' ');
   const base = {model, temperature: 0.2, max_completion_tokens: 760, tool_choice: 'auto', parallel_tool_calls: false,
     messages: [{role: 'system', content: system}, {role: 'user', content: `Selected city: ${context.cityId || 'skopje'}${context.stopId ? `; selected stop: ${context.stopId}` : ''}\nRider question: ${message}`}], tools: [networkTool, cityContextTool]};
-  const call = async body => fetch(endpoint, {method: 'POST', headers: {'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'}, body: JSON.stringify(body), signal: AbortSignal.timeout(18000)});
+  const call = async body => {
+    try { return (await journeyCompletion(env, body)).response; }
+    catch { return new Response(null, {status: 502}); }
+  };
   let response = await call(base);
   if (!response.ok) return {error: 'Meta AI could not answer right now.', status: response.status === 429 ? 429 : 502};
   let data = await response.json();

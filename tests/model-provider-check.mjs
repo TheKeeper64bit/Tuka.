@@ -13,7 +13,7 @@ test('transient Meta failures fall back once with isolated Baseten credentials a
  for(const failure of [401,403,408,429,500,502,503,504,'network']){
   const calls=[];const r=await interpretJourney(request(),env,{fetcher:async(url,options)=>{calls.push({url,...options,body:JSON.parse(options.body)});if(calls.length===1){if(failure==='network')throw Error('private upstream details');return new Response('',{status:failure});}return answer(intent);}});
   assert.equal(r.status,200);assert.equal((await r.json()).provider,'baseten');assert.equal(calls.length,2);
-  assert.equal(calls[1].url,'https://inference.baseten.co/v1/chat/completions');assert.equal(calls[1].headers.Authorization,'Bearer test-baseten');assert.equal(calls[1].body.model,'account-tool-model');assert.deepEqual(calls[0].body.tools,calls[1].body.tools);assert.equal(calls[1].redirect,'error');
+  assert.equal(calls[1].url,'https://inference.baseten.co/v1/chat/completions');assert.equal(calls[1].headers.Authorization,'Bearer test-baseten');assert.equal(calls[1].body.model,'account-tool-model');assert.deepEqual(calls[0].body.tools,calls[1].body.tools);assert.equal(calls[1].redirect,'manual');
  }
 });
 test('Baseten-only configuration works; a key without explicit model stays disabled',async()=>{
@@ -30,4 +30,22 @@ test('invalid model itineraries and bad requests never bypass validation or retr
 });
 test('exhausted providers expose no upstream error details',async()=>{
  let count=0;const r=await interpretJourney(request(),env,{fetcher:async()=>{count++;throw Error('credential or internal endpoint');}});assert.equal(count,2);assert.equal(r.status,502);assert.doesNotMatch(await r.text(),/credential|internal endpoint/);
+});
+
+test('provider redirects are not followed or retried',async()=>{
+ let count=0;
+ const r=await interpretJourney(request(),env,{fetcher:async(url,options)=>{
+  count++;assert.equal(options.redirect,'manual');
+  return new Response(null,{status:307,headers:{Location:'https://untrusted.example'}});
+ }});
+ assert.equal(r.status,502);assert.equal(count,1);
+});
+
+test('explicit Baseten preference uses the hackathon provider first',async()=>{
+ let count=0;
+ const r=await interpretJourney(request(),{...env,MODEL_PROVIDER:'baseten'},{fetcher:async(url,options)=>{
+  count++;assert.equal(url,'https://inference.baseten.co/v1/chat/completions');
+  assert.equal(options.headers.Authorization,'Bearer test-baseten');return answer(intent);
+ }});
+ assert.equal(r.status,200);assert.equal((await r.json()).provider,'baseten');assert.equal(count,1);
 });

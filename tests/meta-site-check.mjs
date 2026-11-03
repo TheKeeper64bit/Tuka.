@@ -88,3 +88,22 @@ test('Tilburg feeds, notices and Meta interpretation require the existing login'
   assert.equal(response.status,401);
  }
 });
+
+test('Copilot chat and tool follow-up use the configured Baseten hackathon model', async () => {
+  const config = {...env, BASETEN_API_KEY:'test-baseten', BASETEN_MODEL:'meta-models/muse-spark-open-1026', MODEL_PROVIDER:'baseten'};
+  const login = await worker.fetch(new Request('https://tuka.test/auth/login', {method:'POST',body:new URLSearchParams({username:'CerebralValley',password:'meta'})}),config);
+  const cookie=login.headers.get('Set-Cookie').split(';')[0];
+  const originalFetch=globalThis.fetch;let count=0;
+  globalThis.fetch=async (url,options)=>{
+    count++;assert.equal(url,'https://inference.baseten.co/v1/chat/completions');
+    assert.equal(options.headers.Authorization,'Bearer test-baseten');assert.equal(options.redirect,'manual');
+    const body=JSON.parse(options.body);assert.equal(body.model,config.BASETEN_MODEL);
+    if(count===1)return Response.json({choices:[{message:{tool_calls:[{id:'call-1',type:'function',function:{name:'get_network_profiles',arguments:'{}'}}]}}]});
+    assert.ok(body.messages.some(m=>m.role==='tool'));
+    return Response.json({model:config.BASETEN_MODEL,choices:[{message:{content:'Use the journey planner for verified departures.'}}]});
+  };
+  try{
+    const r=await worker.fetch(new Request('https://tuka.test/api/meta/ask',{method:'POST',headers:{Cookie:cookie,'Content-Type':'application/json'},body:JSON.stringify({message:'What networks are available?',cityId:'tilburg'})}),config);
+    assert.equal(r.status,200);assert.match((await r.json()).answer,/journey planner/);assert.equal(count,2);
+  }finally{globalThis.fetch=originalFetch;}
+});
