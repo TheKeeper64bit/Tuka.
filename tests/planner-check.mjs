@@ -112,3 +112,36 @@ test('avoid passing a legal exit then riding back across the road for a tiny wal
  const restricted=planJourney(db,null,origin,destination,at('08:00'),{mode:'leave'});
  assert(restricted.some(r=>routes(r).join(',')==='outbound,back'),'Do not suggest alighting at a forbidden stop');
 });
+
+test('onboard seeds the selected run and retains downstream transfer rules',()=>{
+ const db=network(),now=at('08:03');
+ const onboard={routeId:'one',tripIds:new Set(['one']),stopId:'B'};
+ const [result]=planJourney(db,null,stops[1],stops[2],now,{mode:'leave',onboard});
+ assert.deepEqual(routes(result),['one','two']);
+ assert.equal(result.legs[0].onboard,true);
+ assert.equal(result.legs[0].from.id,'B');
+ assert.equal(result.legs[0].start,now);
+ assert.equal(result.legs[0].to.id,'B');
+ assert.equal(result.connections[0].marginMs,60000);
+ assert.deepEqual(planJourney(db,null,stops[1],stops[2],now,{mode:'leave',onboard,minTransfer:5}),[]);
+ assert.deepEqual(planJourney(db,null,stops[1],stops[2],now,{mode:'leave',onboard,deadline:at('08:29')}),[]);
+});
+
+test('onboard rejects passed calls and asks for confirmation when multiple services match',()=>{
+ const db=fixture();
+ trip(db,'outbound',[['A','08:00'],['B','08:12'],['C','08:25']]);
+ trip(db,'later',[['A','08:04'],['B','08:16'],['C','08:28']]);
+ db.trips.get('later').route_id='outbound';
+ trip(db,'inbound',[['C','08:05'],['B','08:12'],['A','08:25']]);
+ db.trips.get('inbound').route_id='outbound';
+ const onboard={routeId:'outbound',tripIds:new Set(['outbound','later']),stopId:'B'};
+ let matches;
+ assert.deepEqual(planJourney(db,null,stops[1],stops[2],at('08:08'),{mode:'leave',onboard,onboardMatches:value=>{matches=value;}}),[]);
+ assert.equal(matches.length,2);
+ const [first]=matches;
+ const [result]=planJourney(db,null,stops[1],stops[2],at('08:08'),{mode:'leave',onboard:{...onboard,...first,tripIds:new Set([first.tripId])}});
+ assert.deepEqual(routes(result),['outbound']);
+ assert.equal(result.legs[0].to.id,'C');
+ assert.deepEqual(routes(planJourney(db,null,stops[1],stops[2],at('08:08'),{mode:'leave',onboard:{...onboard,tripIds:new Set(['inbound'])}})[0]),['inbound','later']);
+ assert.deepEqual(planJourney(db,null,stops[1],stops[2],at('08:18'),{mode:'leave',onboard}),[]);
+});

@@ -1,4 +1,5 @@
-export const languages={mk:'Македонски',sq:'Shqip',en:'English'};
+import {dutchMessages,translateDutch} from './i18n-nl.js?v=1';
+export const languages={mk:'Македонски',sq:'Shqip',en:'English',nl:'Nederlands'};
 export function language(storage=globalThis.localStorage){try{const value=storage?.getItem('tuka-language');return languages[value]?value:'en';}catch{return 'en';}}
 export const messages={
 'Stops':['Постојки','Stacionet'],'Bus lines':['Автобуски линии','Linjat e autobusëve'],'Journey':['Патување','Udhëtimi'],'News':['Вести','Lajme'],'Saved':['Зачувано','Të ruajtura'],'Ticket':['Билет','Biletë'],'Install':['Инсталирај','Instalo'],'Language':['Јазик','Gjuha'],'Change language':['Промени јазик','Ndrysho gjuhën'],
@@ -130,6 +131,7 @@ Object.assign(messages,{
  'Continue to map':['Продолжи кон картата','Vazhdo te harta'],
  'Try again':['Обидете се повторно','Provoni përsëri'],
 });
+for(const [key,value] of Object.entries(dutchMessages)){messages[key]??=[key,key];messages[key][2]=value;}
 const lookup=new Map(Object.entries(messages).map(([key,value])=>[key.toLowerCase(),value]));
 const sentenceKeys=[...lookup.keys()].filter(key=>/[.!?]$/.test(key)).sort((a,b)=>b.length-a.length);
 const number='(\\d+(?:[.,]\\d+)?)';
@@ -189,5 +191,5 @@ function translateCore(text,index){
 }
 export function translateText(text,locale=language()){
  if(locale==='en'||!languages[locale]||!text.trim())return text;
- return translateCore(text,locale==='mk'?0:1);
+ return locale==='nl'?translateDutch(text):translateCore(text,locale==='mk'?0:1);
 }

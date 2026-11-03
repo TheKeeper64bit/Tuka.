@@ -1,25 +1,186 @@
 import './network-picker.js?v=1';
 import {polishHeader} from './header.js?v=1';
-const root = document.body;
-const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-let selectedCityId = localStorage.getItem('tuka-meta-city') || null;
-let selectedStopId = '';
-function ensurePanel() {
-  if (document.querySelector('#meta-lab')) return document.querySelector('#meta-lab');
-  const button = document.createElement('button'); button.id='meta-open'; button.className='meta-open'; button.type='button'; button.innerHTML='<span class="meta-orb">✦</span><span>Meta Copilot</span>'; button.setAttribute('aria-label','Open Tuka Meta Copilot'); document.querySelector('.headtools')?.prepend(button);
-  const dialog = document.createElement('dialog'); dialog.id='meta-lab'; dialog.className='meta-dialog';
-  dialog.innerHTML='<form method="dialog" class="meta-head"><div><span class="meta-kicker">META HACKATHON BUILD</span><h2>Tuka Copilot</h2><p>A city-aware transit assistant grounded in official network data. Tilburg is the Netherlands pilot.</p></div><button class="meta-close" aria-label="Close">×</button></form><section class="meta-city-section"><div class="meta-section-heading"><div><span class="meta-kicker">CITY-AWARE TRANSIT</span><h3>Choose a network profile</h3></div><span id="meta-city-status" class="meta-status">Loading…</span></div><div id="meta-cities" class="meta-cities"></div></section><section class="meta-chat"><div class="meta-section-heading"><div><span class="meta-kicker">GROUNDED ANSWERS</span><h3>Ask about the selected network</h3></div><span class="meta-lock">Token stays server-side</span></div><div class="meta-chat-log" id="meta-chat-log" aria-live="polite"><p class="meta-message meta-message-ai">Choose a city to explore its stops, timetable and available live data.</p></div><form id="meta-ask" class="meta-ask"><label class="meta-ask-mode">Action<select id="meta-action"><option value="ask">Ask about network</option><option value="plan">Plan a journey</option></select></label><input id="meta-question" maxlength="1200" autocomplete="off" placeholder="e.g. Which network is available here?" aria-label="Ask Tuka Copilot"><button class="primary">Ask</button></form></section><p class="meta-footnote">Answers are grounded in Tuka’s verified city registry and available provider checks. Confirm departures in the planner before leaving.</p>';
-  root.append(dialog); return dialog;
+
+const $ = selector => document.querySelector(selector);
+let cityId = localStorage.getItem('tuka-meta-city') || 'skopje';
+let stopId = '';
+let cityPending = false;
+let requestPending = false;
+let cityRevision = 0;
+
+function createPanel() {
+  const opener = document.createElement('button');
+  opener.id = 'meta-open';
+  opener.type = 'button';
+  opener.className = 'meta-open';
+  opener.setAttribute('aria-label', 'Open Tuka Meta Copilot');
+  opener.innerHTML = '<span class="meta-orb" aria-hidden="true">✦</span><span>Meta Copilot</span>';
+  $('.headtools')?.prepend(opener);
+
+  const dialog = document.createElement('dialog');
+  dialog.id = 'meta-lab';
+  dialog.className = 'meta-dialog';
+  dialog.setAttribute('aria-labelledby', 'meta-title');
+  dialog.innerHTML = `
+    <form method="dialog" class="meta-head">
+      <div><span class="meta-kicker">TUKA · META AI</span><h2 id="meta-title">Where are you headed?</h2>
+      <p>Ask about transit nearby or start a journey in your own words.</p></div>
+      <button class="meta-close" aria-label="Close Copilot">×</button>
+    </form>
+    <div class="meta-chat">
+      <div class="meta-context"><span id="meta-city-status" role="status">Loading network…</span></div>
+      <div class="meta-modes" role="group" aria-label="Copilot mode">
+        <button type="button" data-meta-mode="ask" aria-pressed="true">Ask about transit</button>
+        <button type="button" data-meta-mode="plan" aria-pressed="false">Plan a journey</button>
+      </div>
+      <div id="meta-chat-log" class="meta-chat-log" role="log" aria-label="Copilot conversation"></div>
+      <form id="meta-ask" class="meta-ask">
+        <input id="meta-question" maxlength="1200" autocomplete="off" aria-label="Ask Tuka Copilot">
+        <button class="primary" type="submit">Ask</button>
+      </form>
+      <p class="meta-help" id="meta-help"></p>
+      <details class="meta-profiles"><summary>Switch network</summary><div id="meta-cities" class="meta-cities"></div></details>
+    </div>`;
+  document.body.append(dialog);
+  return {dialog, opener};
 }
-function cityCard(city, selected) { const live=city.capabilities.includes('realtime')||city.capabilities.includes('vehicles'); return `<button type="button" class="meta-city ${selected?'selected':''}" data-city-id="${esc(city.id)}" aria-pressed="${selected}"><span class="meta-city-top"><strong>${esc(city.name)}</strong><span class="meta-city-pill ${live?'live':''}">${live?'Live capable':'Timetable'}</span></span><small>${esc(city.provider)} · ${esc(city.timezone)}</small><span>${esc(city.description)}</span></button>`; }
-async function selectCity(city, dialog) {
-  dialog.querySelector('#meta-ask button').disabled=true;
-  dialog.querySelector('#meta-city-status').textContent = `Loading ${city.name} timetable…`;
-  document.dispatchEvent(new CustomEvent('tuka-test-city',{detail:{cityId:city.id}}));
+
+function appendMessage(log, text, kind) {
+  const item = document.createElement('p');
+  item.className = `meta-message meta-message-${kind}`;
+  item.textContent = text;
+  log.append(item);
+  log.scrollTop = log.scrollHeight;
 }
-async function loadCities(dialog) { const holder=dialog.querySelector('#meta-cities'); try { const response=await fetch('./api/cities',{headers:{Accept:'application/json'},credentials:'same-origin'}); if(!response.ok)throw Error(); const data=await response.json(); if(!selectedCityId?.startsWith('gtfs-')&&!(data.cities||[]).some(city=>city.id===selectedCityId))selectedCityId='skopje'; holder.innerHTML=(data.cities||[]).map(city=>cityCard(city,city.id===selectedCityId)).join(''); dialog.querySelector('#meta-city-status').textContent=`${data.cities?.length||0} profiles · choose your local network`; holder.querySelectorAll('[data-city-id]').forEach(button=>button.addEventListener('click',()=>{const city=(data.cities||[]).find(item=>item.id===button.dataset.cityId);if(!city)return;holder.querySelectorAll('[data-city-id]').forEach(next=>{const active=next===button;next.classList.toggle('selected',active);next.setAttribute('aria-pressed',String(active));});selectCity(city,dialog);}));  } catch { dialog.querySelector('#meta-city-status').textContent='Profiles unavailable'; holder.innerHTML='<p class="meta-empty">The protected profile service is unavailable. Skopje remains available in the main app.</p>'; } }
-function addMessage(log,text,kind){const item=document.createElement('p');item.className=`meta-message meta-message-${kind}`;item.textContent=text;log.append(item);log.scrollTop=log.scrollHeight;}
-function init(){root.classList.add('has-city-picker');const dialog=ensurePanel();
- document.querySelector('#meta-open').addEventListener('click',()=>{dialog.showModal();loadCities(dialog);});document.addEventListener('tuka-test-city-active',event=>{if(event.detail?.cityId){selectedCityId=event.detail.cityId;selectedStopId='';dialog.querySelector('#meta-chat-log').textContent=selectedCityId.startsWith('gtfs-')?'Selected '+event.detail.name+'. This timetable stays on your device. Use Journey for planning; Copilot is not connected to local imports.':'Selected '+event.detail.name+'. Ask about this network.';dialog.querySelector('#meta-ask button').disabled=false;dialog.querySelectorAll('[data-city-id]').forEach(button=>{const active=button.dataset.cityId===selectedCityId;button.classList.toggle('selected',active);button.setAttribute('aria-pressed',String(active));});dialog.querySelector('#meta-city-status').textContent=event.detail.name+' network ready · select a stop on the map';}});document.addEventListener('tuka-test-stop-active',event=>{selectedStopId=String(event.detail?.stopId||'');});document.addEventListener('tuka-city-error',event=>{dialog.querySelector('#meta-city-status').textContent=event.detail.message;selectedCityId=localStorage.getItem('tuka-meta-city')||'skopje';dialog.querySelector('#meta-ask button').disabled=false;dialog.querySelectorAll('[data-city-id]').forEach(button=>{const active=button.dataset.cityId===selectedCityId;button.classList.toggle('selected',active);button.setAttribute('aria-pressed',String(active));});});const form=dialog.querySelector('#meta-ask'),input=dialog.querySelector('#meta-question'),log=dialog.querySelector('#meta-chat-log');form.addEventListener('submit',async event=>{event.preventDefault();const message=input.value.trim();if(!message)return;if(selectedCityId?.startsWith('gtfs-')){addMessage(log,'This timetable is stored on your device. Use Journey to plan with its imported stops and routes; Copilot is not connected to local imports.','ai');return;}input.value='';addMessage(log,message,'user');const submit=form.querySelector('button');submit.disabled=true;submit.textContent='Thinking…';const requestCity=selectedCityId;try{const planning=dialog.querySelector('#meta-action').value==='plan';const response=await fetch(planning?'./api/meta/interpret':'./api/meta/ask',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},credentials:'same-origin',body:JSON.stringify({message,cityId:selectedCityId,stopId:selectedStopId})});const data=await response.json().catch(()=>({}));if(requestCity!==selectedCityId)return;if(response.ok&&planning&&data.intent){dialog.close();document.dispatchEvent(new CustomEvent('tuka-plan-intent',{detail:data}));return;}addMessage(log,response.ok?data.answer:(data.error||'Meta Copilot is unavailable.'),response.ok?'ai':'error');}catch{addMessage(log,'Meta Copilot is unavailable. Use the planner for verified journey details.','error');}finally{submit.disabled=false;submit.textContent='Ask';}});}
-function start(){init();polishHeader(document);}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+
+function init() {
+  document.body.classList.add('has-city-picker', 'meta-polished');
+  const {dialog, opener} = createPanel();
+  const form = $('#meta-ask'), input = $('#meta-question'), submit = form.querySelector('button');
+  const log = $('#meta-chat-log'), status = $('#meta-city-status'), profiles = $('#meta-cities');
+  let mode = 'ask';
+  let loaded = false;
+  let loading = false;
+  let cityName = '';
+  const imported = () => cityId.startsWith('gtfs-');
+  const sync = () => {
+    submit.disabled = cityPending || requestPending || imported();
+    submit.textContent = requestPending ? 'Thinking…' : mode === 'plan' ? 'Review trip' : 'Ask';
+    input.disabled = imported();
+    input.placeholder = mode === 'plan' ? 'e.g. Get me to the station by 8:30' : 'e.g. What buses serve this area?';
+    $('#meta-help').textContent = imported()
+      ? 'This timetable is stored on your device. Open Journey to plan with it.'
+      : mode === 'plan' ? 'Tuka opens the planner so you can review the details before searching.' : 'Copilot uses available network data. Check the timetable before leaving.';
+    profiles.querySelectorAll('button').forEach(button => {
+      const current = button.dataset.cityId === cityId;
+      button.classList.toggle('selected', current);
+      button.setAttribute('aria-pressed', String(current));
+    });
+  };
+
+  async function loadCities() {
+    if (loaded || loading) return;
+    loading = true;
+    profiles.textContent = 'Loading networks…';
+    try {
+      const response = await fetch('./api/cities', {credentials: 'same-origin', headers: {Accept: 'application/json'}});
+      if (!response.ok) throw new Error('Network profiles unavailable');
+      const {cities = []} = await response.json();
+      profiles.replaceChildren();
+      for (const city of cities) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'meta-city';
+        button.dataset.cityId = city.id;
+        button.textContent = city.name;
+        button.addEventListener('click', () => {
+          if (city.id === cityId && !cityPending) return;
+          cityPending = true;
+          cityRevision++;
+          status.textContent = `Loading ${city.name}…`;
+          sync();
+          document.dispatchEvent(new CustomEvent('tuka-test-city', {detail: {cityId: city.id}}));
+        });
+        profiles.append(button);
+      }
+      loaded = true;
+      cityName ||= cities.find(city => city.id === cityId)?.name || 'Selected network';
+      if (!cityPending) status.textContent = cityName;
+      sync();
+    } catch {
+      profiles.textContent = 'Network profiles are unavailable. Reopen Copilot to retry.';
+      if (!cityName && !cityPending) status.textContent = 'Selected network';
+    } finally {
+      loading = false;
+    }
+  }
+
+  opener.addEventListener('click', () => {
+    dialog.showModal();
+    loadCities();
+  });
+  dialog.querySelectorAll('[data-meta-mode]').forEach(button => button.addEventListener('click', () => {
+    mode = button.dataset.metaMode;
+    dialog.querySelectorAll('[data-meta-mode]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+    sync();
+  }));
+  document.addEventListener('tuka-test-city-active', event => {
+    if (!event.detail?.cityId) return;
+    const changed = cityId !== event.detail.cityId;
+    cityId = event.detail.cityId;
+    cityName = event.detail.name;
+    if (changed) {
+      cityRevision++;
+      stopId = '';
+      log.replaceChildren();
+    }
+    cityPending = false;
+    status.textContent = cityName;
+    sync();
+  });
+  document.addEventListener('tuka-test-stop-active', event => { stopId = String(event.detail?.stopId || ''); });
+  document.addEventListener('tuka-city-error', event => {
+    cityPending = false;
+    status.textContent = event.detail.message;
+    sync();
+  });
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const message = input.value.trim();
+    if (!message || submit.disabled) return;
+    const revision = cityRevision;
+    const planning = mode === 'plan';
+    input.value = '';
+    appendMessage(log, message, 'user');
+    requestPending = true;
+    sync();
+    try {
+      const response = await fetch(planning ? './api/meta/interpret' : './api/meta/ask', {
+        method: 'POST', credentials: 'same-origin', signal: AbortSignal.timeout(35000),
+        headers: {'Content-Type': 'application/json', Accept: 'application/json'},
+        body: JSON.stringify({message, cityId, stopId}),
+      });
+      const data = await response.json();
+      if (revision !== cityRevision) return;
+      if (response.ok && planning && data.intent) {
+        dialog.close();
+        document.dispatchEvent(new CustomEvent('tuka-plan-intent', {detail: data}));
+      } else {
+        appendMessage(log, data.answer || data.error || 'Copilot could not answer this request.', response.ok ? 'ai' : 'error');
+      }
+    } catch {
+      if (revision === cityRevision) appendMessage(log, 'Copilot is unavailable right now. You can still use Journey.', 'error');
+    } finally {
+      requestPending = false;
+      sync();
+    }
+  });
+  sync();
+}
+
+function start() {
+  init();
+  polishHeader(document);
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once: true});
+else start();

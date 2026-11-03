@@ -48,3 +48,34 @@ body.has-city-picker header.header-polished{flex-wrap:nowrap;gap:14px;overflow:v
 }
 @media(max-width:359px){.header-polished #city-open{max-width:112px;padding:9px}.header-polished .brand .wordmark{font-size:27px}.header-polished .header-more-toggle{width:36px}}
 .header-polished .header-menu-actions #install-app{width:100%;min-width:0;padding:10px;justify-content:center}
+
+/* Hackathon Copilot and shared interaction feedback. */
+#meta-lab{width:min(560px,calc(100% - 24px));max-height:calc(100dvh - 24px);border:1px solid var(--line);border-radius:22px;box-shadow:0 18px 70px #102c4336}
+#meta-lab .meta-head{background:var(--panel);color:var(--ink);padding:20px}
+#meta-lab .meta-head h2{font-size:clamp(21px,5vw,30px);line-height:1.2}
+#meta-lab .meta-head p{color:var(--muted);font-size:13px}
+#meta-lab .meta-kicker,#meta-lab .meta-close{color:var(--blue)}
+#meta-lab .meta-close{background:var(--soft);min-width:44px;min-height:44px}
+#meta-lab .meta-chat{padding:16px 20px 20px}
+.meta-context{font-size:13px;font-weight:750;color:var(--blue);margin-bottom:12px}
+.meta-modes{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:var(--soft);border-radius:13px}
+.meta-modes button{min-height:44px;background:transparent;color:var(--ink);border-radius:10px;padding:7px;font-size:13px;font-weight:700}
+.meta-modes button[aria-pressed=true]{background:var(--panel);color:var(--blue);box-shadow:0 1px 4px #102c4320}
+#meta-lab .meta-chat-log{min-height:0;max-height:min(34dvh,260px);margin:12px 0;background:var(--soft)}
+#meta-lab .meta-chat-log:empty{display:none}
+#meta-lab .meta-ask{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:12px}
+#meta-lab .meta-ask input,#meta-lab .meta-ask button{min-height:46px}
+.meta-help{font-size:12px;line-height:1.5;color:var(--muted)}
+.meta-profiles{border-top:1px solid var(--line);padding-top:12px;margin-top:12px;font-size:13px}
+.meta-profiles summary{color:var(--blue);cursor:pointer;font-weight:700;min-height:32px}
+#meta-lab .meta-profiles .meta-cities{display:flex;flex-wrap:wrap;gap:8px}
+#meta-lab .meta-profiles .meta-city{min-height:44px;padding:8px 14px}
+.meta-polished button{transition:background-color .16s,color .16s,transform .14s}
+.meta-polished button:not(:disabled):active{transform:scale(.97)}
+.meta-polished main .page:not(#home):not([hidden]),#meta-lab[open],#meta-lab .meta-message{animation:meta-appear .19s ease-out both}
+@keyframes meta-appear{from{opacity:0;translate:0 4px}to{opacity:1;translate:0 0}}
+@media(prefers-reduced-motion:reduce){
+ .meta-polished button{transition:none}
+ .meta-polished button:not(:disabled):active{transform:none}
+ .meta-polished main .page:not(#home):not([hidden]),#meta-lab[open],#meta-lab .meta-message{animation:none}
+}

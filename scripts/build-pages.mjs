@@ -7,7 +7,7 @@ const ROOT=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 // Worker bundle, environment file, or a custom-domain CNAME.
 export const PUBLIC_ASSETS=[
   'index.html','offline.html','manifest.webmanifest','sw.js','config.js',
-  'header.js','network-picker.js','feed-store.js','feed-profile.js','feed-import.js','feed-import-worker.js','gtfs-zip.js','app.js','boot.js','layout.js','install.js','language.js','i18n.js',
+  'header.js','network-picker.js','feed-store.js','feed-profile.js','feed-import.js','feed-import-worker.js','gtfs-zip.js','app.js','boot.js','layout.js','install.js','language.js','i18n.js','i18n-nl.js',
   'community.js','community-config.json','favourites.js','journey-follow.js',
   'journey-store.js','journey-tools.js','live.js','map-ui.js','news.js',
   'offline.js','place-search.js','planner.js','ride.js','schedule.js',

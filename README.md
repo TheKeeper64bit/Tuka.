@@ -1,16 +1,20 @@
 # tuka.
 
-### Your city changes. Your way home should still feel familiar.
+**One transit app. A different city. The same way to find your bus.**
 
-**A map-first public transport app becoming a shared transit experience across cities, countries and languages.**
+Tuka is a map-first public transport app built in Skopje, with connected networks in Boston and Tilburg. Import a GTFS timetable to use the same stop map, route explorer, and journey planner on your own network.
 
-Built in Skopje. Extended to Boston. Now being tested for Tilburg.
+**Meta AI Hackathon · Tuka v1**
 
-**Bring your own GTFS network · 3 connected city pilots · installable web app · one shared journey engine**
+[Open the judging demo](https://tuka.meta-cerebralvalley.rand0m.net) · [Run locally](#run-tuka) · [Development log](CHANGELOG.md)
 
-[Explore the judging host](https://tuka.meta-cerebralvalley.rand0m.net) · [Follow the evidence](#built-to-be-inspected) · [Run it yourself](#run-tuka) · [See the roadmap](#where-tuka-goes-next)
+Try this in the demo:
 
-> **Submission status:** this branch, `codex/meta-hackathon`, contains the latest published implementation. The judging host requires credentials. Deployment of the latest branch updates and Tilburg field acceptance remain pending; the hosted demo may show an earlier build.
+1. **Tap a stop.** See its routes and departures, with live estimates labeled where available.
+2. **Open Meta Copilot → Plan a journey.** Try “Get me to the station by 8:30.” Copilot turns your request into planner inputs you can review.
+3. **Find journeys.** Tuka’s transit engine checks the timetable and shows the actual route and transfers on the map.
+
+The judging host requires credentials and may serve an earlier revision. The v1 interface supports English, Macedonian, Albanian, and Dutch.
 
 ![Tuka's Tilburg pilot: a selected stop, colored bus routes and reachable stops in one shared interface](reports/tilburg/routes-desktop.png)
 
@@ -160,7 +164,7 @@ Reliability is part of the product experience: a timetable should remain usable 
 
 | Evidence | What it establishes |
 | --- | --- |
-| **191 passing Node tests**, plus standalone regression checks | Coverage across authentication, planning, calendars, realtime matching, geometry, city isolation, saved state, offline basics, notices and translations. |
+| **192 passing Node tests**, plus standalone regression checks | Coverage across authentication, planning, calendars, realtime matching, geometry, city isolation, saved state, offline basics, notices and translations. |
 | **407,058 source calls compared; zero mismatches** | The Tilburg partition preserves the compared fields of its retained source trips. |
 | **Geometry audits across all three assessed networks** | Seven Skopje, eleven Boston and three Tilburg patterns recover legitimate published paths after fixing ordered stop-to-shape matching. |
 | **Browser GPS and city-switch checks** | Tilburg GPS overrides a stale saved Skopje preference; a first visit with denied location opens the chooser without downloading a default network. |
@@ -301,3 +305,9 @@ OVapi's source metadata identifies **CC0-1.0** for general tables and **ODbL-1.0
 **Built by [Ignatij Tasevski](https://github.com/TheKeeper64bit), from Skopje.**
 
 **Tuka starts with a stop near you. Its ambition is to make every supported city feel a little more familiar.**
+
+## Why Tuka.
+
+**Tuka** (pronounced **TOO-kah**) means **“here”** in Macedonian. Wherever you are, your next ride starts here.
+
+Tuka. keeps one name across cities. The Macedonian wordmark is **Тука.** The city label tells you which network you’re using, while the tagline can speak your language: **Find your next bus** in English or **Vind je volgende bus** in Dutch.

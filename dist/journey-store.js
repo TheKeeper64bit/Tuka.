@@ -1,4 +1,4 @@
-import {preferences} from './planner.js?v=26';
+import {preferences} from './planner.js?v=27';
 const KEY='tuka-journeys-v1';
 const point=p=>p&&Number.isFinite(p.lat)&&Number.isFinite(p.lon)&&Math.abs(p.lat)<=90&&Math.abs(p.lon)<=180;
 export function readJourneys(storage) {

@@ -1,5 +1,5 @@
 import {providerFor} from './city-providers.js?v=3';
-import {preferences} from './planner.js?v=26';
+import {preferences} from './planner.js?v=27';
 
 export function place(value,cityId='skopje'){
   if(!value)return null;

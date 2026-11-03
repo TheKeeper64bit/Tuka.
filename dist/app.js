@@ -1,22 +1,22 @@
 import {restoreImportedFeeds} from './feed-store.js?v=1';
 import {providerFor,CITY_PROVIDERS,hasProvider,cityAtLocation,locateCity} from './city-providers.js?v=3';
 import {cityStorage} from './gtfs.js?v=2';
-import {language} from './i18n.js?v=32';
+import {language} from './i18n.js?v=33';
 import {readPlaces,writePlace,readShared,sharedJourney,wheelchairAccess,walkingDistance} from './journey-tools.js?v=27';
 import {walkingPath,knownWalk,walkInstruction} from './walking.js?v=27';
 import {matchingAlerts,matchingStopAlerts,alertText,safeLink} from './service-alerts.js?v=26';
 import {journeyGeometry,journeyOverlay,journeyVehicles,journeyStatus} from './journey-follow.js?v=27';
 import {localDate,localTime,localTimestamp,hasPublishedService} from './schedule.js?v=24';
-import {preferences} from './planner.js?v=26';
+import {preferences} from './planner.js?v=27';
 import {readJourneys,writeJourneys,savedJourney,commuteStatus} from './journey-store.js?v=24';
 import {rankPlaces,placeType} from './place-search.js?v=24';
 import {readFavourites,writeFavourites,savedSelection,sameSelection,savedRouteMatches} from './favourites.js?v=20';
 import {createNewsView} from './news.js?v=24';
 import {PassengerReports} from './community.js?v=16';
-import {createProgress,advance} from './ride.js?v=16';
+import {createProgress,advance,measure,project} from './ride.js?v=16';
 import {boardingNetwork,visibleNetwork,arrivalConnects,vehicleServes,routeColor} from './stop-network.js?v=22';
-import {polishMap,routeGeometry,resolveRouteGeometry,routeOverlay,syncMarkers,networkOverlay,stopPinLayer} from './map-ui.js?v=22';
-import {load,realtime,departures,distance,planJourney} from './transit.js?v=26';
+import {polishMap,routeGeometry,resolveRouteGeometry,routeOverlay,syncMarkers,networkOverlay,stopPinLayer,alignStops,trimGeometry} from './map-ui.js?v=22';
+import {load,realtime,departures,distance,planJourney} from './transit.js?v=27';
 const passengerReports=new PassengerReports();passengerReports.init();
 let reportTimer=null,journeyResults=[],activeJourney=null,ride=null,arrivalChoices=[],locationWatch=null,wakeLock=null,lastLocation=0,lastAccuracy=Infinity;
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -76,6 +76,7 @@ async function switchCity(cityId,{automatic=false,position=null}={}){
   setLabel('#map-title','Find your next bus.');
   const brand=document.querySelector('.city');if(brand)brand.textContent=provider.name.toUpperCase();const kicker=document.querySelector('.map-kicker');if(kicker)kicker.textContent=provider.name.toUpperCase()+', IN MOTION';
   document.title=`Tuka · ${provider.name}`;transitAttribution(homeMap);
+  setJourneyEntry('normal');
   $('#journey-date').value=localDate(Date.now(),db.timezone);$('#journey-date').min=$('#journey-date').value;$('#journey-time').value=localTime(Date.now()+3600000,db.timezone);
   updatePlannerControls();renderLines();renderSaved();activate('home');
   localStorage.setItem('tuka-meta-city',provider.id);
@@ -127,7 +128,7 @@ function selectTargetStop(id){
 }
 function updateHomeRoute(){
  if(!db||!homeMap?.getSource('stops'))return;
- if(activeJourney){networkOverlay(homeMap,[],[],null);journeyOverlay(homeMap,activeJourney.geometry,activeJourney.step);setLabel('#map-title','To '+(name(activeJourney.result.legs.at(-1).to)||'your destination'));return;}
+ if(activeJourney){networkOverlay(homeMap,[],[],null);journeyOverlay(homeMap,activeJourney.onboardNeedsReview?null:activeJourney.geometry,activeJourney.step);setLabel('#map-title','To '+(name(activeJourney.result.legs.at(-1).to)||'your destination'));return;}
  if(ride){networkOverlay(homeMap,[ride.pattern],ride.stops.slice(1).filter(x=>x.drop_off_type!=='1').map(stop=>({stop})),ride.exit>=1?ride.stops[ride.exit].id:null);setLabel('#map-title',service(ride.route)+' '+line(ride.route)+' · Ride mode');$('#maphint').textContent=ride.active?'Following your ride · '+ride.message:'Tap your exit stop on this route, or choose a stop number below.';return;}
  if(!stopId){networkOverlay(homeMap,[],[],null);return;}
  const network=boardingNetwork(db,stopId),shown=visibleNetwork(network,chosenLines,targetStopId);
@@ -194,7 +195,7 @@ async function searchEndpoint(kind){const start=kind==='origin',container=$(star
 
 $('#origin-form').onsubmit=e=>{e.preventDefault();searchEndpoint('origin');};
 $('#destination-form').onsubmit=e=>{e.preventDefault();searchEndpoint('destination');};
-$('#plan').onclick=runPlan;
+$('#plan').onclick=()=>runPlan({useJourneyEntry:true});
 function showJourney(index){
  const result=journeyResults[index];if(!result?.legs.length)return;
  if(ride)endRide();
@@ -206,6 +207,7 @@ function showJourney(index){
  stopId=null;targetStopId=null;selectedVehicle=null;chosenLines.clear();correcting=false;$('#location-edit').hidden=true;if(origin)placeOrigin(origin);
  document.body.classList.add('following-journey');
  for(const id of ['change-stop','show-routes','show-buses','correct-location'])$('#'+id).hidden=true;
+ activeJourney.onboardTrack=makeOnboardTrack(activeJourney);
  updateFollowControl();activate('home');setSheet(false);updateStopLayer();updateVehicles();fitJourney();watchLocation();loadWalking(activeJourney);
 }
 function journeyStepTitle(leg){return leg.type==='bus'?service(leg.route)+' '+line(leg.route)+' · '+name(leg.headsign):leg.type==='transfer'?'Change buses':'Walk to '+(name(leg.to)||'your destination');}
@@ -217,17 +219,18 @@ function journeyDeadline(){return activeJourney?.context?.deadline??(activeJourn
 function journeyFollowPanel(){
  const selected=activeJourney,leg=selected.result.legs[selected.step],at=selected.steps.indexOf(selected.step),last=at===selected.steps.length-1;
  const next=last?'Finish journey':leg.type==='bus'?'I’ve got off':leg.type==='transfer'?'At the next stop':'I’m at the stop';
- return `<div class="journey-follow-panel">${selected.replanMessage?`<p class="notice" role="status">${esc(selected.replanMessage)}</p>`:''}<div class="journey-follow-heading"><span class="label">YOUR JOURNEY · STEP ${at+1} OF ${selected.steps.length}</span><button class="textbtn" data-end-journey>End</button></div><h2>${esc(journeyStepTitle(leg))}</h2><div id="chosen-journey-info" class="journey-follow-info" aria-live="polite">${journeyStepInfo()}</div><div class="journey-step-actions"><button class="secondary" data-journey-previous ${at===0?'disabled':''} aria-label="Previous journey step">←</button><button class="primary" data-journey-next>${next}</button><button class="secondary" data-journey-overview aria-label="Show the whole journey">Overview</button></div><p class="journey-location-status" id="journey-location-status">${esc(journeyLocationStatus())}</p><div class="journey-follow-summary"><strong id="chosen-journey-arrival"></strong><span>Steps change when you tap Next or select a step below.</span></div><ol class="journey-step-list">${selected.steps.map((index,i)=>{const l=selected.result.legs[index];return `<li><button data-journey-step="${index}" ${index===selected.step?'aria-current="step"':''}><span class="step-number">${i+1}</span><span><strong>${esc(journeyStepTitle(l))}</strong><small>${l.type==='bus'?esc(name(l.from))+' → '+esc(name(l.to)):l.type==='transfer'?esc(name(l.from))+' → '+esc(name(l.to)):(l.walkingPath?'':'~')+Math.round(walkingDistance(l))+' m · '+(l.walkingPath?'street walking directions':'approximate walk')}</small></span></button></li>`;}).join('')}</ol><div class="journey-extra-actions"><button class="secondary" data-replan ${selected.replanning?'disabled':''}>${leg.type==='bus'?'Missed this bus?':'Find another journey'}</button><button class="textbtn" data-share-journey>Share journey</button></div><div id="chosen-journey-alerts">${serviceNotices(currentJourneyStatus().legs)}</div><p class="notice">Connections are estimates. Keep Tuka open for location updates.</p></div>`;
+ return `<div class="journey-follow-panel">${selected.replanMessage?`<p class="notice" role="status">${esc(selected.replanMessage)}</p>`:''}<div class="journey-follow-heading"><span class="label">YOUR JOURNEY · STEP ${at+1} OF ${selected.steps.length}</span><button class="textbtn" data-end-journey>End</button></div><h2>${esc(journeyStepTitle(leg))}</h2><div id="chosen-journey-info" class="journey-follow-info" aria-live="polite">${journeyStepInfo()}</div><div class="journey-step-actions"><button class="secondary" data-journey-previous ${at===0?'disabled':''} aria-label="Previous journey step">←</button><button class="primary" data-journey-next>${next}</button><button class="secondary" data-journey-overview aria-label="Show the whole journey">Overview</button></div><p class="journey-location-status" id="journey-location-status">${esc(journeyLocationStatus())}</p><div class="journey-follow-summary"><strong id="chosen-journey-arrival"></strong><span>Steps change when you tap Next or select a step below.</span></div><ol class="journey-step-list">${selected.steps.map((index,i)=>{const l=selected.result.legs[index];return `<li><button data-journey-step="${index}" ${index===selected.step?'aria-current="step"':''}><span class="step-number">${i+1}</span><span><strong>${esc(journeyStepTitle(l))}</strong><small>${l.type==='bus'?esc(name(l.from))+' → '+esc(name(l.to)):l.type==='transfer'?esc(name(l.from))+' → '+esc(name(l.to)):(l.walkingPath?'':'~')+Math.round(walkingDistance(l))+' m · '+(l.walkingPath?'street walking directions':'approximate walk')}</small></span></button></li>`;}).join('')}</ol><div class="journey-extra-actions"><button class="secondary" data-replan ${selected.replanning?'disabled':''}>${leg.type==='bus'&&!leg.onboard?'Missed this bus?':'Find another journey'}</button><button class="textbtn" data-share-journey>Share journey</button></div><div id="chosen-journey-alerts">${serviceNotices(currentJourneyStatus().legs)}</div><p class="notice">Connections are estimates. Keep Tuka open for location updates.</p></div>`;
 }
 function journeyStepInfo(){
  if(!activeJourney)return '';
+ if(activeJourney.onboardNeedsReview)return '<p class="connection-banner">The previous exit is behind you. Confirm your next stop before following a route.</p>';
  const status=currentJourneyStatus(),leg=status.legs[activeJourney.step];
  const time=t=>journeyClock(t,Date.now());let detail='';
  if(leg.type==='bus'){
-  detail=`<p>Board at <strong data-no-translate>${esc(name(leg.from))}</strong><br>Get off at <strong data-no-translate>${esc(name(leg.to))}</strong></p><div class="journey-live-times"><span>${time(leg.start)}<small>${leg.live?'Live departure estimate':db.trips.get(leg.tripId)?.frequencyEstimated?'Frequency estimate':'Scheduled departure'}</small></span><span>~${time(leg.end)}<small>${leg.arrivalLive?'Live arrival estimate':'Timetable arrival'}</small></span></div>`;
+  detail=`<p>${leg.onboard?'Already aboard · next stop':'Board at'} <strong data-no-translate>${esc(name(leg.from))}</strong><br>Get off at <strong data-no-translate>${esc(name(leg.to))}</strong></p><div class="journey-live-times"><span>${time(leg.start)}<small>${leg.onboard?'Already aboard':leg.live?'Live departure estimate':db.trips.get(leg.tripId)?.frequencyEstimated?'Frequency estimate':'Scheduled departure'}</small></span><span>~${time(leg.end)}<small>${leg.arrivalLive?'Live arrival estimate':'Timetable arrival'}</small></span></div>`;
  detail+=accessibilityHTML([leg]);const vehicles=journeyVehicles(rt,{legs:[leg]},Date.now(),db?.timezone);detail+=`<small>${leg.stops} stops · ${vehicles.length?'Bus GPS shown on the map':'No fresh GPS for this bus'}</small>`;
   if(leg.cancelled||leg.skipped)detail+='<p class="connection-banner">'+(leg.cancelled?'This bus is reported cancelled.':'This boarding or exit stop is reported skipped.')+' Check another journey before continuing.</p>';
-  else if(leg.start<Date.now()-60000)detail+='<p class="journey-time-note">Departure time has passed. If you haven’t boarded, check another journey.</p>';
+  else if(!leg.onboard&&leg.start<Date.now()-60000)detail+='<p class="journey-time-note">Departure time has passed. If you haven’t boarded, check another journey.</p>';
  }else{
   detail=`<p>${leg.type==='transfer'?'Continue to':'Head to'} <strong ${name(leg.to)?'data-no-translate':''}>${esc(name(leg.to)||'your destination')}</strong></p><small>${leg.walkingPath?'':'~'}${Math.round(walkingDistance(leg))} m · ${minutes(leg.walkingMs||leg.end-leg.start)} min walking${leg.type==='transfer'?' + '+minutes(leg.bufferMs||0)+' min transfer buffer':''}</small>`;
   const next=status.legs.slice(activeJourney.step+1).find(l=>l.type==='bus');if(next)detail+=`<p class="journey-next-bus">Then bus <strong>${esc(line(next.route))}</strong> · ${time(next.start)} · ${next.live?'live estimate':'timetable'}</p>`;
@@ -258,6 +261,7 @@ function selectJourneyStep(index){
 }
 function moveJourneyStep(direction){if(!activeJourney)return;const at=activeJourney.steps.indexOf(activeJourney.step),next=at+direction;if(next>=activeJourney.steps.length){endJourney();return;}if(next>=0)selectJourneyStep(activeJourney.steps[next]);}
 function fitJourney(){
+ if(activeJourney?.onboardNeedsReview)return;
  if(!activeJourney||!homeMap?.getSource('stops'))return;
  activeJourney.follow=false;updateFollowControl();
  const points=activeJourney.geometry.paths.features.flatMap(f=>f.geometry.coordinates);if(!points.length)return;
@@ -274,14 +278,14 @@ function endJourney(){
 function journeyClock(time,reference){const zone=db?.timezone||'Europe/Skopje';return clock(time,zone)+(localDate(time,zone)!==localDate(reference,zone)?' · '+new Intl.DateTimeFormat('en-GB',{timeZone:zone,day:'numeric',month:'short'}).format(time):'');}
 function minutes(ms){return Math.round(ms/6000)/10;}
 function journeyCard(r,i,reference){
- const options=journeyContext.options,departure=r.departure??reference;
+ const onboard=r.legs[0]?.onboard,options=journeyContext.options,departure=r.departure??reference;
  const simpler=r.tight?journeyResults.findIndex(x=>!x.tight&&x.transfers<r.transfers):-1;
  const steps=r.legs.map(l=>{
-  if(l.type==='bus')return `<li><div class="legheading"><span class="chip">${esc(line(l.route))}</span> To ${esc(name(l.headsign))}</div>Board ${journeyClock(l.start,reference)} at ${esc(name(l.from))}<br>Get off at ${esc(name(l.to))} · ~${journeyClock(l.end,reference)}<br><small>${l.stops} stops · ${l.live?'Live departure estimate':'Scheduled departure'} · ${l.arrivalLive?'live arrival estimate':'timetable arrival'}</small></li>`;
+  if(l.type==='bus')return `<li><div class="legheading"><span class="chip">${esc(line(l.route))}</span> To ${esc(name(l.headsign))}</div>${l.onboard?'Already aboard · next stop':'Board '+journeyClock(l.start,reference)+' at'} ${esc(name(l.from))}<br>Get off at ${esc(name(l.to))} · ~${journeyClock(l.end,reference)}<br><small>${l.stops} stops · ${l.onboard?'Current ride':l.live?'Live departure estimate':'Scheduled departure'} · ${l.arrivalLive?'live arrival estimate':'timetable arrival'}</small></li>`;
   if(l.type==='transfer'){const c=l.connection;return `<li><div class="legheading">Change buses${l.from?.id!==l.to?.id?' at '+esc(name(l.to)):''}</div><small>Walk ~${Math.round(l.meters*1.3)} m (${minutes(l.walkingMs)} min) + ${minutes(l.bufferMs)} min minimum transfer time</small>${c?`<div class="connection-note ${c.tight?'tight':''}"><strong>${c.tight?'Tight connection':'Connection margin'} · ${minutes(c.marginMs)} min spare</strong><span>${minutes(c.availableMs)} min between buses, minus walking and your buffer. ${c.live?'Based on current estimates.':'Based partly or wholly on the timetable.'} Delays may cause a missed connection.</span></div>`:''}</li>`;}
   return `<li><div class="legheading">Walk ~${Math.round(l.meters*1.3)} m · ${minutes(l.walkingMs)} min</div><small>To ${l.to?.stop_id?esc(name(l.to)):'your destination'} · approximate street distance</small></li>`;
  });
- return `<article class="journeycard" id="journey-result-${i}"><div class="journey-top"><span class="bestlabel">${i===0?(options.mode==='arrive'&&options.preference==='fastest'?'LATEST DEPARTURE':preferenceLabel(options.preference).toUpperCase()):'ALTERNATIVE'} · ${r.transfers} TRANSFERS</span><span class="duration">${Math.ceil((r.arrival-departure)/60000)} min</span></div><h2>Arrive ~${journeyClock(r.arrival,reference)}</h2><p class="journey-summary">Leave ${journeyClock(departure,reference)} · ~${r.walkingMeters} m walking${options.mode==='arrive'?' · '+minutes(reference-r.arrival)+' min before your deadline':''}</p>${r.tight?'<p class="connection-banner">Tight connection · allow for delays or choose a simpler journey.</p>':''}${simpler>=0?`<a class="simpler-link" href="#journey-result-${simpler}">Simpler alternative: ${journeyResults[simpler].transfers} transfers · arrive ~${journeyClock(journeyResults[simpler].arrival,reference)}</a>`:''}<div class="journey-buttons"><button class="primary" data-journey="${i}">Follow this journey</button><button class="secondary" data-save-journey="${i}">☆ Save commute</button><button class="textbtn" data-share-journey="${i}">Share journey</button></div><details class="journey-details"><summary>Journey details</summary>${accessibilityHTML(r.legs)}${serviceNotices(r.legs)}<ol class="timeline">${steps.join('')}</ol></details></article>`;
+ return `<article class="journeycard" id="journey-result-${i}"><div class="journey-top"><span class="bestlabel">${i===0?(!onboard&&options.mode==='arrive'&&options.preference==='fastest'?'LATEST DEPARTURE':preferenceLabel(options.preference).toUpperCase()):'ALTERNATIVE'} · ${r.transfers} TRANSFERS</span><span class="duration">${Math.ceil((r.arrival-departure)/60000)} min</span></div><h2>Arrive ~${journeyClock(r.arrival,reference)}</h2><p class="journey-summary">${onboard?'Already on bus '+esc(line(r.legs[0].route)):'Leave '+journeyClock(departure,reference)} · ~${r.walkingMeters} m walking${options.mode==='arrive'?' · '+minutes(reference-r.arrival)+' min before your deadline':''}</p>${r.tight?'<p class="connection-banner">Tight connection · allow for delays or choose a simpler journey.</p>':''}${simpler>=0?`<a class="simpler-link" href="#journey-result-${simpler}">Simpler alternative: ${journeyResults[simpler].transfers} transfers · arrive ~${journeyClock(journeyResults[simpler].arrival,reference)}</a>`:''}<div class="journey-buttons"><button class="primary" data-journey="${i}">Follow this journey</button>${onboard?'':`<button class="secondary" data-save-journey="${i}">☆ Save commute</button><button class="textbtn" data-share-journey="${i}">Share journey</button>`}</div><details class="journey-details"><summary>Journey details</summary>${accessibilityHTML(r.legs)}${serviceNotices(r.legs)}<ol class="timeline">${steps.join('')}</ol></details></article>`;
 }
 function updateSavedArrivals(){if(!db)return;for(const id of saved.keys()){let element=document.getElementById?.('saved-arrivals-'+id);if(element)element.innerHTML=savedArrivals(id);}}
 function renderFeed(){updateSavedArrivals();let fresh=rt&&Math.abs(Date.now()/1000-rt.timestamp)<120;$('#feedstatus').textContent=navigator.onLine===false?'Offline · timetable':fresh?`${rt.sources?.modeshift&&rt.sources?.skopska?'Live · 2 sources':'Live'} · ${clock(rt.timestamp*1000)}`:providerFor(activeCityId).imported?'Imported · timetable only':'Timetable · live unavailable';if(activeJourney)updateJourneyInfo();if(stopId&&$('#stop-service-notices'))$('#stop-service-notices').innerHTML=stopNotices();if(!ride&&stopId&&$('#arrivals'))$('#arrivals').innerHTML=arrivals(stopId);updateVehicles();if(stopId&&$('#tracked-buses'))$('#tracked-buses').innerHTML=trackedBuses()}
@@ -316,14 +320,72 @@ function chooseRideExit(id,index){if(!ride||ride.active)return;let i=index??ride
 function ridePanel(){let r=ride,exit=r.exit>=1?r.stops[r.exit]:null;return `<div class="ride-panel"><span class="label">RIDE MODE · BUS ${esc(line(r.route))}</span><h2>To ${esc(name(r.trip.trip_headsign||r.route.route_long_name))}</h2><p class="notice">Board at ${esc(name(r.stops[0]))} · ${r.pattern.approximate?'Stop sequence available; street geometry is approximate.':'Exact trip direction selected.'}</p>${exit?`<div class="target-panel"><span class="label">YOUR EXIT · ${r.exit} ${r.exit===1?'STOP':'STOPS'} FROM BOARDING</span><strong>${esc(name(exit))}</strong><p id="ride-progress">${esc(r.message)}</p></div>`:'<p>Choose your exit on the map or from the numbered stops.</p>'}${r.active?'<button class="secondary" data-end-ride>End ride</button>':`<div class="network-actions"><button class="primary" data-start-ride ${exit?'':'disabled'}>Start ride · I’m boarding</button><button class="textbtn" data-end-ride>Cancel ride</button></div>`}<p class="notice">Keep Tuka open. Tracking and alerts may pause when you lock your phone or switch apps.</p><div class="network-actions"><button class="secondary" data-ride-notifications>Enable notifications</button><button class="secondary" data-ride-awake>${r.keepScreen?'Screen stays awake':'Keep screen awake'}</button></div><p class="notice" id="ride-options-status">${esc(r.optionsStatus||'Alerts always appear in Tuka; phone notifications need your permission.')}</p>${r.active?'':`<ol class="ride-stops">${r.stops.slice(1).map((s,j)=>`<li><button data-ride-exit="${j+1}" class="${r.exit===j+1?'selected':''}" ${s.drop_off_type==='1'?'disabled':''}><span>${j+1}</span><strong>${esc(name(s))}</strong>${s.drop_off_type==='1'?'<small>No alighting</small>':''}</button></li>`).join('')}</ol>`}</div>`;}
 function updateRideBanner(){let banner=$('#ride-banner');banner.hidden=!ride||tab!=='home';if(!ride)return;$('#ride-status').textContent=`Bus ${line(ride.route)} · ${ride.message}`;banner.classList.toggle('exit-alert',!!ride.alert);}
 function watchLocation(){if(locationWatch!==null||!navigator.geolocation?.watchPosition)return;locationWatch=navigator.geolocation.watchPosition(p=>{
- if(correcting||manualCity)return;
+ if(correcting||(manualCity&&!activeJourney?.onboardTrack))return;
  const fix={lat:p.coords.latitude,lon:p.coords.longitude,accuracy:p.coords.accuracy,timestamp:p.timestamp};
  const detected=cityAtLocation(fix);if(!detected&&!ride&&!activeJourney)return;if(!ride&&!activeJourney&&detected&&detected.id!==activeCityId){if(loadingCityId!==detected.id)switchCity(detected.id,{automatic:true,position:fix});return;}
  origin={lat:fix.lat,lon:fix.lon};draft={...origin};placeOrigin(origin);lastLocation=Date.now();lastAccuracy=fix.accuracy;$('#originlabel').textContent='Your location · live';$('#locationdetail').textContent=`GPS accuracy ±${Math.round(fix.accuracy)} m`;
  if(ride?.active){let result=advance(ride.progress,fix);ride.message=result.status==='Tracking your ride'?`${result.remainingStops} stops remaining · ${Math.round(result.meters)} m along route`:result.status;if(ride.progress.notified.has('missed'))ride.message='Your exit stop appears to be behind you · '+name(ride.stops[ride.exit]);else if(ride.progress.notified.has('exit'))ride.message='Get off at '+name(ride.stops[ride.exit]);else if(ride.progress.notified.has('approach'))ride.message='Your exit is next · '+name(ride.stops[ride.exit]);if(result.alert)rideAlert(result.alert);if($('#ride-progress'))$('#ride-progress').textContent=ride.message;updateRideBanner();updateHomeRoute();if(tab==='home'&&ride.follow)homeMap?.flyTo({center:coords(origin),duration:700});}
- else if(activeJourney){if($('#journey-location-status'))$('#journey-location-status').textContent=journeyLocationStatus();if(tab==='home'&&activeJourney.follow&&fix.accuracy<=80)homeMap?.flyTo({center:coords(origin),duration:700});}
+ else if(activeJourney){updateOnboardPosition(activeJourney,fix);if($('#journey-location-status'))$('#journey-location-status').textContent=journeyLocationStatus();if(tab==='home'&&activeJourney.follow&&fix.accuracy<=80)homeMap?.flyTo({center:coords(origin),duration:700});}
  else if(!stopId&&db&&!$('#home-content').querySelector('.stopgrid'))renderHome();
  },()=>{if(activeJourney){lastLocation=0;if($('#journey-location-status'))$('#journey-location-status').textContent=journeyLocationStatus();}if(ride?.active){ride.message='Location unavailable · check your exit stop manually';updateRideBanner();if($('#ride-progress'))$('#ride-progress').textContent=ride.message;}},{enableHighAccuracy:true,maximumAge:0,timeout:15000});}
+function makeOnboardTrack(selected){
+ const leg=selected.result.legs[0];
+ if(!leg?.onboard)return null;
+ const trip=db.trips.get(leg.tripId),calls=db.times.get(leg.tripId)||[];
+ const start=calls.findIndex(call=>call.seq===leg.boardSeq),exit=calls.findIndex(call=>call.seq===leg.endSeq);
+ if(start<0||exit<start)return null;
+ const first=Math.max(0,start-1),remaining=calls.slice(first);
+ const stops=remaining.map(call=>stopIndex.get(call.stop_id));
+ const allStops=calls.map(call=>stopIndex.get(call.stop_id));
+ const shape=routeGeometry(db,trip);
+ if(shape.approximate||stops.length<2||allStops.some(stop=>!stop))return null;
+ const points=trimGeometry(shape.points,allStops.map(coords),first,calls.length-1);
+ try{return {calls:remaining,stops,offset:start-first,index:start-first,progress:createProgress(points,stops,exit-first),notified:new Set()};}
+ catch{return null;}
+}
+function updateOnboardPosition(selected,fix){
+ const track=selected.onboardTrack,leg=selected.result.legs[0];
+ if(!track||selected.step!==0)return;
+ const update=advance(track.progress,fix);
+ if(update.status!=='Tracking your ride')return;
+ if(update.alert){
+  const key=update.alert+':'+leg.endSeq;
+  if(!track.notified.has(key)){
+   track.notified.add(key);
+   selected.replanMessage=update.alert==='missed'?'Your planned exit appears to be behind you. Checking the remaining route.':(update.alert==='exit'?'Get off at ':'Your exit is next: ')+name(leg.to);
+   renderHome();
+  }
+ }
+ let next=track.index;
+ while(next<track.stops.length&&track.progress.progress>track.progress.positions[next]+25)next++;
+ if(next===track.stops.length&&next>track.index){
+  track.index=next;selected.onboardNeedsReview=true;
+  selected.replanMessage='The selected bus has reached its terminus. Confirm your location before planning onward.';
+  renderHome();updateHomeRoute();return;
+ }
+ if(next<=track.index||track.progress.confidence<2||next>=track.stops.length)return;
+ track.index=next;
+ const stop=track.stops[next],call=track.calls[next],context=selected.context;
+ if(!context)return;
+ const onboard={routeId:leg.route.route_id,tripIds:new Set([leg.tripId]),stopId:stop.id,serviceDate:leg.serviceDate,sequence:call.seq};
+ const options={...context.options,mode:'now',onboard,deadline:context.deadline,walkingDistance:knownWalk};
+ const results=planJourney(db,rt,stop,context.destination,Date.now(),options);
+ if(!results.length){
+  selected.onboardNeedsReview=call.seq>leg.endSeq;
+  selected.replanMessage='Next stop: '+name(stop)+'. No updated connection could be confirmed.';
+  renderHome();updateHomeRoute();return;
+ }
+ const updated=results[0],exit=track.calls.findIndex(item=>item.seq===updated.legs[0].endSeq);
+ if(exit<next)return;
+ const changed=updated.legs[0].endSeq!==leg.endSeq;
+ selected.onboardNeedsReview=false;
+ track.progress.targetIndex=exit;
+ if(changed)track.progress.notified.clear();
+ selected.result=updated;selected.steps=updated.legs.flatMap((item,index)=>item.type==='walk'&&item.meters<10?[]:[index]);
+ selected.geometry=journeyGeometry(db,updated);
+ selected.replanMessage='Next stop: '+name(stop)+' · '+(exit-next+1)+' remaining to your exit.'+(changed?' Exit updated to '+name(updated.legs[0].to)+'.':'');
+ renderHome();updateHomeRoute();
+}
 function startRide(){if(!ride||ride.exit<1||ride.active)return;if(!navigator.geolocation?.watchPosition){ride.message='Live location is unavailable in this browser.';renderHome();updateRideBanner();return;}try{ride.progress=createProgress(ride.pattern.points,ride.stops,ride.exit);}catch{ride.message='Route geometry could not be tracked. Choose another trip.';renderHome();updateRideBanner();return;}ride.active=true;ride.follow=true;updateFollowControl();document.body.classList.add('riding');ride.message='Locating you on the selected bus route';ride.alert=false;watchLocation();renderHome();setSheet(false);updateRideBanner();if(ride.keepScreen)keepAwake();}
 async function rideAlert(type){if(!ride)return;const session=ride.session,title=type==='missed'?'Your exit stop appears to be behind you':type==='exit'?'Get off at this stop':'Your exit is the next stop',body=`Bus ${line(ride.route)} · ${name(ride.stops[ride.exit])}`;ride.alert=true;ride.message=title+' · '+name(ride.stops[ride.exit]);updateRideBanner();navigator.vibrate?.([250,120,250]);if(typeof Notification!=='undefined'&&Notification.permission==='granted'&&navigator.serviceWorker){try{const reg=await navigator.serviceWorker.getRegistration();if(ride?.session===session&&reg?.active)await reg.showNotification(title,{body,icon:'./icon-192-blue.png',tag:'tuka-ride-'+session+'-'+type,vibrate:[250,120,250],data:{url:'./'}});}catch{if(ride)ride.optionsStatus='Phone notification could not be shown; your alert is visible in Tuka.';}}}
 async function enableRideNotifications(){if(!ride)return;const current=ride;if(typeof Notification==='undefined'){ride.optionsStatus='Phone notifications are unavailable in this browser.';}else{try{let permission=await Notification.requestPermission();if(ride!==current)return;ride.optionsStatus=permission==='granted'?'Phone notifications enabled. Keep Tuka open for tracking.':'Notifications are blocked or dismissed. In-app alerts still work.';}catch{ride.optionsStatus='Phone notifications unavailable. In-app alerts still work.';}}renderHome();}
@@ -365,8 +427,109 @@ toolsItems.addEventListener('click',event=>{if(event.target.closest('button'))se
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&$('.map-tools').classList.contains('open')){setMapTools(false);toolsToggle.focus();}});
 
 function clearBoardingStop(){if(activeJourney)endJourney();passengerReports.watch(null);$('#passenger-prompt').hidden=true;if(ride)endRide();let previous=stopIndex.get(stopId);stopId=null;targetStopId=null;selectedVehicle=null;chosenLines.clear();$('#change-stop').hidden=true;$('#show-buses').hidden=true;$('#show-routes').hidden=true;setLabel('#map-title','Choose a boarding stop');setSheet(false);updateStopLayer();renderHome();updateVehicles();if(previous)homeMap?.flyTo({center:coords(previous),zoom:16,duration:350});$('#maphint').textContent='Tap another stop to see its routes.';}
+let journeyEntry='normal', onboardDb=null, onboardDirections=[], onboardMatches=[];
+const onboardMatch=$('#onboard-match'), onboardLine=$('#onboard-line'),onboardDirection=$('#onboard-direction'),onboardStop=$('#onboard-stop');
+function setOptions(select,prompt,entries){
+ select.replaceChildren(new Option(prompt,''),...entries.map(([value,label])=>new Option(label,value)));
+}
+function resetOnboardMatches(){
+ onboardMatches=[];onboardMatch.value='';$('#onboard-match-label').hidden=true;
+}
+function refreshOnboardOptions(){
+ if(onboardDb===db)return;
+ onboardDb=db;onboardDirections=[];resetOnboardMatches();
+ const routes=[...(db?.routes.values()||[])].sort((a,b)=>line(a).localeCompare(line(b),undefined,{numeric:true}));
+ setOptions(onboardLine,'Select your bus line',routes.map(route=>[route.route_id,line(route)]));
+ setOptions(onboardDirection,'Select direction',[]);
+ setOptions(onboardStop,'Select next stop',[]);
+ onboardDirection.disabled=onboardStop.disabled=true;
+}
+function setJourneyEntry(mode){
+ journeyEntry=mode;
+ if(mode==='onboard')refreshOnboardOptions();
+ $('#journey-normal').hidden=mode!=='normal';
+ $('#journey-onboard').hidden=mode!=='onboard';
+ for(const button of document.querySelectorAll('[data-journey-mode]'))button.setAttribute('aria-pressed',String(button.dataset.journeyMode===mode));
+}
+for(const button of document.querySelectorAll('[data-journey-mode]'))button.onclick=()=>{setJourneyEntry(button.dataset.journeyMode);invalidatePlan();};
+onboardLine.onchange=()=>{
+ const groups=new Map();
+ for(const [id,trip] of db?.trips||[]){
+  if(trip.route_id!==onboardLine.value)continue;
+  const calls=db.times.get(id)||[],last=stopIndex.get(calls.at(-1)?.stop_id);
+  const headsign=name(trip.trip_headsign)||name(last)||'Direction '+(trip.direction_id||'0');
+  const key=JSON.stringify([trip.direction_id,headsign]);
+  if(!groups.has(key))groups.set(key,{headsign,tripIds:new Set(),stops:new Set()});
+  const group=groups.get(key);group.tripIds.add(id);
+  for(const call of calls)group.stops.add(call.stop_id);
+ }
+ onboardDirections=[...groups.values()];
+ setOptions(onboardDirection,'Select direction',onboardDirections.map((direction,i)=>[i,direction.headsign]));
+ onboardDirection.disabled=!onboardDirections.length;onboardDirection.onchange();
+};
+onboardDirection.onchange=()=>{
+ const group=onboardDirection.value===''?null:onboardDirections[Number(onboardDirection.value)];
+ setOptions(onboardStop,'Select next stop',[...(group?.stops||[])].filter(id=>stopIndex.has(id)).map(id=>[id,name(stopIndex.get(id))]));
+ onboardStop.disabled=!group;resetOnboardMatches();invalidatePlan();
+};
+onboardStop.onchange=()=>{resetOnboardMatches();invalidatePlan();};
+$('#onboard-gps').onclick=()=>{
+ const status=$('#onboard-position'),group=onboardDirections[Number(onboardDirection.value)];
+ if(onboardDirection.value===''||!group||!navigator.geolocation){status.textContent='Select a direction, then use GPS or choose your next stop manually.';return;}
+ const network=db;
+ status.textContent='Checking your position…';
+ navigator.geolocation.getCurrentPosition(({coords:fix})=>{
+  if(network!==db||group!==onboardDirections[Number(onboardDirection.value)])return;
+  const suggestions=new Set(),patterns=new Set();
+  if(fix.accuracy<=60)for(const id of group.tripIds){
+   const trip=db.trips.get(id),calls=db.times.get(id)||[];
+   const key=JSON.stringify([trip.shape_id,calls.map(call=>call.stop_id)]);
+   if(patterns.has(key))continue;
+   patterns.add(key);
+   if(patterns.size>12){suggestions.clear();break;}
+   const shape=routeGeometry(db,trip);
+   if(shape.approximate)continue;
+   const stops=calls.map(call=>stopIndex.get(call.stop_id));
+   if(stops.some(stop=>!stop))continue;
+   const positions=alignStops(shape.points,stops.map(coords));
+   if(!positions)continue;
+   const cumulative=measure(shape.points);
+   const at=position=>{
+    const index=Math.min(cumulative.length-2,Math.floor(position));
+    return cumulative[index]+(position-index)*(cumulative[index+1]-cumulative[index]);
+   };
+   for(let i=1;i<stops.length;i++){
+    const hit=project(shape.points,cumulative,[fix.longitude,fix.latitude],at(positions[i-1]),at(positions[i]));
+    if(hit?.distance<=Math.max(35,fix.accuracy))suggestions.add(stops[i].id);
+   }
+  }
+  if(suggestions.size===1){
+   onboardStop.value=[...suggestions][0];onboardStop.onchange();
+   status.textContent='GPS suggests '+name(stopIndex.get(onboardStop.value))+'. Confirm it is your next stop before finding a route.';
+  }else status.textContent='GPS could not identify a single next stop. Select it manually.';
+ },()=>{status.textContent='GPS unavailable. Select your next stop manually.';},{enableHighAccuracy:true,timeout:8000,maximumAge:10000});
+};
+for(const button of document.querySelectorAll('[data-journey-time]'))button.onclick=()=>{
+ plannerOptions=preferences({...plannerOptions,mode:button.dataset.journeyTime});updatePlannerControls();invalidatePlan();
+};
+for(const radio of document.querySelectorAll('[name="journey-walk"]'))radio.onchange=()=>{
+ plannerOptions=preferences({...plannerOptions,walkingSpeed:radio.value});updatePlannerControls();invalidatePlan();
+};
+$('#transfer-buffer').oninput=()=>{
+ plannerOptions=preferences({...plannerOptions,minTransfer:$('#transfer-buffer').value});updatePlannerControls();invalidatePlan();
+};
+$('#journey-settings').onclick=()=>{
+ const panel=$('#journey-preferences');panel.open=true;panel.querySelector('summary').focus();panel.scrollIntoView({block:'nearest'});
+};
+$('.jp-map').addEventListener('toggle',()=>{if($('.jp-map').open){ensureDestinationMap();destMap?.resize();}});
 const preferenceLabel=value=>({fastest:'Fastest',transfers:'Fewest transfers',walking:'Least walking'})[value]||'Fastest';
 function updatePlannerControls(){
+ resetOnboardMatches();
+ for(const button of document.querySelectorAll('[data-journey-time]'))button.setAttribute('aria-pressed',String(button.dataset.journeyTime===plannerOptions.mode));
+ for(const radio of document.querySelectorAll('[name="journey-walk"]'))radio.checked=Number(radio.value)===plannerOptions.walkingSpeed;
+ $('#transfer-value').textContent=plannerOptions.minTransfer+' min';
+ const walking=({3:'Relaxed',4.5:'Normal',6:'Fast'})[plannerOptions.walkingSpeed]||plannerOptions.walkingSpeed+' km/h';
+ $('#preference-summary').textContent=walking+' walking · '+plannerOptions.minTransfer+' min transfers';
  $('#journey-mode').value=plannerOptions.mode;$('#walking-speed').value=String(plannerOptions.walkingSpeed);$('#transfer-buffer').value=String(plannerOptions.minTransfer);$('#walking-limit').value=plannerOptions.maxWalkingMinutes??'';
  for(const b of document.querySelectorAll('[data-preference]'))b.setAttribute('aria-pressed',String(b.dataset.preference===plannerOptions.preference));
  $('#journey-date-label').hidden=$('#journey-time-label').hidden=plannerOptions.mode==='now';
@@ -375,21 +538,40 @@ function updatePlannerControls(){
 }
 function invalidatePlan(){planVersion++;clearJourneyMap();$('#journeys').innerHTML='<p class="notice">Preferences changed. Find journeys to update your results.</p>';}
 async function runPlan(input={}){
- if(!db)return;const from=plannerOrigin||origin;
+ if(!db)return;
+ const onboardMode=journeyEntry==='onboard'&&input.useJourneyEntry;
+ const direction=onboardDirection.value===''?null:onboardDirections[Number(onboardDirection.value)];
+ const confirmed=onboardMatch.value===''?null:onboardMatches[Number(onboardMatch.value)];
+ const onboard=onboardMode&&direction&&onboardStop.value?{
+  routeId:onboardLine.value,tripIds:confirmed?new Set([confirmed.tripId]):direction.tripIds,stopId:onboardStop.value,
+  serviceDate:confirmed?.serviceDate,sequence:confirmed?.sequence,
+ }:null;
+ if(onboardMode&&!onboard){$('#journeys').innerHTML='<div class="empty">Choose your bus line, direction and next stop.</div>';return;}
+ const from=onboard?stopIndex.get(onboard.stopId):plannerOrigin||origin;
  if(!from||!destination){$('#journeys').innerHTML=`<div class="empty">${!from?'Enable location or use Correct location on the Stops tab.':'Choose a search result or tap the destination map.'}</div>`;return;}
  const options={...plannerOptions},time=options.mode==='now'?Date.now():localTimestamp($('#journey-date').value,$('#journey-time').value,db?.timezone);
  if(!Number.isFinite(time)||time<Date.now()-60000){$('#journeys').innerHTML=`<div class="empty">Choose a valid future date and time in ${esc(db?.timezone||'the selected city')}. Times skipped when the clocks change are unavailable.</div>`;return;}
  clearJourneyMap();const version=++planVersion,context={origin:{...from},destination:{...destination},options,time,deadline:input.deadline??(options.mode==='arrive'?time:null),excludedTrips:input.excludedTrips||[]};
  $('#plan').disabled=true;$('#journeys').innerHTML='<p class="notice">Comparing walking, waiting and transfers…</p>';
  try{
-  if(options.mode==='now')await Promise.race([refresh(),new Promise(r=>setTimeout(r,1500))]);
+  if(options.mode==='now'||(onboard&&options.mode==='arrive'))await Promise.race([refresh(),new Promise(r=>setTimeout(r,1500))]);
   await new Promise(r=>setTimeout(r,25));if(version!==planVersion)return;
   if(options.mode==='now')context.time=Date.now();
-  const results=planJourney(db,rt,context.origin,context.destination,context.time,{...options,walkingDistance:knownWalk,excludedTrips:Array.isArray(input.excludedTrips)?input.excludedTrips:[]});journeyResults=results;journeyContext=context;
+  const currentTime=onboard&&options.mode==='arrive'?Date.now():context.time;
+  const searchOptions=onboard&&options.mode==='arrive'?{...options,mode:'now'}:options;
+  let matches=[];
+  const results=planJourney(db,rt,context.origin,context.destination,currentTime,{...searchOptions,onboard,deadline:context.deadline,walkingDistance:knownWalk,excludedTrips:Array.isArray(input.excludedTrips)?input.excludedTrips:[],onboardMatches:value=>{matches=value;}});
+  if(matches.length>1){
+   onboardMatches=matches;
+   setOptions(onboardMatch,'Select the matching service',matches.map((match,i)=>[i,`${clock(match.arrival)} · ${match.live?'live estimate':'scheduled'} · ${match.downstream.map(id=>name(stopIndex.get(id))).filter(Boolean).join(' → ')||'terminus'} · call ${match.sequence}`]));
+   $('#onboard-match-label').hidden=false;onboardMatch.focus();
+   $('#journeys').innerHTML='<div class="empty">Several services match. Confirm your bus above, then find your route again.</div>';return;
+  }
+  if(onboard)context.options={...searchOptions};journeyResults=results;journeyContext=context;
   const coverage=results.some(r=>r.legs.some(l=>l.live||l.arrivalLive));
   const date=localDate(context.time,db?.timezone),end=db.info?.feed_end_date,published=hasPublishedService(db,context.time,options.mode,db?.timezone);
   const notice=`${!published?'No bus trips published for the selected time window in the downloaded feed. Walking options only. ':''}${options.mode==='now'?(coverage?'Includes live estimates':'Timetable only · live predictions unavailable'):'Future timetable prediction'} · ${date} · ${options.mode==='arrive'&&options.preference==='fastest'?'latest departure first':preferenceLabel(options.preference).toLowerCase()+' first'}. ${db.cached?'Using a downloaded schedule. ':''}Walking routes are approximate; connections are not guaranteed.`;
-  $('#journeys').innerHTML=results.length?`<p class="notice planner-result-note">${esc(notice)}</p>`+results.map((r,i)=>journeyCard(r,i,context.time)).join(''):`<div class="empty">${!published?(activeCityId==='skopje'?'JSP has not included bus trips for the selected time window in the downloaded feed. Reconnect closer to travel to check for an updated timetable.':'The transit provider has no published bus trips for this time window. Try another service date.'):end&&date.replaceAll('-','')>end?'This date is beyond the published timetable.':'No journey found for this time and these preferences.'} Search covers ${options.mode==='arrive'?'the 4 hours before arrival':'the next 4 hours'}, up to two transfers and stops within 800 m of each endpoint. Try a different time or nearby point.</div>`;
+  $('#journeys').innerHTML=results.length?`<p class="notice planner-result-note">${esc(notice)}</p>`+results.map((r,i)=>journeyCard(r,i,context.time)).join(''):onboard?'<div class="empty">No onboard route found. Check the next stop and time. The timetable must identify a single matching bus within 15 minutes.</div>':`<div class="empty">${!published?(activeCityId==='skopje'?'JSP has not included bus trips for the selected time window in the downloaded feed. Reconnect closer to travel to check for an updated timetable.':'The transit provider has no published bus trips for this time window. Try another service date.'):end&&date.replaceAll('-','')>end?'This date is beyond the published timetable.':'No journey found for this time and these preferences.'} Search covers ${options.mode==='arrive'?'the 4 hours before arrival':'the next 4 hours'}, up to two transfers and stops within 800 m of each endpoint. Try a different time or nearby point.</div>`;
 
   return results;
  }catch(error){$('#journeys').innerHTML='<div class="empty">Could not calculate this journey. Try again.</div>';console.error(error);}finally{$('#plan').disabled=false;}
@@ -408,14 +590,14 @@ async function checkCommute(id,button){
  const row=commutes.find(c=>c.id===id);if(!row)return;button.disabled=true;button.textContent='Checking…';
  try{await Promise.race([refresh(),new Promise(r=>setTimeout(r,1500))]);const results=planJourney(db,rt,row.origin,row.destination,Date.now(),row.options);commuteChecks.set(id,{...commuteStatus(row,results),checkedAt:Date.now()});}catch{commuteChecks.set(id,{text:'Could not check this journey. Try again.',kind:'warning',checkedAt:Date.now()});}finally{renderCommutes();}
 }
-function openCommute(id){const row=commutes.find(c=>c.id===id);if(!row)return;plannerOrigin={...row.origin};plannerOptions={...row.options,mode:'now'};updatePlannerControls();chooseDestination(row.destination);activate('journey');runPlan();}
+function openCommute(id){setJourneyEntry('normal');const row=commutes.find(c=>c.id===id);if(!row)return;plannerOrigin={...row.origin};plannerOptions={...row.options,mode:'now'};updatePlannerControls();chooseDestination(row.destination);activate('journey');runPlan();}
 async function prepareOffline(){
  if(!navigator.serviceWorker)return;
  try{const reg=await navigator.serviceWorker.ready;(navigator.serviceWorker.controller||reg.active)?.postMessage({type:'PREPARE_OFFLINE'});}catch{}
 }
 $('#journey-date').value=localDate(Date.now(),db?.timezone);$('#journey-date').min=localDate(Date.now(),db?.timezone);$('#journey-time').value=localTime(Date.now()+3600000,db?.timezone);
 for(const [selector,key] of [['#journey-mode','mode'],['#walking-speed','walkingSpeed'],['#transfer-buffer','minTransfer'],['#walking-limit','maxWalkingMinutes']])$(selector).onchange=()=>{plannerOptions=preferences({...plannerOptions,[key]:$(selector).value});updatePlannerControls();invalidatePlan();};
-for(const selector of ['#journey-date','#journey-time'])$(selector).onchange=invalidatePlan;
+for(const selector of ['#journey-date','#journey-time'])$(selector).onchange=()=>{resetOnboardMatches();invalidatePlan();};
 document.addEventListener('input',e=>{const id=e.target.dataset?.commuteName;if(!id)return;const row=commutes.find(c=>c.id===id);if(row){row.label=e.target.value.trim().slice(0,100)||'Saved journey';writeJourneys(storage(),commutes);}});
 
 updatePlannerControls();
@@ -494,6 +676,7 @@ renderPlaceShortcuts();
 // and the rider reviews them before the existing planner calculates a journey.
 document.addEventListener('tuka-plan-intent',event=>{
  const {cityId,intent}=event.detail||{};if(!db||cityId!==activeCityId||!intent)return;
+ setJourneyEntry('normal');
  plannerOptions=preferences({...plannerOptions,...intent});updatePlannerControls();
  if(intent.date)$('#journey-date').value=intent.date;if(intent.time)$('#journey-time').value=intent.time;
  plannerOrigin=null;destination=null;destinationPin?.remove();destinationPin=null;
