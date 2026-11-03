@@ -12,7 +12,8 @@ function retain(map,id,label) {
   map.set(id,[...current.filter(x=>!(x.connectionKey===label.connectionKey&&label.time<=x.time&&label.walk<=x.walk)),label]);
 }
 export function planJourney(db,rt,origin,destination,time=Date.now(),input={}) {
-  const options=preferences(input),reverse=options.mode==='arrive',sign=reverse?-1:1,start=sign*time;
+  const onboard=input.onboard;
+  const options=preferences(input),reverse=options.mode==='arrive'&&!onboard,sign=reverse?-1:1,start=sign*time;
   const zone=db?.timezone;
   // Only Leave now uses live updates. Dated plans remain reproducible timetable predictions.
   const live=options.mode==='now'?rt:null,buffer=options.minTransfer*60000;
@@ -41,10 +42,10 @@ export function planJourney(db,rt,origin,destination,time=Date.now(),input={}) {
   }
   const foot=(type,from,to,meters,at)=>{const walkingMs=walkMs(meters,from,to),end=at+walkingMs+(type==='transfer'?buffer:0);return {type,from:reverse?to:from,to:reverse?from:to,meters,walkingMeters:walked(meters,from,to),walkingMs,bufferMs:type==='transfer'?buffer:0,start:reverse?-end:at,end:reverse?-at:end};};
   let labels=new Map(),results=[];
-  for(const s of stops) {const meters=distance(source,s);if(meters<=800){const leg=foot('walk',source,s,meters,start);retain(labels,s.id,{time:reverse?-leg.start:leg.end,walk:leg.walkingMeters,legs:[leg]});}}
+  if(!onboard) for(const s of stops) {const meters=distance(source,s);if(meters<=800){const leg=foot('walk',source,s,meters,start);retain(labels,s.id,{time:reverse?-leg.start:leg.end,walk:leg.walkingMeters,legs:[leg]});}}
   const egress=new Map(stops.map(s=>[s.id,distance(s,target)]).filter(x=>x[1]<=800));
   const finish=legs=>{legs=(reverse?legs.slice().reverse():legs).map(l=>({...l}));if(reverse){for(let i=1;i<legs.length;i++){const leg=legs[i];if(leg.type!=='bus'){leg.start=legs[i-1].end;leg.end=leg.start+leg.walkingMs+leg.bufferMs;}}}const buses=legs.filter(l=>l.type==='bus');results.push({departure:legs[0].start,arrival:legs.at(-1).end,legs,transfers:Math.max(0,buses.length-1),walkingMeters:Math.round(legs.filter(l=>l.type!=='bus').reduce((n,l)=>n+l.walkingMeters,0))});};
-  const direct=distance(source,target);if(direct<=1800)finish([foot('walk',source,target,direct,start)]);
+  const direct=distance(source,target);if(!onboard&&direct<=1800)finish([foot('walk',source,target,direct,start)]);
   const runs=[];
   // Include extended service from previous days, and the following civil day.
   const maxSeconds=db.maxSeconds??[...db.times.values()].reduce((n,path)=>Math.max(n,path.at(-1)?.seconds||0),86400);
@@ -69,16 +70,43 @@ export function planJourney(db,rt,origin,destination,time=Date.now(),input={}) {
       runs.push({id,trip,day,path});
     }
   }
+  // Anchor the first round to the selected run and its next confirmed stop.
+  // When several runs could match, return no result instead of guessing.
+  let currentBus;
+  if(onboard){
+    const matches=[];
+    for(const run of runs){
+      if(run.trip.route_id!==onboard.routeId||!onboard.tripIds.has(run.id))continue;
+      for(const [index,call] of run.path.entries()){
+        if(call.skip||call.p.stop_id!==onboard.stopId||call.departure.time<time||call.arrival.time>time+15*60000)continue;
+        if(onboard.serviceDate&&run.day.date!==onboard.serviceDate||onboard.sequence!=null&&call.p.seq!==onboard.sequence)continue;
+        const vehicle=live?.vehicles?.find(v=>v.tripId===run.id&&v.date===run.day.date&&v.seq>call.p.seq&&Math.abs(time/1000-v.timestamp)<=120);
+        if(vehicle)continue;
+        matches.push({run,index});
+      }
+    }
+    if(matches.length!==1){
+      input.onboardMatches?.(matches.map(({run,index})=>({
+        tripId:run.id,serviceDate:run.day.date,sequence:run.path[index].p.seq,
+        arrival:run.path[index].arrival.time,live:run.path[index].arrival.live,
+        downstream:run.path.slice(index+1,index+4).map(call=>call.p.stop_id),
+      })));
+      return [];
+    }
+    currentBus=matches[0];
+  }
   for(let round=0;round<3;round++) {
     const reached=new Map();
     for(const run of runs) {
-      let boarded=[];
-      for(let i=0;i<run.path.length;i++) {
+      if(currentBus&&round===0&&run!==currentBus.run)continue;
+      const firstIndex=currentBus&&round===0?currentBus.index:0;
+      let boarded=currentBus&&round===0?[{label:{walk:0,legs:[]},x:run.path[firstIndex],index:firstIndex}]:[];
+      for(let i=firstIndex;i<run.path.length;i++) {
         const x=run.path[i];if(x.skip||!byId.has(x.p.stop_id))continue;
         const arrive=sign*(reverse?x.departure.time:x.arrival.time),depart=sign*(reverse?x.arrival.time:x.departure.time);
         if(x.p[reverse?'pickup_type':'drop_off_type']!=='1'&&arrive<=start+HORIZON) for(const b of boarded) {
           const first=reverse?x:b.x,last=reverse?b.x:x;
-          const leg={type:'bus',route:db.routes.get(run.trip.route_id),headsign:run.trip.trip_headsign,tripId:run.id,serviceDate:run.day.date,boardSeq:first.p.seq,endSeq:last.p.seq,from:byId.get(first.p.stop_id),to:byId.get(last.p.stop_id),start:first.departure.time,end:last.arrival.time,live:first.departure.live,arrivalLive:last.arrival.live,stops:i-b.index};
+          const leg={type:'bus',route:db.routes.get(run.trip.route_id),headsign:run.trip.trip_headsign,tripId:run.id,serviceDate:run.day.date,boardSeq:first.p.seq,endSeq:last.p.seq,from:byId.get(first.p.stop_id),to:byId.get(last.p.stop_id),start:currentBus&&round===0?time:first.departure.time,end:currentBus&&round===0?Math.max(time,last.arrival.time):last.arrival.time,live:first.departure.live,arrivalLive:last.arrival.live,onboard:!!currentBus&&round===0,stops:i-b.index};
           retain(reached,x.p.stop_id,{time:arrive,walk:b.label.walk,connectionKey:constrained?run.id:undefined,legs:[...b.label.legs,leg]});
         }
         if(x.p[reverse?'drop_off_type':'pickup_type']==='1'||depart<start)continue;
@@ -106,6 +134,7 @@ export function planJourney(db,rt,origin,destination,time=Date.now(),input={}) {
     }
     labels=next;
   }
+  if(onboard&&Number.isFinite(input.deadline))results=results.filter(result=>result.arrival<=input.deadline);
   if(options.maxWalkingMinutes!==null)results=results.filter(r=>r.legs.filter(l=>l.type!=='bus').reduce((n,l)=>n+l.walkingMs,0)<=options.maxWalkingMinutes*60000);
   // Remove a small-walk saving that sends the rider past their exit and back.
   // Only an actually generated, legal earlier exit on the same boarded run can

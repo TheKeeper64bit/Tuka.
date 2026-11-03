@@ -4,3 +4,51 @@
 body.following-journey .location-strip,body.following-journey .mapcaption{display:none}body.following-journey .stop-sheet{height:38dvh;min-height:265px;max-height:52dvh}body.following-journey .stop-sheet.expanded{height:72dvh;max-height:72dvh}body.following-journey .sheet-toggle{min-height:36px;padding:7px;gap:4px;font-size:11px}body.following-journey .map-top-label strong{font-size:17px;line-height:1.4;overflow-wrap:anywhere}.journey-follow-heading{display:flex;justify-content:space-between;align-items:center;gap:8px}.journey-follow-heading .textbtn{min-height:32px;padding:5px 8px}.journey-follow-panel h2{font-size:20px;line-height:1.35;margin:3px 0 10px}.journey-follow-info p{margin:7px 0;font-size:14px;line-height:1.5}.journey-follow-info small{font-size:12px;color:var(--muted);line-height:1.5}.journey-live-times{display:flex;gap:24px;margin:8px 0;font-size:19px;font-weight:750}.journey-live-times small{display:block;font-weight:450}.journey-step-actions{display:flex;gap:7px;position:sticky;bottom:-16px;background:var(--panel);padding:10px 0;z-index:1}.journey-step-actions .primary{flex:1}.journey-step-actions button{padding:10px 12px;min-height:44px;font-size:13px}.journey-location-status,.journey-time-note{font-size:12px;color:var(--muted);line-height:1.5;margin:4px 0 14px}.journey-follow-summary{display:grid;gap:6px;padding:16px 0;border-top:1px solid var(--line)}.journey-follow-summary strong{font-size:14px}.journey-follow-summary span{font-size:12px;color:var(--muted)}.journey-step-list{list-style:none;margin:0;padding:0}.journey-step-list button{display:flex;width:100%;gap:12px;text-align:left;background:transparent;color:var(--ink);border-radius:12px;padding:12px 8px;line-height:1.4}.journey-step-list button[aria-current=step]{background:var(--soft)}.step-number{display:grid;place-items:center;width:30px;height:30px;flex:none;background:var(--panel);border:1px solid var(--line);border-radius:50%;font-weight:750}.journey-step-list strong{font-size:13px}.journey-step-list small{display:block;font-size:12px;color:var(--muted);margin-top:5px}.journey-follow-info .connection-banner{font-size:12px;padding:9px 11px}@media(min-width:800px){body.following-journey .stop-sheet{height:43dvh;max-height:60dvh}body.following-journey .stop-sheet.expanded{height:72dvh;max-height:72dvh}}.headtools #feedstatus{display:none}
 /* A few compact actions, with infrequent details behind disclosure controls. */
 .endpoint-tools,.endpoint-tools>div,.journey-extra-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.endpoint-tools{justify-content:space-between;margin:8px 0 18px}.endpoint-tools .secondary{padding:8px 12px}.place-saving{display:flex;gap:10px;align-items:center;margin:10px 0;color:var(--muted);font-size:13px}.place-saving summary,.journey-details summary,.walking-directions summary{cursor:pointer;font-weight:650;padding:10px 0}.journey-details{margin-top:10px;border-top:1px solid var(--line)}.journey-extra-actions{margin:16px 0}.coverage-note{font-size:11px;color:var(--muted);line-height:1.5;margin:8px 0}.coverage-note .textbtn{font-size:inherit;padding:0}.accessibility-note{font-size:12px;line-height:1.5;margin:12px 0}.accessibility-note small{display:block;color:var(--muted);padding-left:18px}.walking-directions{font-size:13px}.walking-directions li{padding:5px 0;line-height:1.5}.walking-credit{display:block;margin:8px 0;font-size:10px;line-height:1.6;color:var(--muted)}.walking-credit a{color:inherit}.journey-follow-info p{margin:8px 0}#share-dialog{border:1px solid var(--line);border-radius:20px;background:var(--panel,#fff);color:var(--ink);padding:24px;width:min(440px,90vw)}#share-dialog::backdrop{background:#071b3499}#share-dialog input{display:block;width:100%;margin:10px 0 18px}body.dark #share-dialog{background:#142235;color:#eef4ff}
+
+/* V1 Journey tab. All visual overrides stay inside the planner page. */
+#journey.journey-page{--jp-blue:#2563eb;--jp-navy:#102b46;--jp-muted:#64748b;--jp-border:#e2e8f0;--jp-surface:#fff;--jp-track:#f1f5f9;width:100%;max-width:520px;margin:0 auto;padding:20px 14px 30px;color:var(--jp-navy)}
+.dark #journey.journey-page{--jp-navy:var(--ink);--jp-muted:var(--muted);--jp-border:var(--line);--jp-surface:var(--panel);--jp-track:var(--soft)}
+#journey .jp-header,#journey .jp-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+#journey .jp-header{margin-bottom:20px}
+#journey .jp-header h1{font-size:25px;margin:0 0 4px;letter-spacing:-.7px}
+#journey .jp-header p,#journey .jp-hint{color:var(--jp-muted);font-size:12px;margin:0}
+#journey .jp-settings{width:44px;height:44px;border-radius:50%;background:var(--jp-surface);color:var(--blue);font-size:21px;box-shadow:0 2px 8px #102b4610}
+#journey .jp-card{background:var(--jp-surface);border-radius:22px;padding:17px;margin-bottom:13px;box-shadow:0 5px 22px #102b4609}
+#journey .jp-segments{display:flex;gap:4px;padding:4px;background:var(--jp-track);border-radius:15px}
+#journey .jp-mode{margin-bottom:22px}
+#journey .jp-mode button{flex:1;min-width:0}
+#journey .jp-segments button{border-radius:12px;min-height:44px;padding:8px;color:var(--jp-muted);background:transparent;font-size:13px;font-weight:650;transition:background .2s,color .2s,box-shadow .2s}
+#journey .jp-segments button[aria-pressed=true]{background:var(--jp-surface);color:var(--blue);box-shadow:0 2px 8px #102b4617}
+#journey .jp-time button{font-size:11px;white-space:nowrap}
+#journey .jp-label{display:block;font-size:11px;letter-spacing:.6px;color:var(--jp-muted);font-weight:700;margin:0 0 9px}
+#journey .jp-card select:not([hidden]),#journey .jp-datetime input,#journey .searchbar{width:100%;min-width:0;border:1px solid var(--jp-border);border-radius:12px;background:var(--jp-surface);color:var(--jp-navy)}
+#journey .jp-card select:not([hidden]),#journey .jp-datetime input{padding:12px 10px}
+#journey #journey-onboard select{margin-bottom:14px}
+#journey .searchbar{margin:0;box-shadow:none;gap:9px}
+#journey .searchbar>span{color:var(--jp-blue)}
+#journey #destination-form>span{color:#db3775}
+#journey .fromrow{padding:0;background:none;border:0;box-shadow:none;margin:0 0 8px;font-size:12px}
+#journey .fromrow .fromdot,#journey .fromrow .label{display:none}
+#journey hr{border:0;border-top:1px solid var(--jp-border);margin:18px 0}
+#journey .jp-map{margin-top:12px}
+#journey summary{cursor:pointer;color:var(--blue);font-weight:700}
+#journey .jp-datetime{display:flex;gap:9px}
+#journey .jp-datetime label:not([hidden]){margin-top:12px;min-width:0;font-size:12px}
+#journey #journey-time-hint{margin-top:8px}
+#journey #journey-preferences>summary{display:flex;align-items:center;gap:9px;min-height:44px;color:var(--jp-navy);font-size:14px;list-style:none}
+#journey #journey-preferences>summary::-webkit-details-marker{display:none}
+#journey #journey-preferences small{display:block;color:var(--jp-muted);font-weight:400;margin-top:5px}
+#journey .jp-chevron{margin-left:auto;transition:transform .2s}
+#journey details[open] .jp-chevron{transform:rotate(180deg)}
+#journey .jp-preferences{border-top:1px solid var(--jp-border);padding-top:17px;margin-top:12px}
+#journey .jp-preferences fieldset{border:0;padding:0;margin:0 0 14px}
+#journey .jp-preferences legend{font-size:11px;color:var(--jp-muted);font-weight:700}
+#journey .jp-preferences fieldset label{display:flex;align-items:center;gap:9px;min-height:38px;font-size:14px}
+#journey .jp-slider{display:flex;align-items:center;gap:10px}
+#journey .jp-slider input{flex:1;min-width:0}
+#journey .jp-slider output{white-space:nowrap}
+#journey .jp-submit{width:100%;border-radius:16px;background:var(--jp-blue);color:white;font-size:16px;font-weight:750;padding:17px;box-shadow:0 6px 16px #2563eb30}
+#journey #journey-normal:not([hidden]),#journey #journey-onboard:not([hidden]),#journey details[open]>.jp-preferences{animation:jp-reveal .22s ease-out}
+@keyframes jp-reveal{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:390px){#journey.journey-page{padding:15px 10px 25px}#journey .jp-card{padding:14px}#journey .jp-time button{padding:8px 6px;font-size:10px}}
+@media(prefers-reduced-motion:reduce){#journey *,#journey *::before,#journey *::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}

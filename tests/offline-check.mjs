@@ -6,7 +6,7 @@ function harness({stores=new Map(),label='',base='/',privateAccess=false,authent
  const listeners={};let online=true,onlineStatus=200,brokenAsset=false,brokenWrite=false,pausedWrite=null;
  const requests=[];
  const clients=new Set();
- const caches={async keys(){return [...stores.keys()];},async delete(k){return stores.delete(k);},async open(k){if(!stores.has(k))stores.set(k,new Map());const rows=stores.get(k);return {async put(url,r){if(pausedWrite&&url===base+'offline.js')await pausedWrite;if(brokenWrite&&url===base+'planner.js?v=26')throw Error('quota exceeded');rows.set(String(url),r.clone());},async match(url){return rows.get(String(url))?.clone();}};}};
+ const caches={async keys(){return [...stores.keys()];},async delete(k){return stores.delete(k);},async open(k){if(!stores.has(k))stores.set(k,new Map());const rows=stores.get(k);return {async put(url,r){if(pausedWrite&&url===base+'offline.js')await pausedWrite;if(brokenWrite&&url===base+'planner.js?v=27')throw Error('quota exceeded');rows.set(String(url),r.clone());},async match(url){return rows.get(String(url))?.clone();}};}};
  const fetch=async req=>{if(!online)throw Error('network offline');const path=typeof req==='string'?req:new URL(req.url).pathname;requests.push(path);if(path===base+'auth/session'){if(!privateAccess)throw Error('Public app must not request a session');return new Response(JSON.stringify({authenticated}),{status:sessionStatus});}if(path===base+'api/tickets')return new Response('private');if(onlineStatus!==200)return new Response('Unavailable',{status:onlineStatus});if(brokenAsset&&path===base+(brokenAsset===true?'offline.js':brokenAsset))return new Response('missing',{status:404});return new Response(label+(path===base+'offline.html'?'offline reader':path));};
  const source=fs.readFileSync('dist/sw.js','utf8').replace('const PRIVATE_ACCESS=false;',`const PRIVATE_ACCESS=${privateAccess};`);
  vm.runInNewContext(source,{self:{location:{origin:'https://tuka.test'},registration:{scope:'https://tuka.test'+base},addEventListener:(key,fn)=>listeners[key]=fn,skipWaiting:async()=>{},clients:{claim:async()=>{},matchAll:async()=>[...clients].map(id=>({id}))}},caches,fetch,URL,Promise,Error});
@@ -26,11 +26,11 @@ function previousReader(){
 }
 test('public offline reader prepares without any session check; APIs and unknown routes are never cached',async()=>{
  const h=harness();await h.prepare();assert(!h.requests.some(path=>path.startsWith('/auth/')));h.setOnline(false);
- assert.equal(await (await h.request('/')).text(),'offline reader');assert.equal(await (await h.request('/planner.js?v=26','cors')).text(),'/planner.js?v=26');
+ assert.equal(await (await h.request('/')).text(),'offline reader');assert.equal(await (await h.request('/planner.js?v=27','cors')).text(),'/planner.js?v=27');
  await assert.rejects(h.request('/api/tickets','cors'));await assert.rejects(h.request('/auth/session','cors'));await assert.rejects(h.request('/app.js?v=24','cors'));await assert.rejects(h.request('/login'));
 });
 test('online error responses are not replaced by cached content',async()=>{
- const h=harness();await h.prepare();h.setStatus(503);assert.equal((await h.request('/')).status,503);assert.equal((await h.request('/planner.js?v=26','cors')).status,503);
+ const h=harness();await h.prepare();h.setStatus(503);assert.equal((await h.request('/')).status,503);assert.equal((await h.request('/planner.js?v=27','cors')).status,503);
 });
 test('incomplete installation cannot create a working offline reader',async()=>{
  const h=harness();h.breakAsset();await h.prepare();assert.equal(h.stores.size,0);h.setOnline(false);await assert.rejects(h.request('/'));
@@ -78,8 +78,8 @@ test('offline upgrade publishes all assets together and preserves dependencies o
  let release;h.pauseWrite(new Promise(resolve=>release=resolve));
  const preparation=h.prepare();
  // Fetching and putting are asynchronous: wait for the staging cache to exist.
- for(let i=0;i<30&&!([...h.stores.keys()].some(k=>k.startsWith('tuka-offline-v36-')));i++)await new Promise(resolve=>setImmediate(resolve));
- assert([...h.stores.keys()].some(k=>k.startsWith('tuka-offline-v36-')));
+ for(let i=0;i<30&&!([...h.stores.keys()].some(k=>k.startsWith('tuka-offline-v37-')));i++)await new Promise(resolve=>setImmediate(resolve));
+ assert([...h.stores.keys()].some(k=>k.startsWith('tuka-offline-v37-')));
  h.setOnline(false);
  assert.equal(await (await h.request('/','navigate','during-update')).text(),'previous offline reader');
  release();await preparation;
@@ -93,11 +93,11 @@ test('Pages offline reader stays within its repository path and retains other ap
  assert(h.requests.every(path=>path.startsWith('/Tuka./')));
  assert(h.requests.includes('/Tuka./config.js?v=1'));
  assert(stores.has('tuka-v10'));assert(stores.has('tuka-offline-v24'));
- assert([...stores.keys()].some(key=>key.startsWith('tuka-offline-%2FTuka.%2F-v36-')));
+ assert([...stores.keys()].some(key=>key.startsWith('tuka-offline-%2FTuka.%2F-v37-')));
  h.setOnline(false);
  assert.equal(await (await h.request('/Tuka./')).text(),'offline reader');
  assert.equal(await (await h.request('/Tuka./index.html')).text(),'offline reader');
- assert.equal(await (await h.request('/Tuka./planner.js?v=26','cors')).text(),'/Tuka./planner.js?v=26');
+ assert.equal(await (await h.request('/Tuka./planner.js?v=27','cors')).text(),'/Tuka./planner.js?v=27');
  assert.equal(await h.request('/'),undefined);assert.equal(await h.request('/other/'),undefined);
  await assert.rejects(h.request('/Tuka./api/tickets','cors'));
  await assert.rejects(h.request('/Tuka./login'));
