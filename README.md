@@ -77,6 +77,12 @@ Imports currently accept fixed-route GTFS Schedule ZIPs up to **50 MB compressed
 
 [Read the shell contract and supported boundaries](reports/universal-shell.md).
 
+### AI Network Inspector
+
+The import review shows local GTFS findings before you save a network. On the protected Meta build, open **AI Network Inspector → Analyze network** to get optional verification suggestions for reported anomalies. The request contains a bounded summary and representative GTFS IDs. The original ZIP stays on your device, and the inspector cannot change stops, routes, shapes, or timetables.
+
+Meta is preferred, with Baseten available as a configured fallback. The inspector reports provider token usage when available and reuses recent results for identical reports within the same server instance. Clean feeds and ordinary imports need no model call. Set `NETWORK_INSPECTOR_ENABLED=false` on the server to disable AI analysis.
+
 ## What we built during the hackathon
 
 Tuka started as a map-first Skopje bus app with arrivals and a journey planner. During the hackathon, that foundation became a shared transit app for three connected networks and locally imported timetables.

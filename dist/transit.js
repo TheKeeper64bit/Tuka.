@@ -7,8 +7,8 @@ export const BASE=providerFor('skopje').gtfsUrl.replace(/gtfs\/gtfs\.zip$/,'');
 import {serviceDay,active,prediction,eventTime} from './schedule.js?v=24';
 export {serviceDay,active,distance} from './schedule.js?v=24';
 export {planJourney} from './planner.js?v=27';
-import {parseGTFSZip} from './gtfs-zip.js?v=1';
-export {parseGTFSZip} from './gtfs-zip.js?v=1';
+import {parseGTFSZip} from './gtfs-zip.js?v=2';
+export {parseGTFSZip} from './gtfs-zip.js?v=2';
 import {readImportedFeed} from './feed-store.js?v=1';
 const loadedCities=new Map(),pendingCities=new Map();
 export async function load({offlineOnly=false,cityId='skopje'}={}){

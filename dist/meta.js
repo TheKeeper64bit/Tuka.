@@ -1,4 +1,4 @@
-import './network-picker.js?v=1';
+import './network-picker.js?v=2';
 import {polishHeader} from './header.js?v=1';
 
 const $ = selector => document.querySelector(selector);

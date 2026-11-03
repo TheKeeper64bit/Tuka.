@@ -74,3 +74,63 @@ test('imported stop and trip transfer rules constrain both leave-at and arrive-b
  t.transfers=[{from_stop_id:'b',to_stop_id:'b',transfer_type:'3'}];assert.equal(plans('leave').length,0);assert.equal(plans('arrive').length,0);
  t.transfers=[{from_stop_id:'b',to_stop_id:'b',from_trip_id:'in',to_trip_id:'early',transfer_type:'3'}];assert(plans('leave').some(j=>j.legs.some(l=>l.tripId==='later')));assert(plans('leave').every(j=>!j.legs.some(l=>l.tripId==='early')));
 });
+
+test('GTFS review reports verified anomalies and leaves ZIP bytes unchanged',async()=>{
+ const tables=base();
+ tables.agency[0].agency_url='https://example.org';
+ for(const r of tables.routes)r.agency_id='operator';
+ tables.calendar.forEach(row=>{row.start_date='20000101';row.end_date='20001231';});
+ tables.calendar_dates=[];
+ tables.trips[0].shape_id='bad';
+ tables.trips.push({...tables.trips[0],trip_id:'orphan',route_id:'missing',direction_id:'3'});
+ tables.stop_times.push({...tables.stop_times[0],trip_id:'missing'});
+ tables.shapes=[{shape_id:'bad',shape_pt_lat:'0',shape_pt_lon:'0',shape_pt_sequence:'1'},{shape_id:'bad',shape_pt_lat:'1',shape_pt_lon:'1',shape_pt_sequence:'2'}];
+ tables.pathways=[{pathway_id:'unsupported'}];
+ const zip=zipTables(tables),record=await reviewFeed(zip,'Fixture',{worker:false});
+ const codes=new Set(record.profile.diagnostics.findings.map(row=>row.code));
+ for(const code of ['trip_reference','direction','stop_reference','expired_calendar','suspicious_shape','unsupported'])assert(codes.has(code),code);
+ assert.equal(record.blob,zip);
+ assert.deepEqual((await reviewFeed(zip,'Other name',{worker:false})).profile.diagnostics,record.profile.diagnostics);
+});
+
+test('Network Inspector skips clean feeds, falls back, caches and rejects unsupported model output',async()=>{
+ const {inspectNetwork}=await import('../server/network-inspector.js');
+ const env={MODEL_API_KEY:'test-only',BASETEN_API_KEY:'test-only',BASETEN_MODEL:'fixture'};
+ const findings=[{code:'direction',severity:'warning',count:2,ids:['route-1']}];
+ const req=(hash='a',items=findings)=>new Request('https://tuka.test/api/meta/network-inspector',{method:'POST',body:JSON.stringify({hash:hash.repeat(64),version:1,findings:items})});
+ let calls=0;
+ const fetcher=async(url,options)=>{
+  calls++;
+  assert(!options.body.includes('stop_times.txt'));
+  if(url.includes('meta.ai'))return new Response('',{status:503});
+  return Response.json({choices:[{message:{content:JSON.stringify({suggestions:[{code:'direction',check:'headsigns'}]})}}],usage:{prompt_tokens:121,completion_tokens:18,total_tokens:139}});
+ };
+ assert((await (await inspectNetwork(req('a',[]),env,{fetcher})).json()).skipped);
+ assert.equal(calls,0);
+ const result=await (await inspectNetwork(req(),env,{fetcher})).json();
+ assert.equal(result.provider,'baseten');assert.equal(result.usage.total,139);assert.equal(calls,2);
+ assert((await (await inspectNetwork(req(),env,{fetcher})).json()).cached);assert.equal(calls,2);
+ assert.equal((await inspectNetwork(req(),{...env,NETWORK_INSPECTOR_ENABLED:'false'},{fetcher})).status,503);
+ assert.equal((await inspectNetwork(req(),{},{fetcher})).status,503);
+ assert.equal((await inspectNetwork(req('b'),env,{fetcher:async()=>Response.json({choices:[{message:{content:'{"suggestions":[{"code":"direction","check":"replace coordinates"}]}'}}]})})).status,502);
+ assert.equal((await inspectNetwork(req('c'),env,{fetcher:async()=>new Response('',{status:503})})).status,502);
+});
+
+test('well-formed timetable with valid shapes has no inspector findings',async()=>{
+ const t=base();
+ t.agency[0].agency_url='https://example.org';
+ for(const route of t.routes)route.agency_id='operator';
+ t.calendar.forEach(row=>{row.end_date='20991231';});
+ t.calendar_dates=t.calendar_dates.filter(row=>row.exception_type==='1');
+ t.shapes=[];
+ for(const trip of t.trips){
+  trip.shape_id=trip.trip_id+'-shape';
+  const calls=t.stop_times.filter(call=>call.trip_id===trip.trip_id);
+  for(const call of calls){
+   const stop=t.stops.find(stop=>stop.stop_id===call.stop_id);
+   t.shapes.push({shape_id:trip.shape_id,shape_pt_lat:stop.stop_lat,shape_pt_lon:stop.stop_lon,shape_pt_sequence:call.stop_sequence});
+  }
+ }
+ const result=await reviewFeed(zipTables(t),'Clean fixture',{worker:false});
+ assert.deepEqual(result.profile.diagnostics.findings,[]);
+});

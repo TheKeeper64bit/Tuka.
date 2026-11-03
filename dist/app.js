@@ -29,7 +29,7 @@ const coords=p=>[p.lon,p.lat],point=c=>({lon:c.lng,lat:c.lat}),fc=features=>({ty
 let activeCityId='skopje',cityVersion=0,manualCity=localStorage.getItem('tuka-city-mode')==='manual',loadingCityId=null;
 const storage=()=>cityStorage(localStorage,activeCityId);
 let fullTimetable=false,plannerOrigin=null,journeyContext=null,commutes=readJourneys(storage()),commuteChecks=new Map();
-let plannerOptions=preferences();try{plannerOptions=preferences(JSON.parse(localStorage.getItem('tuka-planner')||'{}'));}catch{}
+let plannerOptions=preferences({minTransfer:4});try{plannerOptions=preferences({minTransfer:4,...JSON.parse(localStorage.getItem('tuka-planner')||'{}')});}catch{}
 let db,rt,tab='home',origin=null,draft={lat:41.997,lon:21.431},destination=null,stopId=null,lineId=null,direction=0,homeMap,destMap,lineMap,originPin,destinationPin,chosenLines=new Set(),vehicleMarkers={home:new Map(),line:new Map()},selectedVehicle=null,targetStopId=null,placeChoices=[],searchVersion=0,planVersion=0,refreshBusy=false,liveError=false;
 let correcting=false,locationBusy=false,refreshPromise=null,refreshStopId=null;let saved=readFavourites(storage()),stopIndex=new Map(),routeIndex=new Map(),routeTrips=new Map();
 const newsView=createNewsView(document);
@@ -530,7 +530,11 @@ function updatePlannerControls(){
  $('#transfer-value').textContent=plannerOptions.minTransfer+' min';
  const walking=({3:'Relaxed',4.5:'Normal',6:'Fast'})[plannerOptions.walkingSpeed]||plannerOptions.walkingSpeed+' km/h';
  $('#preference-summary').textContent=walking+' walking · '+plannerOptions.minTransfer+' min transfers';
- $('#journey-mode').value=plannerOptions.mode;$('#walking-speed').value=String(plannerOptions.walkingSpeed);$('#transfer-buffer').value=String(plannerOptions.minTransfer);$('#walking-limit').value=plannerOptions.maxWalkingMinutes??'';
+ $('#journey-mode').value=plannerOptions.mode;$('#walking-speed').value=String(plannerOptions.walkingSpeed);$('#transfer-buffer').value=String(plannerOptions.minTransfer);const limit=$('#walking-limit'),value=String(plannerOptions.maxWalkingMinutes??'');
+ if(value&&limit.options&&![...limit.options].some(option=>option.value===value)){
+  const option=document.createElement('option');option.value=value;option.textContent=value+' min';limit.append(option);
+ }
+ limit.value=value;
  for(const b of document.querySelectorAll('[data-preference]'))b.setAttribute('aria-pressed',String(b.dataset.preference===plannerOptions.preference));
  $('#journey-date-label').hidden=$('#journey-time-label').hidden=plannerOptions.mode==='now';
  $('#journey-time-hint').textContent=plannerOptions.mode==='now'?`Live estimates where available · ${db?.timezone||'Europe/Skopje'}`:`Timetable prediction · ${db?.timezone||'Europe/Skopje'} · future service may change`;

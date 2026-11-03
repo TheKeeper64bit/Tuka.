@@ -1,3 +1,4 @@
+import {inspectNetwork} from './network-inspector.js';
 import {journeyCompletion,modelProviders} from './model-provider.js';
 import {newsResponse} from './news.js';
 import {translateNotice} from './notice-translation.js';
@@ -314,6 +315,7 @@ export default {
     if (url.pathname === '/api/walk') return walkingResponse(request,env);
     if (url.pathname === '/auth/session') return json({authenticated:true});
     if(url.pathname==='/api/news/translate')return translateNotice(request,env);
+    if(url.pathname==='/api/meta/network-inspector')return inspectNetwork(request,env);
     if(url.pathname==='/api/meta/interpret')return interpretJourney(request,env);
     if(url.pathname.startsWith('/api/transit/tilburg/')) return netherlandsFeed(request,env);
     if(url.pathname==='/api/news'&&url.searchParams.get('city')==='tilburg'&&request.method==='GET')return tilburgNotices(request,env);

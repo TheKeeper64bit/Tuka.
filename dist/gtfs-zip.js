@@ -2,6 +2,7 @@ function csv(s){let rows=[],row=[],v='',q=false;for(let i=0;i<s.length;i++){let 
 export const ZIP_LIMIT=50*1024*1024;
 const EXPANDED_LIMIT=200*1024*1024;
 const TABLES=new Set(['agency','stops','routes','trips','stop_times','calendar','calendar_dates','shapes','transfers','feed_info','frequencies','licenses']);
+const UNSUPPORTED=new Set(['locations.geojson','location_groups.txt','booking_rules.txt','fare_products.txt','pathways.txt','levels.txt','fare_attributes.txt','fare_rules.txt']);
 export async function parseGTFSZip(ab){
  if(!(ab instanceof ArrayBuffer)||ab.byteLength<22)throw Error('Invalid GTFS ZIP.');
  if(ab.byteLength>ZIP_LIMIT)throw Error('GTFS ZIP exceeds the 50 MB import limit.');
@@ -10,12 +11,14 @@ export async function parseGTFSZip(ab){
  if(e<0||v.getUint32(e,true)!==0x06054b50||e+22+v.getUint16(e+20,true)!==b.length)throw Error('Invalid ZIP directory.');
  if(v.getUint16(e+4,true)||v.getUint16(e+6,true))throw Error('Multi-volume ZIP is unsupported.');
  let p=v.getUint32(e+16,true),count=v.getUint16(e+10,true),expanded=0;
+ const unsupported=new Set();
  if(count>512)throw Error('ZIP contains too many files.');
  for(let i=0;i<count;i++){
   if(p+46>e||v.getUint32(p,true)!==0x02014b50)throw Error('Invalid ZIP entry.');
   const flags=v.getUint16(p+8,true),method=v.getUint16(p+10,true),size=v.getUint32(p+20,true),unpacked=v.getUint32(p+24,true),nl=v.getUint16(p+28,true),el=v.getUint16(p+30,true),cl=v.getUint16(p+32,true),local=v.getUint32(p+42,true);
   if(p+46+nl+el+cl>e)throw Error('Invalid ZIP entry bounds.');
   const path=new TextDecoder().decode(b.slice(p+46,p+46+nl)),name=path.split('/').at(-1),stem=name.replace(/\.txt$/,'');p+=46+nl+el+cl;
+  if(UNSUPPORTED.has(name))unsupported.add(name);
   if(!name.endsWith('.txt')||!TABLES.has(stem))continue;
   if(Object.hasOwn(out,name))throw Error('ZIP contains duplicate GTFS tables.');
   if(flags&1)throw Error('Encrypted ZIP files are unsupported.');
@@ -32,5 +35,6 @@ export async function parseGTFSZip(ab){
   expanded+=data.length;out[name]=csv(new TextDecoder('utf-8',{fatal:true}).decode(data));
  }
  if(!Object.keys(out).length)throw Error('No GTFS .txt tables found in this ZIP.');
+ if(unsupported.size)Object.defineProperty(out,'unsupportedTables',{value:[...unsupported]});
  return out;
 }

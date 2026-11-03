@@ -1,8 +1,40 @@
 import {polishHeader} from './header.js?v=1';
 import {providers,providerFor} from './city-providers.js?v=3';
 import {restoreImportedFeeds} from './feed-store.js?v=1';
-import {reviewFeed,importReviewedFeed,removeImportedFeed} from './feed-import.js?v=1';
+import {reviewFeed,importReviewedFeed,removeImportedFeed} from './feed-import.js?v=2';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const findingLabels={required_field:'Missing required fields',agency_reference:'Unresolved agency references',trip_reference:'Unresolved route or service references',excluded_trip:'Trips omitted by timetable validation',direction:'Ambiguous or invalid direction information',shape_reference:'Missing referenced shapes',stop_reference:'Unresolved stop or trip references',calendar:'Invalid service calendar records',expired_calendar:'Published service has expired',duplicate_stop:'Stops share the same name and coordinates',suspicious_shape:'Sampled shape disagrees with its stop sequence',no_shapes:'Published route shapes unavailable',unsupported:'Features outside the schedule importer'};
+const checkLabels={source_export:'Compare the records with a fresh official export.',references:'Check that the referenced IDs exist in the matching GTFS tables.',stop_order:'Verify stop sequence and travel direction against the operator timetable.',shape_alignment:'Compare the shape against the published stop order and map.',headsigns:'Confirm direction IDs and destination names with the operator.',service_dates:'Verify service dates and exceptions in the official timetable.',capabilities:'Check which capabilities the operator publishes separately.'};
+
+function attachInspector(article,record,isCurrent){
+ const report=record.profile.diagnostics;
+ const section=article.ownerDocument.createElement('details');section.className='network-inspector';
+ section.innerHTML='<summary>AI Network Inspector · '+report.warnings+' warnings</summary><p>Local validation passed · '+report.critical+' critical errors. '+(report.afterMidnight?'Includes after-midnight service. ':'')+'Geometry checked on a bounded sample.</p><ul>'+report.findings.map(f=>'<li><strong>'+esc(f.severity==='unsupported'?'Unsupported capability':'Verified finding')+':</strong> '+esc(findingLabels[f.code])+' ('+f.count+')'+(f.ids.length?' · '+esc(f.ids.join(', ')):'')+'</li>').join('')+'</ul><p role="status">'+(report.findings.length?'Open to check AI availability.':'No anomalies need AI analysis.')+'</p><button type="button" class="secondary" hidden>Analyze network</button><div class="network-inspector-result"></div>';
+ article.querySelector('#network-import-confirm').before(section);
+ const status=section.querySelector('[role=status]'),action=section.querySelector('button'),results=section.querySelector('.network-inspector-result');
+ section.addEventListener('toggle',async()=>{
+  if(!section.open||!report.findings.length||section.dataset.checked)return;
+  section.dataset.checked='true';status.textContent='Checking AI availability…';
+  try{
+   const response=await fetch('./api/meta/network-inspector',{signal:AbortSignal.timeout(5000)});
+   if(!response.ok||!(await response.json()).available)throw Error();
+   if(!isCurrent())return;
+   status.textContent='Optional. Sends a small diagnostic summary and sample IDs. Your ZIP stays on this device.';
+   action.hidden=false;
+  }catch{status.textContent='AI inspection unavailable. You can still import the timetable.';}
+ });
+ action.onclick=async()=>{
+  action.disabled=true;status.textContent='Analyzing findings…';
+  try{
+   const response=await fetch('./api/meta/network-inspector',{method:'POST',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(23000),body:JSON.stringify({hash:record.profile.feedVersion,version:report.version,findings:report.findings})});
+   const data=await response.json();if(!isCurrent())return;
+   if(!response.ok)throw Error(data.error||'AI inspection unavailable.');
+   status.textContent=(data.cached?'Cached analysis':'Analysis complete')+(data.provider?' · '+data.provider:'')+(data.usage?.total!=null?' · '+data.usage.total+' tokens reported':' · token usage unavailable');
+   results.innerHTML='<strong>AI suggestions to verify</strong>'+(data.suggestions.length?'<ul>'+data.suggestions.map(row=>'<li>'+esc(findingLabels[row.code])+': '+esc(checkLabels[row.check])+'</li>').join('')+'</ul>':'<p>No additional checks suggested.</p>');
+  }catch(error){if(isCurrent())status.textContent=error.message+' Local import remains available.';}
+  finally{action.disabled=false;}
+ };
+}
 export function initNetworkPicker(document){
  if(document.querySelector('#city-open'))return;
  document.body.classList.add('has-city-picker');
@@ -22,7 +54,7 @@ export function initNetworkPicker(document){
  };
  $('#network-import-form').onsubmit=async event=>{event.preventDefault();if(busy)return;busy=true;pending=null;$('#network-review').disabled=true;$('#network-review-result').textContent='Reading and validating the timetable…';
   try{pending=await reviewFeed($('#network-file').files[0],$('#network-name').value);const p=pending.profile,s=p.summary;
-   $('#network-review-result').innerHTML='<article class="network-review"><span class="eyebrow">READY TO IMPORT</span><h3>'+esc(p.name)+'</h3><p>'+esc(p.label)+'</p>'+(p.agencies.length>2?'<details><summary>View all '+p.agencies.length+' agencies</summary><p>'+esc(p.agencies.join(' · '))+'</p></details>':'')+'<dl><div><dt>Stops</dt><dd>'+s.stops+'</dd></div><div><dt>Routes</dt><dd>'+s.routes+'</dd></div><div><dt>Trips</dt><dd>'+s.trips+'</dd></div><div><dt>Time zone</dt><dd>'+esc(p.timezone)+'</dd></div></dl>'+(s.feedEnd?'<p>Published service through '+esc(s.feedEnd.replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3'))+'.</p>':'')+'<p>Timetable only. Live arrivals, operator news and ticketing are not included in GTFS Schedule.</p>'+p.warnings.map(w=>'<p class="notice">'+esc(w)+'</p>').join('')+'<label>Save as<select id="network-import-target"><option value="">New network</option>'+providers().filter(p=>p.imported).map(p=>'<option value="'+esc(p.id)+'">Update '+esc(p.name)+' (keep saved places)</option>').join('')+'</select></label><button type="button" id="network-import-confirm" class="primary">Import &amp; open network</button></article>';$('#network-review-result').scrollIntoView({block:'nearest',behavior:'smooth'});
+   $('#network-review-result').innerHTML='<article class="network-review"><span class="eyebrow">READY TO IMPORT</span><h3>'+esc(p.name)+'</h3><p>'+esc(p.label)+'</p>'+(p.agencies.length>2?'<details><summary>View all '+p.agencies.length+' agencies</summary><p>'+esc(p.agencies.join(' · '))+'</p></details>':'')+'<dl><div><dt>Stops</dt><dd>'+s.stops+'</dd></div><div><dt>Routes</dt><dd>'+s.routes+'</dd></div><div><dt>Trips</dt><dd>'+s.trips+'</dd></div><div><dt>Time zone</dt><dd>'+esc(p.timezone)+'</dd></div></dl>'+(s.feedEnd?'<p>Published service through '+esc(s.feedEnd.replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3'))+'.</p>':'')+'<p>Timetable only. Live arrivals, operator news and ticketing are not included in GTFS Schedule.</p>'+p.warnings.map(w=>'<p class="notice">'+esc(w)+'</p>').join('')+'<label>Save as<select id="network-import-target"><option value="">New network</option>'+providers().filter(p=>p.imported).map(p=>'<option value="'+esc(p.id)+'">Update '+esc(p.name)+' (keep saved places)</option>').join('')+'</select></label><button type="button" id="network-import-confirm" class="primary">Import &amp; open network</button></article>';const reviewed=pending;attachInspector($('.network-review'),reviewed,()=>pending===reviewed);$('#network-review-result').scrollIntoView({block:'nearest',behavior:'smooth'});
   }catch(error){$('#network-review-result').textContent=error.message;}finally{busy=false;$('#network-review').disabled=false;}
  };
  $('#network-review-result').onclick=async event=>{if(!event.target.closest('#network-import-confirm')||!pending||busy)return;busy=true;event.target.disabled=true;

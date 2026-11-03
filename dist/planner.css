@@ -52,3 +52,24 @@ body.following-journey .location-strip,body.following-journey .mapcaption{displa
 @keyframes jp-reveal{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:390px){#journey.journey-page{padding:15px 10px 25px}#journey .jp-card{padding:14px}#journey .jp-time button{padding:8px 6px;font-size:10px}}
 @media(prefers-reduced-motion:reduce){#journey *,#journey *::before,#journey *::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+#journey .jp-preferences{padding-top:12px;margin-top:8px}
+#journey .jp-preference-group{margin-bottom:12px}
+#journey .jp-preference-caption{font-size:11px;font-weight:700;color:var(--jp-muted);margin-bottom:5px}
+#journey .jp-walk-segments,#journey .jp-route-segments{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;padding:4px;background:var(--jp-track);border-radius:13px;margin:5px 0 12px}
+#journey .jp-walk-segments label,#journey .jp-route-segments button{position:relative;justify-content:center;text-align:center;min-height:44px;border:0;padding:5px 3px;font-size:12px;line-height:1.2;border-radius:10px;color:var(--jp-navy);background:transparent;font-weight:650}
+#journey .jp-walk-segments input{position:absolute;opacity:0}
+#journey .jp-walk-segments label:has(:checked),#journey .jp-route-segments button[aria-pressed=true]{background:var(--jp-surface);color:var(--blue);box-shadow:0 2px 8px #102b4617}
+#journey .jp-walk-segments label:focus-within{outline:2px solid var(--jp-blue);outline-offset:1px}
+#journey .jp-preference-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#journey .jp-preference-fields label{display:grid;grid-template-rows:auto 44px;gap:4px;min-width:0;font-size:12px;font-weight:650}
+#journey .jp-preference-fields select{height:44px;padding:6px 9px}
+#journey .jp-preference-fields .jp-slider{border:1px solid var(--jp-border);border-radius:12px;padding:0 9px}
+#journey .jp-slider input{accent-color:var(--jp-blue)}
+#journey .jp-slider output{font-variant-numeric:tabular-nums}
+#journey .jp-preferences .planner-hint{margin:7px 0 0}
+@media(max-width:370px){#journey .jp-preference-fields{grid-template-columns:1fr}}
+#journey .jp-preference-fields .jp-slider{display:grid;grid-template-columns:minmax(0,1fr) auto;min-width:0;gap:8px}
+#journey .jp-preference-fields .jp-slider input{width:100%;margin:0}
+#journey .jp-preference-fields .jp-slider output{min-width:0;text-align:right}
+@media(max-width:400px){#journey .jp-preference-fields{grid-template-columns:1fr}}
