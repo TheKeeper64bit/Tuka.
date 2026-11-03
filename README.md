@@ -305,3 +305,9 @@ OVapi's source metadata identifies **CC0-1.0** for general tables and **ODbL-1.0
 **Built by [Ignatij Tasevski](https://github.com/TheKeeper64bit), from Skopje.**
 
 **Tuka starts with a stop near you. Its ambition is to make every supported city feel a little more familiar.**
+
+## Why Tuka.
+
+**Tuka** (pronounced **TOO-kah**) means **“here”** in Macedonian. Wherever you are, your next ride starts here.
+
+Tuka. keeps one name across cities. The Macedonian wordmark is **Тука.** The city label tells you which network you’re using, while the tagline can speak your language: **Find your next bus** in English or **Vind je volgende bus** in Dutch.
