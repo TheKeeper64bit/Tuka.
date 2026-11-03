@@ -1,4 +1,5 @@
 import {journeyCompletion,modelProviders} from './model-provider.js';
+import {newsResponse} from './news.js';
 import {translateNotice} from './notice-translation.js';
 import {interpretJourney} from './meta-intent.js';
 import {netherlandsFeed,tilburgNotices} from './netherlands.js';
@@ -316,6 +317,7 @@ export default {
     if(url.pathname==='/api/meta/interpret')return interpretJourney(request,env);
     if(url.pathname.startsWith('/api/transit/tilburg/')) return netherlandsFeed(request,env);
     if(url.pathname==='/api/news'&&url.searchParams.get('city')==='tilburg'&&request.method==='GET')return tilburgNotices(request,env);
+    if(url.pathname==='/api/news'&&[null,'skopje'].includes(url.searchParams.get('city')))return newsResponse(request,{});
     if (/^\/api\/transit\/[^/]+\/[^/]+$/.test(url.pathname)) return transitFeed(request);
     if (url.pathname === '/api/transit/road-geometry') return roadGeometry(request,env);
     if (url.pathname === '/api/cities' && request.method === 'GET') return json({cities: publicCities()});

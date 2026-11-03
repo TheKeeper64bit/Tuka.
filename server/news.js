@@ -79,6 +79,15 @@ function cached(row) { try{return row?.payload?JSON.parse(row.payload):null;}cat
 export async function newsResponse(request,env,{fetcher=fetch,generate=generateArticles,now=Date.now()}={}) {
   if(!['GET','HEAD'].includes(request.method))return new Response('Method not allowed',{status:405,headers:{Allow:'GET, HEAD'}});
   const db=env.AUTH_DB;
+  // The Meta demo has no D1 binding. Serve the official feed without AI.
+  if(!db){
+    try{
+      const articles=originals(await readFeed(fetcher));
+      return response({articles,checkedAt:new Date(now).toISOString(),sourceUrl:JSP_NEWS,stale:false});
+    }catch{
+      return response({articles:[],error:'JSP news is temporarily unavailable. Please try again shortly.',sourceUrl:JSP_NEWS},503);
+    }
+  }
   const row=await db.prepare('SELECT * FROM jsp_news_cache WHERE id = 1').first(),old=cached(row);
   if(row?.retry_after>now)return old?response({...old,stale:now-row.checked_at>=FRESH_MS}):row.refresh_token?response({articles:[],pending:true,sourceUrl:JSP_NEWS},202):response({articles:[],error:'JSP news is temporarily unavailable. Please try again shortly.',sourceUrl:JSP_NEWS},503);
   const token=crypto.randomUUID();

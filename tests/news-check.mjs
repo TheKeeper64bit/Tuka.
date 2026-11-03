@@ -70,3 +70,15 @@ test('news fetch is lazy, refresh restores controls after errors, and old conten
   const els=new Map(['#news-list','#news-status','#news-refresh'].map(id=>[id,{innerHTML:'existing article',setAttribute(){}}]));let calls=0;
   const view=createNewsView({querySelector:s=>els.get(s)},async()=>{calls++;throw Error();});assert.equal(calls,0);await view.open();assert.equal(els.get('#news-refresh').disabled,false);assert.equal(els.get('#news-list').innerHTML,'existing article');assert.match(els.get('#news-status').textContent,/could not be refreshed/);
 });
+
+test('Skopje news works without a database or model on the judging host',async()=>{
+ const req=new Request('https://judge.example/api/news');
+ const result=await newsResponse(req,{},{
+  fetcher:async url=>{assert.equal(url,JSP_FEED);return new Response(feed);},
+  generate:async()=>assert.fail('The judging host must not call AI'),
+ });
+ assert.equal(result.status,200);
+ const payload=await result.json();
+ assert.equal(payload.articles[0].title,'Bus 5 diversion');
+ assert.equal(payload.articles[0].aiEdited,false);
+});
