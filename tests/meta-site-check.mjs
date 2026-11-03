@@ -89,6 +89,20 @@ test('Tilburg feeds, notices and Meta interpretation require the existing login'
  }
 });
 
+
+async function copilotRequest(config){
+ const form=new URLSearchParams({username:'CerebralValley',password:'meta'}),login=await worker.fetch(new Request('https://tuka.test/auth/login',{method:'POST',body:form}),config);
+ return worker.fetch(new Request('https://tuka.test/api/meta/ask',{method:'POST',headers:{Cookie:login.headers.get('Set-Cookie').split(';')[0],'Content-Type':'application/json'},body:JSON.stringify({cityId:'skopje',message:'What network can I use?'})}),config);
+}
+test('Copilot supports Baseten-only credentials without exposing the key',async t=>{
+ t.mock.method(globalThis,'fetch',async(url,options)=>{assert.equal(url,'https://inference.baseten.co/v1/chat/completions');assert.equal(options.headers.Authorization,'Bearer secret-baseten');const body=JSON.parse(options.body);assert.equal(body.model,'tool-model');assert.equal(body.max_tokens,760);assert.equal(body.max_completion_tokens,undefined);return Response.json({choices:[{message:{content:'Check departures in the planner.'}}]});});
+ const r=await copilotRequest({...env,BASETEN_API_KEY:'secret-baseten',BASETEN_MODEL:'tool-model'});assert.equal(r.status,200);const body=await r.json();assert.equal(body.provider,'baseten');assert.equal(body.model,'tool-model');assert(!JSON.stringify(body).includes('secret-baseten'));
+});
+test('Copilot fallback replays verified tool context with the provider that succeeded',async t=>{
+ const calls=[];t.mock.method(globalThis,'fetch',async(url,options)=>{calls.push({url,headers:options.headers,body:JSON.parse(options.body)});if(calls.length===1)return new Response('',{status:503});if(calls.length===2)return Response.json({choices:[{message:{tool_calls:[{id:'context-1',type:'function',function:{name:'get_city_context',arguments:JSON.stringify({city_id:'skopje'})}}]}}]});return Response.json({choices:[{message:{content:'Use the planner for verified departures.'}}]});});
+ const r=await copilotRequest({...env,MODEL_API_KEY:'secret-meta',BASETEN_API_KEY:'secret-baseten',BASETEN_MODEL:'tool-model'});assert.equal(r.status,200);assert.equal((await r.json()).provider,'baseten');assert.equal(calls.length,3);assert.match(calls[0].url,/api.meta.ai/);assert(calls.slice(1).every(c=>c.url==='https://inference.baseten.co/v1/chat/completions'));assert(calls[2].body.messages.some(m=>m.role==='tool'&&m.tool_call_id==='context-1'));assert.equal(calls[0].headers.Authorization,'Bearer secret-meta');assert.equal(calls[2].headers.Authorization,'Bearer secret-baseten');
+});
+
 test('Copilot chat and tool follow-up use the configured Baseten hackathon model', async () => {
   const config = {...env, BASETEN_API_KEY:'test-baseten', BASETEN_MODEL:'meta-models/muse-spark-open-1026', MODEL_PROVIDER:'baseten'};
   const login = await worker.fetch(new Request('https://tuka.test/auth/login', {method:'POST',body:new URLSearchParams({username:'CerebralValley',password:'meta'})}),config);

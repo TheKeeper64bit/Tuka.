@@ -160,7 +160,7 @@ Reliability is part of the product experience: a timetable should remain usable 
 
 | Evidence | What it establishes |
 | --- | --- |
-| **184 passing Node tests**, plus standalone regression checks | Coverage across authentication, planning, calendars, realtime matching, geometry, city isolation, saved state, offline basics, notices and translations. |
+| **191 passing Node tests**, plus standalone regression checks | Coverage across authentication, planning, calendars, realtime matching, geometry, city isolation, saved state, offline basics, notices and translations. |
 | **407,058 source calls compared; zero mismatches** | The Tilburg partition preserves the compared fields of its retained source trips. |
 | **Geometry audits across all three assessed networks** | Seven Skopje, eleven Boston and three Tilburg patterns recover legitimate published paths after fixing ordered stop-to-shape matching. |
 | **Browser GPS and city-switch checks** | Tilburg GPS overrides a stale saved Skopje preference; a first visit with denied location opens the chooser without downloading a default network. |
@@ -222,11 +222,20 @@ npm ci
 cp .env.example .env
 ```
 
-Fill the ignored `.env` with a local `META_AUTH_PASSWORD`. Add `MODEL_API_KEY` for Meta Copilot, journey interpretation and notice translation. For an optional fallback, set `BASETEN_API_KEY` and an account-available, tool-capable `BASETEN_MODEL`. The login username is configured in `wrangler.meta.jsonc`.
+Fill the ignored `.env` with a local `META_AUTH_PASSWORD`. Add `MODEL_API_KEY` for Meta Copilot, journey interpretation and notice translation. Baseten works for all three model flows: set `BASETEN_API_KEY` and an account-available, tool-capable `BASETEN_MODEL`. Meta is the default primary and Baseten the fallback; set `MODEL_PRIMARY_PROVIDER=baseten` to reverse that order, or `MODEL_FALLBACK_ENABLED=false` to disable fallback. With only Baseten configured it runs directly. The router adapts token-limit and tool-selection fields for each provider; generated journey constraints and translations still pass the same validators. The login username is configured in `wrangler.meta.jsonc`.
 
 ```sh
 npm run dev:meta
 ```
+
+For a deployed Worker, `.env` is deliberately not pushed or published. Provision the credentials separately:
+
+```sh
+npx wrangler secret put BASETEN_API_KEY --config wrangler.meta.jsonc
+npx wrangler secret put BASETEN_MODEL --config wrangler.meta.jsonc
+```
+
+Enter the key and model slug at the respective prompts. Meta remains primary by default; `MODEL_PRIMARY_PROVIDER=baseten` can be supplied as a Worker variable when Baseten should run first. No model-account access or live paid call is verified by the mock tests.
 
 The protected local pilot runs on port **8793**. Its dev command explicitly loads `.env`. Timetable exploration works without a model key; model features report their configuration state. Keep credentials out of `dist/` and Git.
 

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {journeyCompletion,modelProviders} from '../server/model-provider.js';
 import {interpretJourney} from '../server/meta-intent.js';
 const env={MODEL_API_KEY:'test-meta',BASETEN_API_KEY:'test-baseten',BASETEN_MODEL:'account-tool-model'};
 const intent={origin:null,destination:'Tilburg Centraal',mode:'now',date:null,time:null,maxWalkingMinutes:10,preference:'fastest'};
@@ -30,6 +31,19 @@ test('invalid model itineraries and bad requests never bypass validation or retr
 });
 test('exhausted providers expose no upstream error details',async()=>{
  let count=0;const r=await interpretJourney(request(),env,{fetcher:async()=>{count++;throw Error('credential or internal endpoint');}});assert.equal(count,2);assert.equal(r.status,502);assert.doesNotMatch(await r.text(),/credential|internal endpoint/);
+});
+
+
+test('Baseten primary selection and fallback opt-out apply to the shared provider layer',async()=>{
+ const config={...env,MODEL_PRIMARY_PROVIDER:'baseten'};assert.equal(modelProviders(config)[0].name,'baseten');
+ let calls=[];const result=await journeyCompletion(config,{messages:[],max_completion_tokens:500},{fetcher:async(url,options)=>{calls.push({url,body:JSON.parse(options.body)});return Response.json({choices:[]});}});
+ assert.equal(result.provider,'baseten');assert.equal(calls.length,1);assert.equal(calls[0].body.max_tokens,500);assert.equal(calls[0].body.max_completion_tokens,undefined);
+ calls=[];const only=await journeyCompletion({...config,MODEL_FALLBACK_ENABLED:'false'},{messages:[]},{fetcher:async url=>{calls.push(url);return new Response('',{status:503});}});assert.equal(only.response.status,503);assert.equal(calls.length,1);
+});
+test('provider-specific request adaptation preserves the source tool contract',async()=>{
+ const tool={type:'function',function:{name:'extract'}},body={max_completion_tokens:100,tool_choice:tool,tools:[tool],messages:[]};const calls=[];
+ await journeyCompletion(env,body,{fetcher:async(url,options)=>{calls.push(JSON.parse(options.body));return new Response('',{status:calls.length===1?503:200});}});
+ assert.equal(calls[0].tool_choice,'auto');assert.deepEqual(calls[1].tool_choice,tool);assert.equal(calls[1].max_tokens,100);assert.deepEqual(body.tool_choice,tool);assert.equal(body.max_completion_tokens,100);
 });
 
 test('provider redirects are not followed or retried',async()=>{

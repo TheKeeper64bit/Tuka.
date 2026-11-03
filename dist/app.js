@@ -351,10 +351,10 @@ function setSheet(value){
  $('#sheet-toggle').setAttribute('aria-expanded',String(!collapsed));
  $('#sheet-label').textContent=activeJourney?(expanded?'Hide journey details':'Show journey details'):expanded?'Hide stop details':'Show stop details';
  const scroll=$('.sheet-scroll');if(scroll){scroll.hidden=collapsed;scroll.inert=collapsed;}
- const collapse=$('#sheet-collapse');if(collapse){collapse.textContent=collapsed?'⌃':'⌄';collapse.setAttribute('aria-label',collapsed?'Restore details panel':'Minimize details panel');}
+ const collapse=$('#sheet-collapse');if(collapse){collapse.hidden=collapsed;collapse.setAttribute('aria-label','Hide details panel to see the map');}
 }
 $('#sheet-toggle').onclick=()=>{if(sheetDragged){sheetDragged=false;return;}setSheet(sheetState==='collapsed'?'normal':sheetState==='normal'?'expanded':'normal');};
-$('#sheet-collapse').onclick=()=>setSheet(sheetState==='collapsed'?'normal':'collapsed');
+$('#sheet-collapse').onclick=()=>{setSheet(sheetState==='collapsed'?'normal':'collapsed');$('#sheet-toggle').focus();};
 $('#sheet-toggle').addEventListener('pointerdown',event=>{sheetPointer=event.clientY;sheetDragged=false;event.currentTarget.setPointerCapture?.(event.pointerId);});
 $('#sheet-toggle').addEventListener('pointerup',event=>{if(sheetPointer===null)return;const delta=event.clientY-sheetPointer;sheetPointer=null;if(Math.abs(delta)<35)return;sheetDragged=true;setSheet(delta<0?(sheetState==='collapsed'?'normal':'expanded'):(sheetState==='expanded'?'normal':'collapsed'));});
 $('#sheet-toggle').addEventListener('pointercancel',()=>{sheetPointer=null;});

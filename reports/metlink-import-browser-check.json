@@ -2,7 +2,7 @@
   {
     "width": 390,
     "source": "Metlink public GTFS",
-    "reviewMs": 4447,
+    "reviewMs": 5494,
     "lines": 245,
     "reviewWorker": true,
     "importAndRouteSelection": true,

@@ -1,4 +1,4 @@
-import {journeyCompletion, modelProviders} from './model-provider.js';
+import {journeyCompletion,modelProviders} from './model-provider.js';
 import {translateNotice} from './notice-translation.js';
 import {interpretJourney} from './meta-intent.js';
 import {netherlandsFeed,tilburgNotices} from './netherlands.js';
@@ -216,8 +216,8 @@ async function cityContext(args, env) {
 }
 
 async function askMeta(message, context, env) {
-  const providers = modelProviders(env);
-  if (!providers.length) return {error: 'Meta AI is not configured for this deployment.', status: 503};
+  const providers=modelProviders(env);
+  if (!providers.length) return {error: 'Copilot is not configured for this deployment.', status: 503};
   const model = providers[0].model;
   const system = [
     'You are Tuka Copilot, a transit assistant for a hackathon demo.',
@@ -229,10 +229,8 @@ async function askMeta(message, context, env) {
   ].join(' ');
   const base = {model, temperature: 0.2, max_completion_tokens: 760, tool_choice: 'auto', parallel_tool_calls: false,
     messages: [{role: 'system', content: system}, {role: 'user', content: `Selected city: ${context.cityId || 'skopje'}${context.stopId ? `; selected stop: ${context.stopId}` : ''}\nRider question: ${message}`}], tools: [networkTool, cityContextTool]};
-  const call = async body => {
-    try { return (await journeyCompletion(env, body)).response; }
-    catch { return new Response(null, {status: 502}); }
-  };
+  let usedProvider=null;
+  const call = async body => {const result=await journeyCompletion(usedProvider?{...env,MODEL_PRIMARY_PROVIDER:usedProvider}:env,body);usedProvider=result.provider;return result.response;};
   let response = await call(base);
   if (!response.ok) return {error: 'Meta AI could not answer right now.', status: response.status === 429 ? 429 : 502};
   let data = await response.json();
@@ -273,7 +271,7 @@ async function askMeta(message, context, env) {
   }
   const answer = cleanMessage(choice?.message?.content);
   if (!answer) return {error: 'Meta AI returned no answer.', status: 502};
-  return {answer, model: data.model || model};
+  return {answer, model: data.model || modelProviders(env).find(p=>p.name===usedProvider)?.model || model, provider:usedProvider};
 }
 
 export default {
@@ -325,7 +323,7 @@ export default {
       if (!message) return json({error: 'Ask Tuka Copilot a question first.'}, 400);
       const cityId = CITY_CATALOG.some(city=>city.id===String(body?.cityId)) ? String(body.cityId) : 'boston';
       const stopId = typeof body?.stopId === 'string' && /^[A-Za-z0-9:_-]{1,120}$/.test(body.stopId) ? body.stopId : '';
-      const result = await askMeta(message, {cityId, stopId}, env);
+      let result;try{result = await askMeta(message, {cityId, stopId}, env);}catch{result={error:'Copilot is temporarily unavailable. Use the journey planner.',status:502};}
       return result.error ? json({error: result.error}, result.status) : json(result);
     }
     if (url.pathname.startsWith('/api/')) return json({error: 'Not found'}, 404);

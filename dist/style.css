@@ -33,14 +33,14 @@ body.dark .maplibregl-ctrl-group{background:var(--panel);border:1px solid var(--
 /* A compact stop heading and one expandable map-tool launcher. */
 body.map-mode .map-top-label{max-width:calc(100% - 100px);padding:13px 16px;border-radius:18px}
 body.map-mode .map-top-label strong{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:clamp(16px,4.4vw,21px);line-height:1.3;letter-spacing:-.3px;overflow-wrap:anywhere}
-body.map-mode .map-top-label .change-stop{position:static;display:inline-flex;align-items:center;min-height:32px;margin:8px 0 0;padding:4px 0;border-radius:0;box-shadow:none;background:transparent;font-size:12px}
+body.map-mode .map-top-label .change-stop{pointer-events:auto;position:static;display:inline-flex;align-items:center;min-height:32px;margin:8px 0 0;padding:4px 0;border-radius:0;box-shadow:none;background:transparent;font-size:12px}
 body.map-mode .map-top-label .change-stop[hidden]{display:none}
 .map-tool-items{display:grid;gap:8px;max-height:0;opacity:0;overflow:hidden;transform:translateY(-8px);pointer-events:none;transition:max-height .22s ease,opacity .18s ease,transform .22s ease}
 .map-tools.open .map-tool-items{max-height:240px;opacity:1;transform:translateY(0);pointer-events:auto}
 .map-tools.open #map-tools-toggle{background:var(--blue);color:white}
-.sheet-controls{display:flex;align-items:stretch;flex:none;min-height:52px}
+.sheet-controls{position:relative;display:flex;align-items:stretch;flex:none;min-height:54px}
 .sheet-controls .sheet-toggle{flex:1;min-width:0;width:auto;touch-action:none}
-.sheet-collapse{flex:none;width:44px;min-height:44px;margin:4px 8px 4px 0;border-radius:12px;background:var(--soft);color:var(--blue);font-size:22px}
+.sheet-collapse{display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:none;min-height:44px;margin:6px 10px 2px 0;padding:8px;color:var(--muted);background:transparent;border-radius:10px;font-size:12px;font-weight:600;white-space:nowrap}.sheet-collapse svg{width:16px;height:16px;flex:none}.sheet-collapse:hover{background:var(--line);color:var(--ink)}.sheet-collapse:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}.sheet-collapse[hidden]{display:none}.sheet-controls .sheet-grip{position:absolute;top:8px;left:50%;transform:translateX(-50%)}.sheet-controls .sheet-toggle{padding-top:20px;padding-bottom:9px}
 .stop-sheet.collapsed{height:54px!important}
 .stop-sheet.collapsed .sheet-scroll{display:none}
 body.sheet-collapsed.map-mode .mapcaption{bottom:calc(154px + env(safe-area-inset-bottom))}
@@ -59,3 +59,4 @@ body.sheet-collapsed.riding .ride-banner{display:none}
 .network-review label{display:grid;gap:8px;font-size:13px;margin:16px 0}.network-review select{width:100%;min-width:0;border:1px solid var(--line);border-radius:10px;padding:10px;color:var(--ink);background:var(--panel);font:inherit}
 
 .network-review dl>div:last-child{grid-column:1/-1}.network-review details{font-size:13px;color:var(--muted)}.network-review summary{cursor:pointer}
+body.riding.sheet-collapsed .sheet-toggle #sheet-label{visibility:visible}.stop-sheet.collapsed .sheet-controls,.stop-sheet.collapsed .sheet-toggle{min-height:52px}

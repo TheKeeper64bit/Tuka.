@@ -10,7 +10,7 @@ const notices=async()=>Response.json({articles:[article]});
 const model=value=>Response.json({choices:[{message:{tool_calls:[{function:{name:'translate_notice',arguments:JSON.stringify(value)}}]}}]});
 test('English translations preserve numbers, source metadata, Dutch original and are reused',async()=>{
  let calls=0;const memory=new Map(),cache={match:async k=>memory.get(k.url)?.clone(),put:async(k,r)=>memory.set(k.url,r)};
- const fetcher=async(url,init)=>{calls++;assert.match(url,/api.meta.ai/);const payload=JSON.parse(init.body);assert.equal(payload.tool_choice.function.name,'translate_notice');assert.deepEqual(JSON.parse(payload.messages[1].content),original);return model(translation);};
+ const fetcher=async(url,init)=>{calls++;assert.match(url,/api.meta.ai/);const payload=JSON.parse(init.body);assert.equal(payload.tool_choice,'auto');assert.equal(payload.tools[0].function.name,'translate_notice');assert.deepEqual(JSON.parse(payload.messages[1].content),original);return model(translation);};
  const options={notices,fetcher,cache};const r=await translateNotice(request(),{MODEL_API_KEY:'test'},options);assert.equal(r.status,200);const data=await r.json();assert.deepEqual(data.translation,translation);assert.equal(data.kind,'machine');
  assert.equal((await translateNotice(request(),{MODEL_API_KEY:'test'},options)).status,200);assert.equal(calls,1);
  const html=articleMarkup({...article,...data.translation,language:'en',machineTranslated:true},0,'tilburg');assert.match(html,/Machine translation/);assert.match(html,/Original Dutch notice/);assert.match(html,/Lijn 5 stopt niet/);assert(!html.includes('data-translate-notice='));
