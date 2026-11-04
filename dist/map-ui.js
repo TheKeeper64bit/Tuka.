@@ -33,9 +33,24 @@ export function routeGeometry(db,trip,stops){
   // A shape can be syntactically valid yet belong to another place. The 47a П
   // feed included a 1,096 km excursion while its actual stops span about 13 km.
   // Reject the whole shape; removing foreign points would invent connecting roads.
-  if(shaped.length>1&&shaped.every(valid)&&credibleShape(shaped,reference))return {points:shaped,approximate:false,kind:'published'};
+  if(shaped.length>1&&shaped.every(valid)&&credibleShape(shaped,reference)){
+    const route=db.routes?.get(trip.route_id);
+    const points=db.provider==='skopje'&&route?.route_short_name==='56'&&String(trip.shape_id)==='34872'
+      ? trimSkopje56Excursion(shaped,reference) : shaped;
+    return {points,approximate:false,kind:'published'};
+  }
   const road=db.roadGeometries?.get(trip?.trip_id);if(road&&credibleShape(road,reference))return {points:road,approximate:true,kind:'road'};
   return {points:stops?outline(stops):reference,approximate:true,reason:shaped.length>1?'invalid-shape':'missing-shape'};
+}
+// JSP shape 34872 repeats the same highway point after an unscheduled
+// out-and-back. Join the identical vertices and recheck the ordered stops.
+function trimSkopje56Excursion(points,stops){
+ const first=points.findIndex(([lon,lat])=>lon===21.308399&&lat===41.98737);
+ if(first<0)return points;
+ const last=points.findIndex(([lon,lat],i)=>i>first+300&&lon===points[first][0]&&lat===points[first][1]);
+ if(last<0)return points;
+ const corrected=[...points.slice(0,first),...points.slice(last)];
+ return credibleShape(corrected,stops)?corrected:points;
 }
 function valid(p){return Array.isArray(p)&&p.length>=2&&Number.isFinite(p[0])&&Number.isFinite(p[1])&&Math.abs(p[0])<=180&&Math.abs(p[1])<=90;}
 export function credibleShape(points,stops){

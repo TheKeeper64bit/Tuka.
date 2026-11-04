@@ -54,3 +54,11 @@ for(const trip of fiftySix.trips.values()){
  assert.equal(full.downstream.length,calls.length,'The full line retains its complete published itinerary');
 }
 console.log('Passed: all five route 56 patterns stop at the selected exit without changing full-line coverage');
+
+const skopje56={...fiftySix,provider:'skopje'};
+const affected56=[...skopje56.trips.values()].find(trip=>trip.shape_id==='34872');
+const repaired56=routeGeometry(skopje56,affected56);
+assert.equal(repaired56.approximate,false);
+assert.equal(repaired56.points.length,309,'Remove the duplicated highway excursion only from Skopje');
+assert(Math.min(...repaired56.points.map(point=>point[0]))>21.19,'Path no longer overshoots the Bojane terminal');
+assert.equal(routeGeometry({...skopje56,provider:'boston'},affected56).points.length,710);

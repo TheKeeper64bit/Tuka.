@@ -1,4 +1,4 @@
-import {credibleShape} from './map-ui.js?v=22';
+import {credibleShape} from './map-ui.js?v=23';
 import {normalizeGTFS,geolocatedStops} from './gtfs.js?v=2';
 export const table=(tables,name)=>tables[name]||tables[name+'.txt']||[];
 export function inspectFeed(tables,id,name=''){

@@ -1,4 +1,4 @@
-import {routeGeometry,trimGeometry} from './map-ui.js?v=22';
+import {routeGeometry,trimGeometry} from './map-ui.js?v=23';
 const colors=['#1768df','#8b51ce','#087f79','#bd5628','#bf3970','#607526','#5661b1','#a37915'];
 export function routeColor(id){let h=0;for(const c of String(id))h=(h*31+c.charCodeAt(0))>>>0;return colors[h%colors.length];}
 const boards=s=>s.pickup_type!=='1',alights=s=>s.drop_off_type!=='1';
@@ -55,7 +55,24 @@ export function boardingNetwork(db,from){
     used.add(color);routeColors.set(id,color);
   }
   for(const pattern of patterns.values())pattern.color=routeColors.get(pattern.route.route_id);
-  const result={patterns:[...patterns.values()],reachable,routes,routeColors};db.stopNetworks.set(from,result);return result;
+  let visible=[...patterns.values()];
+  if(db.provider==='skopje'){
+    // For identical service patterns, prefer published geometry to a stop
+    // outline. Keep different branches and merge only identical trip coverage.
+    const grouped=new Map();
+    for(const pattern of visible){
+      const key=JSON.stringify([pattern.route.route_id,pattern.trip.direction_id,pattern.downstream.map(s=>[s.stop_id,s.pickup_type,s.drop_off_type])]);
+      const group=grouped.get(key)||[];
+      group.push(pattern);grouped.set(key,group);
+    }
+    visible=[...grouped.values()].flatMap(group=>{
+      const exact=group.filter(p=>!p.approximate);
+      if(!exact.length)return group.slice(0,1).map(p=>({...p,tripIds:new Set(group.flatMap(item=>[...item.tripIds]))}));
+      for(const p of group)if(p.approximate)for(const id of p.tripIds)exact[0].tripIds.add(id);
+      return exact;
+    });
+  }
+  const result={patterns:visible,reachable,routes,routeColors};db.stopNetworks.set(from,result);return result;
 }
 export function visibleNetwork(network,chosen,to){
   const patterns=network.patterns.filter(p=>chosen.has(p.route.route_id)&&(!to||p.downstream.slice(1).some(s=>s.stop_id===to&&alights(s)))).map(p=>{
