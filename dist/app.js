@@ -14,7 +14,7 @@ import {readFavourites,writeFavourites,savedSelection,sameSelection,savedRouteMa
 import {createNewsView} from './news.js?v=24';
 import {PassengerReports} from './community.js?v=16';
 import {createProgress,advance,measure,project} from './ride.js?v=16';
-import {boardingNetwork,visibleNetwork,arrivalConnects,vehicleServes,routeColor} from './stop-network.js?v=23';
+import {boardingNetwork,visibleNetwork,arrivalConnects,vehicleServes,routeColor} from './stop-network.js?v=24';
 import {polishMap,routeGeometry,resolveRouteGeometry,routeOverlay,syncMarkers,networkOverlay,stopPinLayer,alignStops,trimGeometry} from './map-ui.js?v=23';
 import {load,realtime,departures,distance,planJourney} from './transit.js?v=27';
 const passengerReports=new PassengerReports();passengerReports.init();
@@ -133,7 +133,7 @@ function updateHomeRoute(){
  if(!stopId){networkOverlay(homeMap,[],[],null);return;}
  const network=boardingNetwork(db,stopId),shown=visibleNetwork(network,chosenLines,targetStopId);
  networkOverlay(homeMap,shown.patterns,shown.stops,targetStopId);
- const approximate=[...new Set(shown.patterns.filter(p=>p.approximate).map(p=>line(p.route)))];
+ const approximate=[...new Set(shown.patterns.filter(p=>p.approximate&&p.points.length>1).map(p=>line(p.route)))];
  setLabel('#map-title',name(stopIndex.get(stopId)),true);
  $('#maphint').textContent=targetStopId?`To ${name(stopIndex.get(targetStopId))} · direct buses below.`:`${new Set(shown.patterns.map(p=>p.route.route_id)).size} lines · ${shown.stops.length} reachable stops. Tap a stop to choose where to go.`;
  if(approximate.length)$('#maphint').textContent+=` Dashed lines are approximate stop connections, not street paths: ${approximate.join(', ')}.`;

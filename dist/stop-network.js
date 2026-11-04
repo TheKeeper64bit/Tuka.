@@ -72,7 +72,7 @@ export function boardingNetwork(db,from){
       return exact;
     });
   }
-  const result={patterns:visible,reachable,routes,routeColors};db.stopNetworks.set(from,result);return result;
+  const result={patterns:visible,reachable,routes,routeColors,provider:db.provider};db.stopNetworks.set(from,result);return result;
 }
 export function visibleNetwork(network,chosen,to){
   const patterns=network.patterns.filter(p=>chosen.has(p.route.route_id)&&(!to||p.downstream.slice(1).some(s=>s.stop_id===to&&alights(s)))).map(p=>{
@@ -85,5 +85,20 @@ export function visibleNetwork(network,chosen,to){
   });
   const allowed=new Set(patterns.map(p=>p.route.route_id));
   const stops=[...network.reachable.values()].filter(x=>[...x.routeIds].some(id=>allowed.has(id))&&patterns.some(p=>p.downstream.slice(1).some(s=>s.stop_id===x.stop.id&&alights(s))));
-  return {patterns,stops};
+  if(network.provider!=='skopje')return {patterns,stops};
+  // A branch without a shape can share most of its itinerary with a published
+  // branch. Draw its estimate only after their last common stop.
+  const published=patterns.filter(pattern=>!pattern.approximate&&pattern.points.length>1);
+  const overlays=patterns.map(pattern=>{
+    if(!pattern.approximate||pattern.geometryKind==='road')return pattern;
+    let shared=0;
+    for(const exact of published){
+      if(exact.route.route_id!==pattern.route.route_id||exact.trip.direction_id!==pattern.trip.direction_id)continue;
+      let count=0;
+      while(count<pattern.downstream.length&&exact.downstream[count]?.stop_id===pattern.downstream[count].stop_id)count++;
+      shared=Math.max(shared,count);
+    }
+    return shared>1?{...pattern,points:pattern.points.slice(shared-1)}:pattern;
+  });
+  return {patterns:overlays,stops};
 }
