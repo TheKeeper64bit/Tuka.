@@ -194,7 +194,7 @@ Reliability is part of the product experience: a timetable should remain usable 
 
 | Evidence | What it establishes |
 | --- | --- |
-| **192 passing Node tests**, plus standalone regression checks | Coverage across authentication, planning, calendars, realtime matching, geometry, city isolation, saved state, offline basics, notices and translations. |
+| **198 passing Node tests**, plus standalone regression checks | Coverage across authentication, planning, calendars, realtime matching, geometry, city isolation, saved state, offline basics, notices and translations. |
 | **407,058 source calls compared; zero mismatches** | The Tilburg partition preserves the compared fields of its retained source trips. |
 | **Geometry audits across all three assessed networks** | Seven Skopje, eleven Boston and three Tilburg patterns recover legitimate published paths after fixing ordered stop-to-shape matching. |
 | **Browser GPS and city-switch checks** | Tilburg GPS overrides a stale saved Skopje preference; a first visit with denied location opens the chooser without downloading a default network. |
@@ -279,6 +279,22 @@ Run the verification and production asset build:
 npm test
 npm run build:meta
 ```
+
+### Reproduce the judge setup
+
+The submission includes an isolated judge check. It archives the current commit into a temporary directory, installs the locked dependencies there, runs the complete `npm test` suite, and builds the protected Meta assets. It does not read `.env`, `.dev.vars`, the local `node_modules`, or any sibling checkout:
+
+```sh
+bash scripts/setup-judges.sh test
+```
+
+The script requires Node.js 22 or newer. On November 4, 2026, the check passed under Node.js 24.22.1: `npm ci`, all automated tests, and `npm run build:meta` completed successfully; the build produced 65 Meta assets. The tests use mocked provider/model boundaries where noted, so this result is not a claim that every live external feed or model account is available.
+
+### Provenance and reconstruction audit
+
+The original Tuka checkout used for the reconstruction is kept outside this submission repository at `/home/rand0m/Desktop/RaNd0m/Tuka-work-source`. Its pinned pre-hackathon commit is `57e29934a14b5dd19c303e6e927e735176284048` (`Update Site source`, October 8, 2026). The submission branch contains that commit in its history and reconstructs the application on top of it; the current submission head is `7273a0a7efcd39d8b3bb1d18614d825f636153cd` before audit fixes. The sibling checkout is clean and is not a Git submodule or tracked path.
+
+Because the hackathon application intentionally preserves and extends the pre-hackathon transit foundation, the submission is not byte-identical to the pinned commit and its Git history necessarily has that commit as an ancestor. No separate copy of the original checkout, credentials, `.env` file, or `.dev.vars` file is tracked. The audit therefore treats “matches” as a verified ancestry and preserved baseline, while reporting the intentional post-pin reconstruction changes rather than claiming an identical tree.
 
 <details>
 <summary><strong>Refresh the Boston or Tilburg timetable</strong></summary>

@@ -20,7 +20,7 @@
     "dev:meta": "npm run build:meta && wrangler dev --config wrangler.meta.jsonc --env-file .env --port 8793"
   },
   "devDependencies": {
-    "wrangler": "4.148.0"
+    "wrangler": "4.157.0"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.135",
