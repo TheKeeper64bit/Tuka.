@@ -67,7 +67,15 @@ The importer derives agencies, time zone, map coverage and counts from the data.
 
 You can save a feed as a new network or update an existing imported network while keeping its saved stops and journeys. Timetables use IndexedDB on the device; imports do not need a Tuka server upload. Names in non-Latin scripts are preserved and searchable.
 
-**Tested beyond the pilots:** Wellington’s public Metlink ZIP imported with **3,123 served stops, 245 routes and all 10,080 trips**, using published geometry. The mobile browser imported it, opened a route and restored it after reload without a Wellington adapter. This verifies schedule ingestion and UI behavior, not live service operation. [Inspect the real-feed audit](reports/imported-metlink-check.json) · [Browser evidence](reports/metlink-import-browser-check.json).
+### Verified GTFS Import — Wellington, New Zealand
+
+Tuka’s universal GTFS importer was demonstrated on the deployed hackathon website using Wellington’s public Metlink network. The imported GTFS Schedule ZIP contained **3,123 stops, 245 routes, 10,080 trips, and 22 transport agencies**.
+
+After the import, Tuka switched from Skopje to Wellington and displayed the imported stops on the interactive map using the existing interface. Wellington required no city-specific application.
+
+**Verification scope.** The deployed demo confirmed import, network switching, and map visualization. End-to-end journey planning and departure accuracy in Wellington still require separate verification.
+
+[Feed audit](reports/imported-metlink-check.json) · [Browser evidence](reports/metlink-import-browser-check.json)
 
 ![Review a GTFS network before opening it in Tuka](reports/gtfs-import-review-preview.png)
 
@@ -79,9 +87,12 @@ Imports currently accept fixed-route GTFS Schedule ZIPs up to **50 MB compressed
 
 ### AI Network Inspector
 
-The import review shows local GTFS findings before you save a network. On the protected Meta build, open **AI Network Inspector → Analyze network** to get optional verification suggestions for reported anomalies. The request contains a bounded summary and representative GTFS IDs. The original ZIP stays on your device, and the inspector cannot change stops, routes, shapes, or timetables.
+The optional Inspector shows deterministic validation findings and labels AI-generated recommendations separately. During the Wellington import demonstration, local validation passed with **zero critical errors** and reported **133 warnings** for ambiguous or invalid direction information.
 
-Meta is preferred, with Baseten available as a configured fallback. The inspector reports provider token usage when available and reuses recent results for identical reports within the same server instance. Clean feeds and ordinary imports need no model call. Set `NETWORK_INSPECTOR_ENABLED=false` on the server to disable AI analysis.
+The Inspector uses Meta AI when configured, with optional Baseten fallback, to help explain anomalies. The original ZIP stays on the device, and the Inspector cannot modify official transit data. Set `NETWORK_INSPECTOR_ENABLED=false` on the server to disable AI analysis.
+
+**Verification status.** The validation and inspection interface was demonstrated. A successful live provider-backed analysis has yet to be independently verified. Mocked analysis was used in testing and does not establish a live Meta API result.
+
 
 ## What we built during the hackathon
 
@@ -228,7 +239,7 @@ Tuka is a tested pilot with meaningful coverage and work still to prove:
 - **Schedules have an expiry.** Boston and Tilburg static data are build-time snapshots with finite service calendars. They need rebuilding as operators publish updates. Live feeds do not extend those calendars.
 - **Walking and ride alerts have practical limits.** The Meta Worker currently lacks the D1 binding needed for street-walking refinement, so walks remain labelled estimates. Phone backgrounding or locking can pause tracking and alerts.
 - **Local capabilities remain local.** Skopje news, its passenger-report integration and the SkopjeBus ticket handoff do not become universal ticketing. Automatic SMS ticket capture requires native integration.
-- **Acceptance is still in progress.** Tilburg field testing, new live-model verification and deployment of the latest updates remain pending. Recent street-tile loading was unreliable in this development environment; neutral-basemap overlay checks are identified in the evidence.
+- **Acceptance is still in progress.** Tilburg field testing and independent live Inspector provider verification remain pending. Recent street-tile loading was unreliable in this development environment; neutral-basemap overlay checks are identified in the evidence.
 
 ## Install Tuka as a web app
 
